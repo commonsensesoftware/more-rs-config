@@ -1,0 +1,17 @@
+[package]
+name = "more-config-tests"
+version = "1.0.0"
+edition = "2018"
+publish = false
+
+[lib]
+path = "lib.rs"
+doctest = false
+
+[dependencies]
+# TODO: update after publish to crates.io
+more-changetoken = { git = "https://github.com/commonsensesoftware/more-rs-changetoken" }
+more-config = { path = "../src", features = ["std", "chained", "mem", "env", "ini", "json", "binder"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+test-case = "2.2.1"
