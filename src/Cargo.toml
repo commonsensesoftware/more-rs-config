@@ -1,16 +1,17 @@
 [package]
 name = "more-config"
 version = "1.0.0"
-authors = ["Chris Martinez"]
+authors = ["Chris Martinez <chris_martinez_77@hotmail.com>"]
 edition = "2018"
 publish = false
 description = "Provides support for configuration"
 keywords = ["more", "configuration", "config"]
-readme = "../README.md"
+readme = "README.md"
 
 [lib]
 name = "config"
 path = "lib.rs"
+doctest = false
 
 [features]
 default = ["std"]
@@ -25,11 +26,10 @@ binder = ["serde"]
 json = ["util", "serde_json"]
 
 [dependencies]
-# TODO: update after publish to crates.io
-more-changetoken = { git = "https://github.com/commonsensesoftware/more-rs-changetoken" }
+more-changetoken = "1.0"
 configparser = { version = "3.0", optional = true }
 serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
 
 [dev-dependencies]
-test-case = "2.2.1"
+test-case = "2.2"

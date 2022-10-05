@@ -9,9 +9,8 @@ path = "lib.rs"
 doctest = false
 
 [dependencies]
-# TODO: update after publish to crates.io
-more-changetoken = { git = "https://github.com/commonsensesoftware/more-rs-changetoken" }
+more-changetoken = "1.0"
 more-config = { path = "../src", features = ["std", "chained", "mem", "env", "ini", "json", "binder"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0" }
-test-case = "2.2.1"
+test-case = "2.2"
