@@ -196,7 +196,7 @@ impl<'de> de::Deserializer<'de> for Value {
     where
         V: Visitor<'de>,
     {
-        let config = self.0.as_config();
+        let config = self.0.deref();
         let deserializer = Deserializer::new(config);
         de::Deserializer::deserialize_any(deserializer, visitor)
     }

@@ -6,8 +6,7 @@ fn add_env_vars_should_load_environment_variables() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
         .add_env_vars()
-        .build()
-        .to_config();
+        .build();
     let expected = var("USERNAME").unwrap();
 
     // act
@@ -22,8 +21,7 @@ fn add_env_vars_should_load_filtered_environment_variables() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
         .add_env_vars_with_prefix("PROCESSOR_")
-        .build()
-        .to_config();
+        .build();
     let expected = var("PROCESSOR_ARCHITECTURE").unwrap();
 
     // act

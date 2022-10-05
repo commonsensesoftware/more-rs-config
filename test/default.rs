@@ -30,8 +30,7 @@ fn build_should_load_and_combine_different_configuration_sources() {
     builder.add(Box::new(source3));
 
     // act
-    let root = builder.build();
-    let config = root.as_config();
+    let config = builder.build();
 
     // assert
     assert_eq!(config.get("mem1:keyinmem1").unwrap(), "ValueInMem1");
@@ -69,11 +68,10 @@ fn add_configuration_should_chain_configurations() {
     let root = builder.build();
     let mut builder2 = DefaultConfigurationBuilder::new();
 
-    builder2.add_configuration(root.to_config());
+    builder2.add_configuration(root.as_config());
 
     // act
-    let chained = builder2.build();
-    let config = chained.as_config();
+    let config = builder2.build();
 
     // assert
     assert_eq!(config.get("mem1:keyinmem1").unwrap(), "ValueInMem1");
@@ -128,7 +126,6 @@ fn iter_should_flatten_into_hashmap(make_paths_relative: bool) {
 
     // act
     let map: HashMap<_, _> = root
-        .as_config()
         .iter_relative(make_paths_relative)
         .collect();
 
@@ -193,13 +190,12 @@ fn chained_iter_should_flatten_into_hashmap(make_paths_relative: bool) {
     let mut builder2 = DefaultConfigurationBuilder::new();
 
     builder2
-        .add_configuration(other.to_config())
+        .add_configuration(other.as_config())
         .add(Box::new(source3));
     let root = builder2.build();
 
     // act
     let map: HashMap<_, _> = root
-        .as_config()
         .iter_relative(make_paths_relative)
         .collect();
 
@@ -262,23 +258,19 @@ fn iter_should_strip_key_from_children() {
     builder.add(Box::new(source2));
     builder.add(Box::new(source3));
 
-    let root = builder.build();
-    let config = root.as_config();
+    let config = builder.build();
 
     // act
     let map1: HashMap<_, _> = config
         .section("Mem1")
-        .as_config()
         .iter_relative(true)
         .collect();
     let map2: HashMap<_, _> = config
         .section("Mem2")
-        .as_config()
         .iter_relative(true)
         .collect();
     let map3: HashMap<_, _> = config
         .section("Mem3")
-        .as_config()
         .iter_relative(true)
         .collect();
 
@@ -320,8 +312,7 @@ fn new_configuration_provider_should_override_old_one_when_key_is_duplicated() {
     builder.add(Box::new(source2));
 
     // act
-    let root = builder.build();
-    let config = root.as_config();
+    let config = builder.build();
 
     // assert
     assert_eq!(config.get("Key1:Key2").unwrap(), "ValueInMem2");
@@ -347,11 +338,11 @@ fn new_configuration_root_should_be_built_from_existing_with_duplicate_keys() {
 
     // act
     let root2 = DefaultConfigurationBuilder::new()
-        .add_in_memory(root1.as_config().iter().collect())
+        .add_in_memory(root1.iter().collect())
         .build();
 
     // assert
-    assert_eq!(root2.as_config().get("keya:keyb").unwrap(), "valueB");
+    assert_eq!(root2.get("keya:keyb").unwrap(), "valueB");
 }
 
 #[test]
@@ -384,24 +375,23 @@ fn section_should_return_parts_from_root_configuration() {
     builder.add(Box::new(source2));
     builder.add(Box::new(source3));
 
-    let root = builder.build();
-    let config = root.as_config();
+    let config = builder.build();
 
     // act
     let section = config.section("Data");
 
     // assert
     assert_eq!(
-        section.as_config().get("DB1:Connection1").unwrap(),
+        section.get("DB1:Connection1").unwrap(),
         "MemVal1"
     );
     assert_eq!(
-        section.as_config().get("DB1:Connection2").unwrap(),
+        section.get("DB1:Connection2").unwrap(),
         "MemVal2"
     );
     assert_eq!(section.value(), "MemVal4");
-    assert!(section.as_config().get("DB2:Connection").is_none());
-    assert!(section.as_config().get("Source:DB2:Connection").is_none());
+    assert!(section.get("DB2:Connection").is_none());
+    assert!(section.get("Source:DB2:Connection").is_none());
 }
 
 #[test]
@@ -434,8 +424,7 @@ fn section_should_return_children() {
     builder.add(Box::new(source2));
     builder.add(Box::new(source3));
 
-    let root = builder.build();
-    let config = root.as_config();
+    let config = builder.build();
 
     // act
     let sections = config.section("Data").children();
@@ -447,7 +436,6 @@ fn section_should_return_children() {
             .iter()
             .find(|s| s.key() == "DB1")
             .unwrap()
-            .as_config()
             .get("Connection1")
             .unwrap(),
         "MemVal1"
@@ -457,7 +445,6 @@ fn section_should_return_children() {
             .iter()
             .find(|s| s.key() == "DB1")
             .unwrap()
-            .as_config()
             .get("Connection2")
             .unwrap(),
         "MemVal2"
@@ -477,7 +464,7 @@ fn section_should_return_children() {
 #[test_case("", false ; "should not exist with empty value")]
 fn section_without_children(value: &str, expected: bool) {
     // arrange
-    let root = DefaultConfigurationBuilder::new()
+    let config = DefaultConfigurationBuilder::new()
         .add_in_memory(
             [("Mem1", value)]
                 .iter()
@@ -485,8 +472,9 @@ fn section_without_children(value: &str, expected: bool) {
                 .collect(),
         )
         .build();
+
     // act
-    let section = root.as_config().section("Mem1");
+    let section = config.section("Mem1");
 
     // assert
     assert_eq!(section.exists(), expected);
@@ -495,7 +483,9 @@ fn section_without_children(value: &str, expected: bool) {
 #[test]
 fn section_with_children_should_exist() {
     // arrange
-    let root = DefaultConfigurationBuilder::new()
+
+    // act
+    let config = DefaultConfigurationBuilder::new()
         .add_in_memory(
             [
                 ("Mem1:KeyInMem1", "ValueInMem1"),
@@ -508,9 +498,6 @@ fn section_with_children_should_exist() {
         )
         .build();
 
-    // act
-    let config = root.as_config();
-
     // assert
     assert!(config.section("Mem1").exists());
     assert!(config.section("Mem2").exists());
@@ -519,7 +506,7 @@ fn section_with_children_should_exist() {
 
 #[test]
 fn key_starting_with_colon_means_first_section_has_empty_name() {
-    let root = DefaultConfigurationBuilder::new()
+    let config = DefaultConfigurationBuilder::new()
         .add_in_memory(
             [(":Key2", "value")]
                 .iter()
@@ -527,7 +514,6 @@ fn key_starting_with_colon_means_first_section_has_empty_name() {
                 .collect(),
         )
         .build();
-    let config = root.as_config();
 
     // act
     let children = config.children();
@@ -541,7 +527,7 @@ fn key_starting_with_colon_means_first_section_has_empty_name() {
 
 #[test]
 fn key_ending_with_colon_means_last_section_has_empty_name() {
-    let root = DefaultConfigurationBuilder::new()
+    let config = DefaultConfigurationBuilder::new()
         .add_in_memory(
             [("Key1:", "value")]
                 .iter()
@@ -549,7 +535,6 @@ fn key_ending_with_colon_means_last_section_has_empty_name() {
                 .collect(),
         )
         .build();
-    let config = root.as_config();
 
     // act
     let children = config.children();
@@ -563,7 +548,7 @@ fn key_ending_with_colon_means_last_section_has_empty_name() {
 
 #[test]
 fn key_ending_with_double_colon_has_section_with_empty_name() {
-    let root = DefaultConfigurationBuilder::new()
+    let config = DefaultConfigurationBuilder::new()
         .add_in_memory(
             [("Key1::Key3", "value")]
                 .iter()
@@ -571,7 +556,6 @@ fn key_ending_with_double_colon_has_section_with_empty_name() {
                 .collect(),
         )
         .build();
-    let config = root.as_config();
 
     // act
     let children = config.children();

@@ -4,9 +4,9 @@ use tokens::ChangeToken;
 /// Defines the behavior of a configuration.
 pub trait Configuration {
     /// Gets the configuration value.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `key` - The configuration key
     fn get(&self, key: &str) -> Option<&str>;
 
@@ -19,8 +19,8 @@ pub trait Configuration {
     /// Returns a change token that can be used to observe when this configuration is reloaded.
     fn reload_token(&self) -> Box<dyn ChangeToken>;
 
-    /// Attempts to cast the [configuration](trait.Configuration.html) as a [configuration section](trait.ConfigurationSection.html).
-    fn to_section(&self) -> Option<&dyn ConfigurationSection> {
+    /// Attempts to convert the [configuration](trait.Configuration.html) as a [configuration section](trait.ConfigurationSection.html).
+    fn as_section(&self) -> Option<&dyn ConfigurationSection> {
         None
     }
 
@@ -59,7 +59,7 @@ impl ConfigurationIterator {
         let mut first = None;
         let mut prefix_length = 0;
 
-        if let Some(root) = configuration.to_section() {
+        if let Some(root) = configuration.as_section() {
             if make_paths_relative {
                 prefix_length = root.path().len() + 1;
             }
@@ -67,7 +67,7 @@ impl ConfigurationIterator {
             if !make_paths_relative {
                 let key = root.path()[prefix_length..].to_owned();
                 let value = root.value().to_owned();
-    
+
                 first = Some((key, value));
             }
         }
@@ -91,7 +91,7 @@ impl Iterator for ConfigurationIterator {
         while let Some(config) = self.stack.pop() {
             self.stack.extend(config.children().into_iter());
 
-            if let Some(section) = config.to_section() {
+            if let Some(section) = config.as_section() {
                 let key = section.path()[self.prefix_length..].to_owned();
                 let value = section.value().to_owned();
                 return Some((key, value));

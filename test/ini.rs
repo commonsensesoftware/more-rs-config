@@ -19,12 +19,11 @@ fn add_ini_file_should_load_settings_from_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_ini_file(&path)
-        .build()
-        .to_config();
+        .build();
     let section = config.section("Feature.Magic");
 
     // act
-    let result = section.as_config().get("Disabled");
+    let result = section.get("Disabled");
 
     // assert
     if path.exists() {
@@ -64,12 +63,11 @@ fn add_optional_ini_file_should_load_settings_from_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_optional_ini_file(&path)
-        .build()
-        .to_config();
+        .build();
     let section = config.section("Feature.Magic");
 
     // act
-    let result = section.as_config().get("Disabled");
+    let result = section.get("Disabled");
 
     // assert
     if path.exists() {
@@ -87,8 +85,7 @@ fn add_ini_file_should_not_panic_if_file_does_not_exist() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_optional_ini_file(&path)
-        .build()
-        .to_config();
+        .build();
 
     // assert
     assert_eq!(config.children().len(), 0);

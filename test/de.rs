@@ -94,7 +94,7 @@ fn from_config_should_deserialize_simple_struct() {
         .build();
 
     // act
-    let result = from_config::<Foo>(root.as_config());
+    let result = from_config::<Foo>(root.deref());
 
     // assert
     match result {
@@ -143,7 +143,7 @@ fn from_config_should_deserialize_parent_child_struct() {
         .build();
 
     // act
-    let result = from_config::<Parent>(root.as_config());
+    let result = from_config::<Parent>(root.deref());
 
     // assert
     match result {
@@ -196,7 +196,7 @@ fn from_config_should_fail_with_missing_value() {
         .build();
 
     // act
-    let error = from_config::<Foo>(root.as_config()).err().unwrap();
+    let error = from_config::<Foo>(root.deref()).err().unwrap();
 
     // assert
     assert_eq!(error, Error::MissingValue("Doom"));
@@ -221,7 +221,7 @@ fn from_config_should_fail_with_invalid_type() {
         .build();
 
     // act
-    let error = from_config::<Foo>(root.as_config()).err().unwrap();
+    let error = from_config::<Foo>(root.deref()).err().unwrap();
 
     // assert
     assert_eq!(error, Error::Custom(String::from("provided string was not `true` or `false` while parsing value \'notabool\' provided by Baz")));

@@ -11,7 +11,7 @@ fn add_json_file_should_load_settings_from_file() {
     let json = json!({"service": {
        "enabled": false},
      "feature": {
-         "sfpCopy": {
+         "nativeCopy": {
              "disabled": true}}
     });
     let path = PathBuf::new()
@@ -23,12 +23,11 @@ fn add_json_file_should_load_settings_from_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path)
-        .build()
-        .to_config();
-    let section = config.section("Feature").section("SfpCopy");
+        .build();
+    let section = config.section("Feature").section("NativeCopy");
 
     // act
-    let result = section.as_config().get("Disabled");
+    let result = section.get("Disabled");
 
     // assert
     if path.exists() {
@@ -58,7 +57,7 @@ fn add_optional_json_file_should_load_settings_from_file() {
     let json = json!({"service": {
        "enabled": false},
      "feature": {
-       "sfpCopy": {
+       "nativeCopy": {
            "disabled": true}}
     });
     let path = PathBuf::new()
@@ -70,12 +69,11 @@ fn add_optional_json_file_should_load_settings_from_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_optional_json_file(&path)
-        .build()
-        .to_config();
-    let section = config.section("Feature").section("SfpCopy");
+        .build();
+    let section = config.section("Feature").section("NativeCopy");
 
     // act
-    let result = section.as_config().get("Disabled");
+    let result = section.get("Disabled");
 
     // assert
     if path.exists() {
@@ -93,8 +91,7 @@ fn add_json_file_should_not_panic_if_file_does_not_exist() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_optional_json_file(&path)
-        .build()
-        .to_config();
+        .build();
 
     // assert
     assert_eq!(config.children().len(), 0);
@@ -111,10 +108,8 @@ fn simple_json_array_should_be_converted_to_key_value_pairs() {
 
     file.write_all(json.to_string().as_bytes()).unwrap();
 
-    let root = DefaultConfigurationBuilder::new().add_json_file(&path).build();
-
     // act
-    let config = root.as_config();
+    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build();
 
     // assert
     if path.exists() {
@@ -139,10 +134,8 @@ fn complex_json_array_should_be_converted_to_key_value_pairs() {
 
     file.write_all(json.to_string().as_bytes()).unwrap();
 
-    let root = DefaultConfigurationBuilder::new().add_json_file(&path).build();
-
     // act
-    let config = root.as_config();
+    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build();
 
     // assert
     if path.exists() {
@@ -168,10 +161,8 @@ fn nested_json_array_should_be_converted_to_key_value_pairs() {
 
     file.write_all(json.to_string().as_bytes()).unwrap();
 
-    let root = DefaultConfigurationBuilder::new().add_json_file(&path).build();
-
     // act
-    let config = root.as_config();
+    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build();
 
     // assert
     if path.exists() {
@@ -200,13 +191,12 @@ fn json_array_item_should_be_implicitly_replaced() {
     file = File::create(&path2).unwrap();
     file.write_all(json2.to_string().as_bytes()).unwrap();
 
-    let root = DefaultConfigurationBuilder::new()
+    
+    // act
+    let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path1)
         .add_json_file(&path2)
         .build();
-
-    // act
-    let config = root.as_config();
 
     // assert
     if path1.exists() {
@@ -238,13 +228,11 @@ fn json_array_item_should_be_explicitly_replaced() {
     file = File::create(&path2).unwrap();
     file.write_all(json2.to_string().as_bytes()).unwrap();
 
-    let root = DefaultConfigurationBuilder::new()
+    // act
+    let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path1)
         .add_json_file(&path2)
         .build();
-
-    // act
-    let config = root.as_config();
 
     // assert
     if path1.exists() {
@@ -276,13 +264,11 @@ fn json_arrays_should_be_merged() {
     file = File::create(&path2).unwrap();
     file.write_all(json2.to_string().as_bytes()).unwrap();
 
-    let root = DefaultConfigurationBuilder::new()
+    // act
+    let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path1)
         .add_json_file(&path2)
         .build();
-
-    // act
-    let config = root.as_config();
 
     // assert
     if path1.exists() {

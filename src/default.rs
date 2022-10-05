@@ -3,6 +3,7 @@ use std::any::Any;
 use std::cell::{Cell, RefCell, UnsafeCell};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FormatResult};
+use std::ops::Deref;
 use std::rc::{Rc, Weak};
 use std::sync::Mutex;
 use tokens::{ChangeToken, SharedChangeToken};
@@ -128,11 +129,7 @@ impl ConfigurationRoot for DefaultConfigurationRoot {
         self.mediator.providers()
     }
 
-    fn as_config(&self) -> &dyn Configuration {
-        self
-    }
-
-    fn to_config(&self) -> Box<dyn Configuration> {
+    fn as_config(&self) -> Box<dyn Configuration> {
         Box::new(self.clone())
     }
 }
@@ -184,6 +181,14 @@ impl Configuration for DefaultConfigurationRoot {
 impl Debug for DefaultConfigurationRoot {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> FormatResult {
         fmt_debug_view(self, formatter)
+    }
+}
+
+impl Deref for DefaultConfigurationRoot {
+    type Target = dyn Configuration;
+
+    fn deref(&self) -> &Self::Target {
+        self
     }
 }
 
@@ -241,7 +246,7 @@ impl Configuration for DefaultConfigurationSection {
         self.root.reload_token()
     }
 
-    fn to_section(&self) -> Option<&dyn ConfigurationSection> {
+    fn as_section(&self) -> Option<&dyn ConfigurationSection> {
         Some(self)
     }
 
@@ -265,8 +270,12 @@ impl ConfigurationSection for DefaultConfigurationSection {
     fn value(&self) -> &str {
         self.root.get(&self.path).unwrap_or("")
     }
+}
 
-    fn as_config(&self) -> &dyn Configuration {
+impl Deref for DefaultConfigurationSection {
+    type Target = dyn Configuration;
+
+    fn deref(&self) -> &Self::Target {
         self
     }
 }

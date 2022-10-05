@@ -1,7 +1,8 @@
 use crate::Configuration;
+use std::ops::Deref;
 
 /// Defines the behavior for a section of application configuration values.
-pub trait ConfigurationSection: Configuration {
+pub trait ConfigurationSection: Configuration + Deref<Target = dyn Configuration> {
     /// Gets the key this section occupies in its parent.
     fn key(&self) -> &str;
 
@@ -10,9 +11,6 @@ pub trait ConfigurationSection: Configuration {
 
     /// Gets the section value.
     fn value(&self) -> &str;
-
-    /// Downcasts the [ConfigurationSection](trait.ConfigurationSection.html) to a [Configuration](trait.Configuration.html).
-    fn as_config(&self) -> &dyn Configuration;
 }
 
 pub mod ext {
