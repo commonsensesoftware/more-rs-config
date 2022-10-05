@@ -5,7 +5,7 @@ use std::str::FromStr;
 /// Provides binder extension methods for a [Configuration](trait.Configuration.html).
 pub trait ConfigurationBinder {
     /// Creates and returns a structure bound to the configuration.
-    fn get_as<T: DeserializeOwned>(&self) -> T;
+    fn reify<T: DeserializeOwned>(&self) -> T;
 
     /// Binds the configuration to the specified instance.
     ///
@@ -38,7 +38,7 @@ pub trait ConfigurationBinder {
 }
 
 impl ConfigurationBinder for dyn Configuration {
-    fn get_as<T: DeserializeOwned>(&self) -> T {
+    fn reify<T: DeserializeOwned>(&self) -> T {
         from_config::<T>(self).unwrap()
     }
 
@@ -50,7 +50,7 @@ impl ConfigurationBinder for dyn Configuration {
         let section = self.section(key.as_ref());
 
         if section.exists() {
-            bind_config(section.as_config(), instance).unwrap()
+            bind_config(section.deref(), instance).unwrap()
         }
     }
 
@@ -78,7 +78,7 @@ impl ConfigurationBinder for dyn Configuration {
 }
 
 impl<C: AsRef<dyn Configuration>> ConfigurationBinder for C {
-    fn get_as<T: DeserializeOwned>(&self) -> T {
+    fn reify<T: DeserializeOwned>(&self) -> T {
         from_config::<T>(self.as_ref()).unwrap()
     }
 
@@ -90,7 +90,7 @@ impl<C: AsRef<dyn Configuration>> ConfigurationBinder for C {
         let section = self.as_ref().section(key.as_ref());
 
         if section.exists() {
-            bind_config(section.as_config(), instance).unwrap()
+            bind_config(section.deref(), instance).unwrap()
         }
     }
 

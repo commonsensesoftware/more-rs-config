@@ -15,12 +15,17 @@ struct ContactOptions {
 #[derive(Default, Deserialize)]
 #[serde(rename_all(deserialize = "PascalCase"))]
 struct FileCopySettings {
-    #[serde(default, alias = "UseSfpCopy")]
-    use_sfp_copy: bool,
+    #[serde(default, alias = "UseNativeCopy")]
+    use_native_copy: bool,
+}
+
+#[derive(Default, Deserialize)]
+struct ArrayExample {
+    entries: Vec<String>,
 }
 
 #[test]
-fn get_as_should_deserialize_configuration_to_options() {
+fn reify_should_deserialize_configuration_to_options() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
         .add_in_memory(
@@ -34,16 +39,43 @@ fn get_as_should_deserialize_configuration_to_options() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build()
-        .to_config();
+        .build();
 
     // act
-    let options: ContactOptions = config.get_as();
+    let options: ContactOptions = config.reify();
 
     // assert
     assert_eq!(&options.name, "John Doe");
     assert!(options.primary);
     assert_eq!(options.phones.len(), 2);
+}
+
+#[test]
+fn reify_should_deserialize_section_to_options() {
+    // arrange
+    let config = DefaultConfigurationBuilder::new()
+        .add_in_memory(
+            [
+                ("array:entries:0", "value00"),
+                ("array:entries:1", "value10"),
+                ("array:entries:2", "value20"),
+                ("array:entries:3", "value30"),
+                ("array:entries:4", "value40"),
+                ("array:entries:5", "value50"),
+            ]
+            .iter()
+            .map(|t| (t.0.to_owned(), t.1.to_owned()))
+            .collect(),
+        )
+        .build();
+    let section = config.section("array");
+    let expected = vec!["value00", "value10", "value20", "value30", "value40", "value50"];
+
+    // act
+    let options: ArrayExample = section.reify();
+
+    // assert
+    assert_eq!(&options.entries, &expected);
 }
 
 #[test]
@@ -61,8 +93,7 @@ fn bind_should_deserialize_configuration_to_options() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build()
-        .to_config();
+        .build();
     let mut options = ContactOptions::default();
 
     // act
@@ -89,8 +120,7 @@ fn bind_at_should_deserialize_configuration_to_options() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build()
-        .to_config();
+        .build();
     let mut options = ContactOptions::default();
 
     // act
@@ -117,8 +147,7 @@ fn get_value_should_deserialize_configuration_value() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build()
-        .to_config();
+        .build();
 
     // act
     let primary: Option<bool> = config.get_value("primary").unwrap();
@@ -141,8 +170,7 @@ fn get_value_should_return_none_for_missing_configuration_value() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build()
-        .to_config();
+        .build();
 
     // act
     let primary: Option<bool> = config.get_value("primary").unwrap();
@@ -165,8 +193,7 @@ fn get_value_or_default_should_return_default_value_for_missing_configuration_va
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build()
-        .to_config();
+        .build();
 
     // act
     let primary: bool = config.get_value_or_default("primary").unwrap();
@@ -187,16 +214,15 @@ fn deserialization_should_preserve_case_in_ini_file() {
     file.write_all(b"Disabled=true\n").unwrap();
     file.write_all(b"AzureClusterClass:Compute$Disabled=false\n\n").unwrap();
     file.write_all(b"[FileCopySettings]\n").unwrap();
-    file.write_all(b"UseSfpCopy = true\n").unwrap();
-    file.write_all(b"AzureSDPRolloutPhase:Stage$UseSfpCopy=false\n").unwrap();
-    file.write_all(b"AzureSDPRolloutPhase:Canary$UseSfpCopy=false\n\n").unwrap();
+    file.write_all(b"UseNativeCopy = true\n").unwrap();
+    file.write_all(b"AzureSDPRolloutPhase:Stage$UseNativeCopy=false\n").unwrap();
+    file.write_all(b"AzureSDPRolloutPhase:Canary$UseNativeCopy=false\n\n").unwrap();
     file.write_all(b"[RequiredFiles]\n").unwrap();
     file.write_all(b"start.bat=1").unwrap();
 
     let config = DefaultConfigurationBuilder::new()
         .add_ini_file(&path)
-        .build()
-        .to_config();
+        .build();
 
     // act
     let mut settings = FileCopySettings::default();
@@ -209,5 +235,5 @@ fn deserialization_should_preserve_case_in_ini_file() {
         remove_file(&path).ok();
     }
 
-    assert!(settings.use_sfp_copy);
+    assert!(settings.use_native_copy);
 }
