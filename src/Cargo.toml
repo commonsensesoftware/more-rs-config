@@ -1,12 +1,14 @@
 [package]
 name = "more-config"
 version = "1.0.0"
-authors = ["Chris Martinez <chris_martinez_77@hotmail.com>"]
 edition = "2018"
-publish = false
+authors = ["Chris Martinez <chris_martinez_77@hotmail.com>"]
 description = "Provides support for configuration"
 keywords = ["more", "configuration", "config"]
+license = "MIT"
 readme = "README.md"
+repository = "https://github.com/commonsensesoftware/more-rs-config"
+include = ["*.rs", "!build.rs", "README.md"]
 
 [lib]
 name = "config"
