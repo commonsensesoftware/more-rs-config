@@ -368,8 +368,6 @@ A common practice is to add the command-line configuration provider last in a
 series of providers to allow command-line arguments to override configuration
 set by the other providers.
 
-## JSON
-
 ## INI configuration provider
 
 The `IniConfigurationProvider` loads configuration from INI file key-value pairs
