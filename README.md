@@ -2,10 +2,11 @@
 
 [![Crates.io][crates-badge]][crates-url]
 [![MIT licensed][mit-badge]][mit-url]
+![CI](https://github.com/commonsensesoftware/more-rs-config/actions/workflows/ci.yml/badge.svg)
 
 [crates-badge]: https://img.shields.io/crates/v/more-config.svg
 [crates-url]: https://crates.io/crates/more-config
-[mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
+[mit-badge]: https://img.shields.io/badge/license-MIT-blueviolet.svg
 [mit-url]: https://github.com/commonsensesoftware/more-rs-config/blob/main/LICENSE
 
 This library contains all of the fundamental abstractions for defining configurations.
