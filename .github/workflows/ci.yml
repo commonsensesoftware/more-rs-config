@@ -36,7 +36,9 @@ jobs:
         run: cargo build
 
       - name: Cargo Test
-        run: cargo test --all-features -- -Z unstable-options --format json --report-time | cargo2junit > target/debug/results.xml
+        run: |
+          cargo test --package more-config --all-features -- -Z unstable-options --format json --report-time | cargo2junit > target/debug/results.xml
+          cargo test --package more-config-tests -- -Z unstable-options --format json --report-time | cargo2junit > target/debug/results-int.xml
 
       # REF: https://github.com/marketplace/actions/publish-test-results
 
