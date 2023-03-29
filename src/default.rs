@@ -50,7 +50,7 @@ impl Mediator {
     }
 
     fn reload(&self) {
-        let _ = self.sync.lock().unwrap();
+        let _unused = self.sync.lock().unwrap();
 
         // SAFETY: this is a 'chicken and egg' problem. there doesn't seem to be a better way that to moment.
         // 1. 'reload()' requires mutability, but mutability cannot be shared (e.g. Rc/Arc)
@@ -74,7 +74,7 @@ impl Mediator {
         let token;
 
         {
-            let _ = self.sync.lock().unwrap();
+            let _unused = self.sync.lock().unwrap();
             token = self.token.borrow().clone();
         }
 
@@ -85,7 +85,7 @@ impl Mediator {
         let tokens;
 
         unsafe {
-            let _ = self.sync.lock().unwrap();
+            let _unused = self.sync.lock().unwrap();
             tokens = Mediator::to_tokens(&self.me, &*self.providers.get());
         }
 
