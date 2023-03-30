@@ -21,7 +21,7 @@ fn add_env_vars_should_load_filtered_environment_variables() {
     let (prefix, key, unexpected) = if cfg!(windows) {
         ("PROCESSOR_", "ARCHITECTURE", "USERNAME")
     } else {
-        ("SSH_", "CLIENT", "USER")
+        ("LS_", "COLORS", "USER")
     };
     let config = DefaultConfigurationBuilder::new()
         .add_env_vars_with_prefix(prefix)
