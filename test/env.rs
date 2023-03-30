@@ -4,13 +4,12 @@ use std::env::var;
 #[test]
 fn add_env_vars_should_load_environment_variables() {
     // arrange
-    let config = DefaultConfigurationBuilder::new()
-        .add_env_vars()
-        .build();
-    let expected = var("USERNAME").unwrap();
+    let config = DefaultConfigurationBuilder::new().add_env_vars().build();
+    let key = if cfg!(windows) { "USERNAME" } else { "USER" };
+    let expected = var(key).unwrap();
 
     // act
-    let value = config.get("USERNAME").unwrap();
+    let value = config.get(key).unwrap();
 
     // assert
     assert_eq!(value, &expected);
@@ -19,15 +18,20 @@ fn add_env_vars_should_load_environment_variables() {
 #[test]
 fn add_env_vars_should_load_filtered_environment_variables() {
     // arrange
+    let (prefix, key, unexpected) = if cfg!(windows) {
+        ("PROCESSOR_", "ARCHITECTURE", "USERNAME")
+    } else {
+        ("SSH_", "CLIENT", "USER")
+    };
     let config = DefaultConfigurationBuilder::new()
-        .add_env_vars_with_prefix("PROCESSOR_")
+        .add_env_vars_with_prefix(prefix)
         .build();
-    let expected = var("PROCESSOR_ARCHITECTURE").unwrap();
+    let expected = var([prefix, key].join("")).unwrap();
 
     // act
-    let value = config.get("ARCHITECTURE").unwrap();
+    let value = config.get(key).unwrap();
 
     // assert
     assert_eq!(value, &expected);
-    assert!(config.get("SYSTEMROOT").is_none())
+    assert!(config.get(unexpected).is_none())
 }
