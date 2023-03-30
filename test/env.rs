@@ -5,11 +5,10 @@ use std::env::var;
 fn add_env_vars_should_load_environment_variables() {
     // arrange
     let config = DefaultConfigurationBuilder::new().add_env_vars().build();
-    let key = if cfg!(windows) { "USERNAME" } else { "USER" };
-    let expected = var(key).unwrap();
+    let expected = var("CARGO_PKG_NAME").unwrap();
 
     // act
-    let value = config.get(key).unwrap();
+    let value = config.get("CARGO_PKG_NAME").unwrap();
 
     // assert
     assert_eq!(value, &expected);
@@ -18,20 +17,15 @@ fn add_env_vars_should_load_environment_variables() {
 #[test]
 fn add_env_vars_should_load_filtered_environment_variables() {
     // arrange
-    let (prefix, key, unexpected) = if cfg!(windows) {
-        ("PROCESSOR_", "ARCHITECTURE", "USERNAME")
-    } else {
-        ("LS_", "COLORS", "USER")
-    };
     let config = DefaultConfigurationBuilder::new()
-        .add_env_vars_with_prefix(prefix)
+        .add_env_vars_with_prefix("CARGO_PKG_")
         .build();
-    let expected = var([prefix, key].join("")).unwrap();
+    let expected = var("CARGO_PKG_NAME").unwrap();
 
     // act
-    let value = config.get(key).unwrap();
+    let value = config.get("NAME").unwrap();
 
     // assert
     assert_eq!(value, &expected);
-    assert!(config.get(unexpected).is_none())
+    assert!(config.get("PATH").is_none())
 }
