@@ -1,9 +1,8 @@
 use config::{ext::*, *};
 use serde::Deserialize;
-use std::env::var;
+use std::env::temp_dir;
 use std::fs::{remove_file, File};
 use std::io::Write;
-use std::path::PathBuf;
 
 #[derive(Default, Deserialize)]
 struct ContactOptions {
@@ -69,7 +68,9 @@ fn reify_should_deserialize_section_to_options() {
         )
         .build();
     let section = config.section("array");
-    let expected = vec!["value00", "value10", "value20", "value30", "value40", "value50"];
+    let expected = vec![
+        "value00", "value10", "value20", "value30", "value40", "value50",
+    ];
 
     // act
     let options: ArrayExample = section.reify();
@@ -205,18 +206,19 @@ fn get_value_or_default_should_return_default_value_for_missing_configuration_va
 #[test]
 fn deserialization_should_preserve_case_in_ini_file() {
     // arrange
-    let path = PathBuf::new()
-        .join(var("TEMP").unwrap())
-        .join("test1.servicesettings.overrides.ini");
+    let path = temp_dir().join("test1.servicesettings.overrides.ini");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(b"[Service]\n").unwrap();
     file.write_all(b"Disabled=true\n").unwrap();
-    file.write_all(b"AzureClusterClass:Compute$Disabled=false\n\n").unwrap();
+    file.write_all(b"AzureClusterClass:Compute$Disabled=false\n\n")
+        .unwrap();
     file.write_all(b"[FileCopySettings]\n").unwrap();
     file.write_all(b"UseNativeCopy = true\n").unwrap();
-    file.write_all(b"AzureSDPRolloutPhase:Stage$UseNativeCopy=false\n").unwrap();
-    file.write_all(b"AzureSDPRolloutPhase:Canary$UseNativeCopy=false\n\n").unwrap();
+    file.write_all(b"AzureSDPRolloutPhase:Stage$UseNativeCopy=false\n")
+        .unwrap();
+    file.write_all(b"AzureSDPRolloutPhase:Canary$UseNativeCopy=false\n\n")
+        .unwrap();
     file.write_all(b"[RequiredFiles]\n").unwrap();
     file.write_all(b"start.bat=1").unwrap();
 
@@ -228,7 +230,7 @@ fn deserialization_should_preserve_case_in_ini_file() {
     let mut settings = FileCopySettings::default();
 
     // act
-    config.bind_at("FileCopySettings", &mut settings);    
+    config.bind_at("FileCopySettings", &mut settings);
 
     // assert
     if path.exists() {

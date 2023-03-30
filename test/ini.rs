@@ -1,5 +1,5 @@
 use config::{ext::*, *};
-use std::env::var;
+use std::env::temp_dir;
 use std::fs::{remove_file, File};
 use std::io::Write;
 use std::path::PathBuf;
@@ -7,9 +7,7 @@ use std::path::PathBuf;
 #[test]
 fn add_ini_file_should_load_settings_from_file() {
     // arrange
-    let path = PathBuf::new()
-        .join(var("TEMP").unwrap())
-        .join("test_settings_1.ini");
+    let path = temp_dir().join("test_settings_1.ini");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(b"[Service]\n").unwrap();
@@ -42,7 +40,9 @@ fn add_ini_file_should_panic_if_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.ini");
 
     // act
-    let _ = DefaultConfigurationBuilder::new().add_ini_file(&path).build();
+    let _ = DefaultConfigurationBuilder::new()
+        .add_ini_file(&path)
+        .build();
 
     // assert
     // panics
@@ -51,9 +51,7 @@ fn add_ini_file_should_panic_if_file_does_not_exist() {
 #[test]
 fn add_optional_ini_file_should_load_settings_from_file() {
     // arrange
-    let path = PathBuf::new()
-        .join(var("TEMP").unwrap())
-        .join("test_settings_2.ini");
+    let path = temp_dir().join("test_settings_2.ini");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(b"[Service]\n").unwrap();
