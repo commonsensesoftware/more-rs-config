@@ -38,7 +38,7 @@ impl ConfigurationProvider for EnvironmentVariablesConfigurationProvider {
         for (key, value) in vars() {
             if key.to_uppercase().starts_with(&prefix) {
                 let new_key = key[prefix_len..].to_string();
-                data.insert(new_key.to_uppercase(), (new_key, value));
+                data.insert(new_key.to_uppercase().replace("__", ":"), (new_key, value));
             }
         }
 
