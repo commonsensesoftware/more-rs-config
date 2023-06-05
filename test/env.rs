@@ -31,10 +31,12 @@ fn add_env_vars_should_load_filtered_environment_variables() {
 }
 
 #[test]
-fn double_underscores_are_translated() {
+fn add_env_vars_should_translate_double_underscore_to_colon() {
     // arrange
-    let expected = "myvalue";
+    let expected = "any";
+    
     set_var("Foo__Bar__Baz", expected);
+    
     let config = DefaultConfigurationBuilder::new().add_env_vars().build();
 
     // act
