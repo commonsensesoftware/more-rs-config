@@ -1,5 +1,5 @@
 use std::any::type_name;
-use tokens::ChangeToken;
+use tokens::{ChangeToken, NeverChangeToken};
 
 /// Defines the behavior of an object that provides configuration key/values for an application.
 pub trait ConfigurationProvider {
@@ -16,8 +16,8 @@ pub trait ConfigurationProvider {
     fn get(&self, key: &str) -> Option<&str>;
 
     /// Returns a change token if this provider supports change tracking.
-    fn reload_token(&self) -> Option<Box<dyn ChangeToken>> {
-        None
+    fn reload_token(&self) -> Box<dyn ChangeToken> {
+        Box::new(NeverChangeToken::new())
     }
 
     /// Loads the configuration values from the implemented source.
