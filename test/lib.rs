@@ -1,7 +1,5 @@
 #![cfg(test)]
 
-mod util;
-
 mod binder;
 mod de;
 mod default;

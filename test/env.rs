@@ -26,7 +26,7 @@ fn add_env_vars_should_load_filtered_environment_variables() {
     let value = config.get("NAME").unwrap();
 
     // assert
-    assert_eq!(value, &expected);
+    assert_eq!(value, expected);
     assert!(config.get("PATH").is_none())
 }
 
@@ -43,5 +43,5 @@ fn add_env_vars_should_translate_double_underscore_to_colon() {
     let value = config.get("Foo:Bar:Baz").unwrap();
 
     // assert
-    assert_eq!(value, &expected);
+    assert_eq!(value, expected);
 }

@@ -1,6 +1,6 @@
-use crate::util::new_temp_path;
 use config::{ext::*, *};
 use serde_json::json;
+use std::env::temp_dir;
 use std::fs::{remove_file, File};
 use std::io::Write;
 use std::path::PathBuf;
@@ -16,7 +16,7 @@ fn add_json_file_should_load_settings_from_file() {
          "nativeCopy": {
              "disabled": true}}
     });
-    let path = new_temp_path("test_settings_1.json");
+    let path = temp_dir().join("test_settings_1.json");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(json.to_string().as_bytes()).unwrap();
@@ -62,7 +62,7 @@ fn add_optional_json_file_should_load_settings_from_file() {
        "nativeCopy": {
            "disabled": true}}
     });
-    let path = new_temp_path("test_settings_2.json");
+    let path = temp_dir().join("test_settings_2.json");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(json.to_string().as_bytes()).unwrap();
@@ -101,7 +101,7 @@ fn add_json_file_should_not_panic_if_file_does_not_exist() {
 fn simple_json_array_should_be_converted_to_key_value_pairs() {
     // arrange
     let json = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
-    let path = new_temp_path("array_settings_1.json");
+    let path = temp_dir().join("array_settings_1.json");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(json.to_string().as_bytes()).unwrap();
@@ -127,7 +127,7 @@ fn complex_json_array_should_be_converted_to_key_value_pairs() {
         {"address": "1.2.3.4", "hidden": false},
         {"address": "5.6.7.8", "hidden": true}
     ]});
-    let path = new_temp_path("array_settings_2.json");
+    let path = temp_dir().join("array_settings_2.json");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(json.to_string().as_bytes()).unwrap();
@@ -154,7 +154,7 @@ fn nested_json_array_should_be_converted_to_key_value_pairs() {
         ["1.2.3.4", "5.6.7.8"],
         ["9.10.11.12", "13.14.15.16"]
     ]});
-    let path = new_temp_path("array_settings_3.json");
+    let path = temp_dir().join("array_settings_3.json");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(json.to_string().as_bytes()).unwrap();
@@ -179,8 +179,8 @@ fn json_array_item_should_be_implicitly_replaced() {
     // arrange
     let json1 = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
     let json2 = json!({"ip": ["15.16.17.18"]});
-    let path1 = new_temp_path("array_settings_4.json");
-    let path2 = new_temp_path("array_settings_5.json");
+    let path1 = temp_dir().join("array_settings_4.json");
+    let path2 = temp_dir().join("array_settings_5.json");
     let mut file = File::create(&path1).unwrap();
 
     file.write_all(json1.to_string().as_bytes()).unwrap();
@@ -211,8 +211,8 @@ fn json_array_item_should_be_explicitly_replaced() {
     // arrange
     let json1 = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
     let json2 = json!({"ip": {"1": "15.16.17.18"}});
-    let path1 = new_temp_path("array_settings_6.json");
-    let path2 = new_temp_path("array_settings_7.json");
+    let path1 = temp_dir().join("array_settings_6.json");
+    let path2 = temp_dir().join("array_settings_7.json");
     let mut file = File::create(&path1).unwrap();
 
     file.write_all(json1.to_string().as_bytes()).unwrap();
@@ -243,8 +243,8 @@ fn json_arrays_should_be_merged() {
     // arrange
     let json1 = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
     let json2 = json!({"ip": {"3": "15.16.17.18"}});
-    let path1 = new_temp_path("array_settings_8.json");
-    let path2 = new_temp_path("array_settings_9.json");
+    let path1 = temp_dir().join("array_settings_8.json");
+    let path2 = temp_dir().join("array_settings_9.json");
     let mut file = File::create(&path1).unwrap();
 
     file.write_all(json1.to_string().as_bytes()).unwrap();
@@ -274,7 +274,7 @@ fn json_arrays_should_be_merged() {
 #[test]
 fn json_file_should_reload_when_changed() {
     // arrange
-    let path = new_temp_path("reload_settings_1.json");
+    let path = temp_dir().join("reload_settings_1.json");
     let mut json = json!(
     {
         "service": {

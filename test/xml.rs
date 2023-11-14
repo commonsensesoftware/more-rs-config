@@ -1,5 +1,5 @@
-use crate::util::new_temp_path;
 use config::{ext::*, *};
+use std::env::temp_dir;
 use std::fs::{remove_file, File};
 use std::io::Write;
 use std::path::PathBuf;
@@ -34,7 +34,7 @@ fn add_xml_file_should_load_settings_from_file() {
         " </Data.Setting>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_1.xml");
+    let path = temp_dir().join("test_settings_1.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -89,7 +89,7 @@ fn add_optional_xml_file_should_load_settings_from_file() {
         " </Data.Setting>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_2.xml");
+    let path = temp_dir().join("test_settings_2.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -139,7 +139,7 @@ fn add_xml_file_should_process_attributes() {
         "  </Data>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_3.xml");
+    let path = temp_dir().join("test_settings_3.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -176,7 +176,7 @@ fn add_xml_file_should_mix_elements_and_attributes() {
         " </Data>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_4.xml");
+    let path = temp_dir().join("test_settings_4.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -216,7 +216,7 @@ fn name_attribute_should_contribute_to_prefix(filename: &str, attribute: &str) {
         "</settings>",
     ]
     .join("");
-    let path = new_temp_path(filename);
+    let path = temp_dir().join(filename);
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -261,7 +261,7 @@ fn root_element_name_attribute_should_contribute_to_prefix() {
         " </Inventory>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_6.xml");
+    let path = temp_dir().join("test_settings_6.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -298,7 +298,7 @@ fn numeric_name_attribute_should_be_array_like() {
         " </DefaultConnection>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_7.xml");
+    let path = temp_dir().join("test_settings_7.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -340,7 +340,7 @@ fn repeated_element_should_be_array_like(filename: &str, element: &str) {
         "</settings>",
     ]
     .join("");
-    let path = new_temp_path(filename);
+    let path = temp_dir().join(filename);
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -379,7 +379,7 @@ fn repeated_element_with_different_name_attribute_should_have_different_prefix()
         " </DefaultConnection>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_9.xml");
+    let path = temp_dir().join("test_settings_9.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -418,7 +418,7 @@ fn nested_repeated_element_should_be_array_like() {
         " </DefaultConnection>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_10.xml");
+    let path = temp_dir().join("test_settings_10.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -472,7 +472,7 @@ fn mixed_repeated_element_should_be_array_like() {
         " </DefaultConnection>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_11.xml");
+    let path = temp_dir().join("test_settings_11.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -525,7 +525,7 @@ fn config_values_should_process_cdata() {
         " </Data>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_12.xml");
+    let path = temp_dir().join("test_settings_12.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -564,7 +564,7 @@ fn xml_declaration_and_processing_instructions_should_be_ignored() {
         " </Data>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_13.xml");
+    let path = temp_dir().join("test_settings_13.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -601,7 +601,7 @@ fn load_should_panic_when_xml_namespace_is_encountered() {
         " </MyNamespace:Data>\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_14.xml");
+    let path = temp_dir().join("test_settings_14.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -631,7 +631,7 @@ fn load_should_panic_when_key_is_duplicated() {
         " <Data Name='DefaultConnection' ConnectionString='NewConnectionString' />\n",
         "</settings>"
     );
-    let path = new_temp_path("test_settings_15.xml");
+    let path = temp_dir().join("test_settings_15.xml");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
@@ -650,7 +650,7 @@ fn load_should_panic_when_key_is_duplicated() {
 #[test]
 fn xml_file_should_reload_when_changed() {
     // arrange
-    let path = new_temp_path("reload_settings_1.xml");
+    let path = temp_dir().join("reload_settings_1.xml");
     let mut xml = concat!(
         "<Settings>\n",
         " <Connections>\n",
