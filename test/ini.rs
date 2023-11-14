@@ -87,7 +87,7 @@ fn add_optional_ini_file_should_load_settings_from_file() {
 }
 
 #[test]
-fn add_ini_file_should_not_panic_if_file_does_not_exist() {
+fn add_ini_file_should_succeed_if_optional_file_does_not_exist() {
     // arrange
     let path = PathBuf::from(r"C:\fake\settings.ini");
 
