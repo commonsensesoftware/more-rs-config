@@ -3,6 +3,33 @@ use std::cmp::{min, Ordering};
 use std::collections::HashMap;
 use std::fmt::{Formatter, Result as FormatResult, Write};
 
+pub(crate) fn to_pascal_case<T: AsRef<str>>(text: T) -> String {
+    let mut chars = text.as_ref().chars();
+
+    if let Some(first) = chars.next() {
+        first.to_uppercase().collect::<String>() + chars.as_str()
+    } else {
+        String::with_capacity(0)
+    }
+}
+
+#[allow(dead_code)]
+pub(crate) fn to_pascal_case_parts<T: AsRef<str>>(text: T, sep: char) -> String {
+    let parts = text.as_ref().split(sep);
+    let mut pascal_case = String::with_capacity(text.as_ref().len());
+
+    for part in parts {
+        let mut chars = part.chars();
+
+        if let Some(first) = chars.next() {
+            pascal_case.push_str(&first.to_uppercase().to_string());
+            pascal_case.push_str(chars.as_str());
+        }
+    }
+
+    pascal_case
+}
+
 /// Compares two configuration keys.
 ///
 /// # Arguments
@@ -106,27 +133,24 @@ pub fn fmt_debug_view<T>(root: &T, formatter: &mut Formatter<'_>) -> FormatResul
 where
     T: ConfigurationRoot,
 {
-    let providers = root.providers();
-    recurse_children(providers, formatter, &root.children(), "")
+    recurse_children(root, &root.children(), formatter, "")
 }
 
-fn recurse_children<'a>(
-    providers: &[Box<dyn ConfigurationProvider>],
+fn recurse_children<'a, T: ConfigurationRoot>(
+    root: &T,
+    children: &[Box<dyn ConfigurationSection>],
     formatter: &mut Formatter<'_>,
-    children: &[Box<dyn ConfigurationSection + 'a>],
     indent: &str,
 ) -> FormatResult {
     for child in children {
-        let (value, provider) = get_value_and_provider(providers, child.path());
-
         formatter.write_str(indent)?;
         formatter.write_str(child.key())?;
 
-        if provider.is_some() {
+        if let Some((value, provider)) = get_value_and_provider(root, child.path()) {
             formatter.write_char('=')?;
-            formatter.write_str(value.unwrap())?;
+            formatter.write_str(value.as_str())?;
             formatter.write_str(" (")?;
-            formatter.write_str(provider.unwrap())?;
+            formatter.write_str(provider)?;
             formatter.write_char(')')?;
         } else {
             formatter.write_char(':')?;
@@ -135,9 +159,9 @@ fn recurse_children<'a>(
         formatter.write_char('\n')?;
 
         recurse_children(
-            providers,
-            formatter,
+            root,
             &child.children(),
+            formatter,
             &(indent.to_owned() + "  "),
         )?;
     }
@@ -145,15 +169,45 @@ fn recurse_children<'a>(
     Ok(())
 }
 
-fn get_value_and_provider<'a>(
-    providers: &'a [Box<dyn ConfigurationProvider>],
+fn get_value_and_provider<'a, T: ConfigurationRoot>(
+    root: &'a T,
     key: &str,
-) -> (Option<&'a str>, Option<&'a str>) {
-    for provider in providers.iter().rev() {
+) -> Option<(String, &'a str)> {
+    for provider in root.providers().rev() {
         if let Some(value) = provider.get(key) {
-            return (Some(value), Some(provider.name()));
+            return Some((value, provider.name()));
         }
     }
 
-    (None, None)
+    None
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn to_pascal_case_should_normalize_argument_name() {
+        // arrange
+        let argument = "noBuild";
+
+        // act
+        let pascal_case = to_pascal_case(argument);
+
+        // assert
+        assert_eq!(pascal_case, "NoBuild");
+    }
+
+    #[test]
+    fn to_pascal_case_parts_should_normalize_argument_name() {
+        // arrange
+        let argument = "no-build";
+
+        // act
+        let pascal_case = to_pascal_case_parts(argument, '-');
+
+        // assert
+        assert_eq!(pascal_case, "NoBuild");
+    }
 }

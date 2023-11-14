@@ -23,12 +23,12 @@ impl ChainedConfigurationProvider {
 }
 
 impl ConfigurationProvider for ChainedConfigurationProvider {
-    fn get(&self, key: &str) -> Option<&str> {
+    fn get(&self, key: &str) -> Option<String> {
         self.configuration.get(key)
     }
 
-    fn reload_token(&self) -> Option<Box<dyn ChangeToken>> {
-        Some(self.configuration.reload_token())
+    fn reload_token(&self) -> Box<dyn ChangeToken> {
+        self.configuration.reload_token()
     }
 
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
