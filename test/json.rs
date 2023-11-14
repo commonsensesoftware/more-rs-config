@@ -1,9 +1,11 @@
+use crate::util::new_temp_path;
 use config::{ext::*, *};
 use serde_json::json;
-use std::env::temp_dir;
 use std::fs::{remove_file, File};
 use std::io::Write;
 use std::path::PathBuf;
+use std::sync::{Arc, Condvar, Mutex};
+use std::time::Duration;
 
 #[test]
 fn add_json_file_should_load_settings_from_file() {
@@ -14,7 +16,7 @@ fn add_json_file_should_load_settings_from_file() {
          "nativeCopy": {
              "disabled": true}}
     });
-    let path = temp_dir().join("test_settings_1.json");
+    let path = new_temp_path("test_settings_1.json");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(json.to_string().as_bytes()).unwrap();
@@ -60,13 +62,13 @@ fn add_optional_json_file_should_load_settings_from_file() {
        "nativeCopy": {
            "disabled": true}}
     });
-    let path = temp_dir().join("test_settings_2.json");
+    let path = new_temp_path("test_settings_2.json");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(json.to_string().as_bytes()).unwrap();
 
     let config = DefaultConfigurationBuilder::new()
-        .add_optional_json_file(&path)
+        .add_json_file(FileSource::optional(&path))
         .build();
     let section = config.section("Feature").section("NativeCopy");
 
@@ -88,7 +90,7 @@ fn add_json_file_should_not_panic_if_file_does_not_exist() {
 
     // act
     let config = DefaultConfigurationBuilder::new()
-        .add_optional_json_file(&path)
+        .add_json_file(FileSource::optional(&path))
         .build();
 
     // assert
@@ -99,7 +101,7 @@ fn add_json_file_should_not_panic_if_file_does_not_exist() {
 fn simple_json_array_should_be_converted_to_key_value_pairs() {
     // arrange
     let json = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
-    let path = temp_dir().join("array_settings_1.json");
+    let path = new_temp_path("array_settings_1.json");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(json.to_string().as_bytes()).unwrap();
@@ -125,7 +127,7 @@ fn complex_json_array_should_be_converted_to_key_value_pairs() {
         {"address": "1.2.3.4", "hidden": false},
         {"address": "5.6.7.8", "hidden": true}
     ]});
-    let path = temp_dir().join("array_settings_2.json");
+    let path = new_temp_path("array_settings_2.json");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(json.to_string().as_bytes()).unwrap();
@@ -152,7 +154,7 @@ fn nested_json_array_should_be_converted_to_key_value_pairs() {
         ["1.2.3.4", "5.6.7.8"],
         ["9.10.11.12", "13.14.15.16"]
     ]});
-    let path = temp_dir().join("array_settings_3.json");
+    let path = new_temp_path("array_settings_3.json");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(json.to_string().as_bytes()).unwrap();
@@ -177,8 +179,8 @@ fn json_array_item_should_be_implicitly_replaced() {
     // arrange
     let json1 = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
     let json2 = json!({"ip": ["15.16.17.18"]});
-    let path1 = temp_dir().join("array_settings_4.json");
-    let path2 = temp_dir().join("array_settings_5.json");
+    let path1 = new_temp_path("array_settings_4.json");
+    let path2 = new_temp_path("array_settings_5.json");
     let mut file = File::create(&path1).unwrap();
 
     file.write_all(json1.to_string().as_bytes()).unwrap();
@@ -209,8 +211,8 @@ fn json_array_item_should_be_explicitly_replaced() {
     // arrange
     let json1 = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
     let json2 = json!({"ip": {"1": "15.16.17.18"}});
-    let path1 = temp_dir().join("array_settings_6.json");
-    let path2 = temp_dir().join("array_settings_7.json");
+    let path1 = new_temp_path("array_settings_6.json");
+    let path2 = new_temp_path("array_settings_7.json");
     let mut file = File::create(&path1).unwrap();
 
     file.write_all(json1.to_string().as_bytes()).unwrap();
@@ -241,8 +243,8 @@ fn json_arrays_should_be_merged() {
     // arrange
     let json1 = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
     let json2 = json!({"ip": {"3": "15.16.17.18"}});
-    let path1 = temp_dir().join("array_settings_8.json");
-    let path2 = temp_dir().join("array_settings_9.json");
+    let path1 = new_temp_path("array_settings_8.json");
+    let path2 = new_temp_path("array_settings_9.json");
     let mut file = File::create(&path1).unwrap();
 
     file.write_all(json1.to_string().as_bytes()).unwrap();
@@ -267,4 +269,80 @@ fn json_arrays_should_be_merged() {
     assert_eq!(config.get("ip:1").unwrap(), "7.8.9.10");
     assert_eq!(config.get("ip:2").unwrap(), "11.12.13.14");
     assert_eq!(config.get("ip:3").unwrap(), "15.16.17.18");
+}
+
+#[test]
+fn json_file_should_reload_when_changed() {
+    // arrange
+    let path = new_temp_path("reload_settings_1.json");
+    let mut json = json!(
+    {
+        "service": {
+            "enabled": false
+        },
+        "feature": {
+            "nativeCopy": {
+                "disabled": true
+            }
+        }
+    });
+
+    let mut file = File::create(&path).unwrap();
+    file.write_all(json.to_string().as_bytes()).unwrap();
+    drop(file);
+
+    let config = DefaultConfigurationBuilder::new()
+        .add_json_file(&path.is().reloadable())
+        .build();
+    let section = config.section("Feature").section("NativeCopy");
+    let initial = section.get("Disabled").unwrap_or_default();
+
+    drop(section);
+
+    let token = config.reload_token();
+    let state = Arc::new((Mutex::new(false), Condvar::new()));
+    let other_state = Arc::clone(&state);
+    let _unused = token.register(Box::new(move || {
+        let (reloaded, event) = &*other_state;
+        *reloaded.lock().unwrap() = true;
+        event.notify_one();
+    }));
+
+    json = json!(
+    {
+        "service": {
+            "enabled": false
+        },
+        "feature": {
+            "nativeCopy": {
+                "disabled": false
+            }
+        }
+    });
+
+    file = File::create(&path).unwrap();
+    file.write_all(json.to_string().as_bytes()).unwrap();
+    drop(file);
+
+    let (mutex, event) = &*state;
+    let mut reloaded = mutex.lock().unwrap();
+
+    while !*reloaded {
+        reloaded = event
+            .wait_timeout(reloaded, Duration::from_secs(1))
+            .unwrap()
+            .0;
+    }
+
+    // act
+    let section = config.section("Feature").section("NativeCopy");
+    let current = section.get("Disabled").unwrap_or_default();
+
+    // assert
+    if path.exists() {
+        remove_file(&path).ok();
+    }
+
+    assert_eq!(&initial, "true");
+    assert_eq!(&current, "false");
 }
