@@ -13,7 +13,7 @@ pub trait ConfigurationProvider {
     /// # Arguments
     ///
     /// * `key` - The key of the value to retrieve
-    fn get(&self, key: &str) -> Option<&str>;
+    fn get(&self, key: &str) -> Option<String>;
 
     /// Returns a change token if this provider supports change tracking.
     fn reload_token(&self) -> Box<dyn ChangeToken> {
