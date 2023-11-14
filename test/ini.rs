@@ -1,5 +1,5 @@
-use crate::util::new_temp_path;
 use config::{ext::*, *};
+use std::env::temp_dir;
 use std::fs::{remove_file, File};
 use std::io::Write;
 use std::path::PathBuf;
@@ -9,7 +9,7 @@ use std::time::Duration;
 #[test]
 fn add_ini_file_should_load_settings_from_file() {
     // arrange
-    let path = new_temp_path("test_settings_1.ini");
+    let path = temp_dir().join("test_settings_1.ini");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(b"[Service]\n").unwrap();
@@ -53,7 +53,7 @@ fn add_ini_file_should_panic_if_file_does_not_exist() {
 #[test]
 fn add_optional_ini_file_should_load_settings_from_file() {
     // arrange
-    let path = new_temp_path("test_settings_2.ini");
+    let path = temp_dir().join("test_settings_2.ini");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(b"[Service]\n").unwrap();
@@ -94,7 +94,7 @@ fn add_ini_file_should_not_panic_if_file_does_not_exist() {
 #[test]
 fn init_file_should_reload_when_changed() {
     // arrange
-    let path = new_temp_path("test_settings_3.ini");
+    let path = temp_dir().join("test_settings_3.ini");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(b"[Service]\n").unwrap();
