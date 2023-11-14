@@ -1,61 +1,63 @@
+#![allow(dyn_drop)]
+
+use crate::FileSource;
 use crate::{
     util::accumulate_child_keys, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider,
     ConfigurationSource,
 };
 use configparser::ini::Ini;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::sync::{Arc, RwLock};
+use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken};
 
-/// Represents a [configuration provider](trait.ConfigurationProvider.html) for INI files.
-pub struct IniConfigurationProvider {
-    path: PathBuf,
-    optional: bool,
-    data: HashMap<String, (String, String)>,
+struct InnerProvider {
+    file: FileSource,
+    data: RwLock<HashMap<String, (String, String)>>,
+    token: RwLock<SharedChangeToken<SingleChangeToken>>,
 }
 
-impl IniConfigurationProvider {
-    /// Initializes a new INI file configuration provider.
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - The path of the INI file
-    /// * `optional` - Indicates whether the INI file must exist
-    pub fn new(path: PathBuf, optional: bool) -> Self {
+impl InnerProvider {
+    fn new(file: FileSource) -> Self {
         Self {
-            path,
-            optional,
-            data: HashMap::with_capacity(0),
+            file,
+            data: RwLock::new(HashMap::with_capacity(0)),
+            token: Default::default(),
         }
     }
-}
 
-impl ConfigurationProvider for IniConfigurationProvider {
-    fn get(&self, key: &str) -> Option<&str> {
-        self.data.get(&key.to_uppercase()).map(|t| t.1.as_str())
+    fn get(&self, key: &str) -> Option<String> {
+        self.data
+            .read()
+            .unwrap()
+            .get(&key.to_uppercase())
+            .map(|t| t.1.clone())
     }
 
-    fn load(&mut self) {
-        if !self.path.is_file() {
-            if self.optional {
-                if !self.data.is_empty() {
-                    self.data = HashMap::with_capacity(0);
+    fn reload_token(&self) -> Box<dyn ChangeToken> {
+        Box::new(self.token.read().unwrap().clone())
+    }
+
+    fn load(&self, reload: bool) {
+        if !self.file.path.is_file() {
+            if self.file.optional || reload {
+                let mut data = self.data.write().unwrap();
+                if !data.is_empty() {
+                    *data = HashMap::with_capacity(0);
                 }
 
                 return;
             } else {
                 panic!(
                     "The configuration file '{}' was not found and is not optional.",
-                    self.path.display()
+                    self.file.path.display()
                 );
             }
         }
 
-        let path = &self.path.display().to_string();
         let mut ini = Ini::new_cs();
-
-        self.data = if let Ok(sections) = ini.load(&path) {
+        let data = if let Ok(sections) = ini.load(&self.file.path) {
             let capacity = sections.iter().map(|p| p.1.len()).sum();
-            let mut data = HashMap::with_capacity(capacity);
+            let mut map = HashMap::with_capacity(capacity);
 
             for (section, pairs) in sections {
                 for (key, value) in pairs {
@@ -64,25 +66,88 @@ impl ConfigurationProvider for IniConfigurationProvider {
 
                     new_key.push_str(ConfigurationPath::key_delimiter());
                     new_key.push_str(&key);
-                    data.insert(new_key.to_uppercase(), (new_key, new_value));
+                    map.insert(new_key.to_uppercase(), (new_key, new_value));
                 }
             }
 
-            data
+            map
         } else {
             HashMap::with_capacity(0)
-        }
+        };
+
+        *self.data.write().unwrap() = data;
+
+        let previous = std::mem::replace(
+            &mut *self.token.write().unwrap(),
+            SharedChangeToken::default(),
+        );
+
+        previous.notify();
     }
 
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
-        accumulate_child_keys(&self.data, earlier_keys, parent_path)
+        let data = self.data.read().unwrap();
+        accumulate_child_keys(&data, earlier_keys, parent_path)
+    }
+}
+
+/// Represents a [configuration provider](trait.ConfigurationProvider.html) for INI files.
+pub struct IniConfigurationProvider {
+    inner: Arc<InnerProvider>,
+    _registration: Option<Box<dyn Drop>>,
+}
+
+impl IniConfigurationProvider {
+    /// Initializes a new INI file configuration provider.
+    ///
+    /// # Arguments
+    ///
+    /// * `file` - The [INI file](struct.FileSource.html) information
+    pub fn new(file: FileSource) -> Self {
+        let path = file.path.clone();
+        let inner = Arc::new(InnerProvider::new(file));
+        let registration: Option<Box<dyn Drop>> = if inner.file.reload_on_change {
+            let other = inner.clone();
+
+            Some(Box::new(tokens::on_change(
+                move || FileChangeToken::new(path.clone()),
+                move || {
+                    std::thread::sleep(other.file.reload_delay);
+                    other.load(true);
+                },
+            )))
+        } else {
+            None
+        };
+
+        Self {
+            inner,
+            _registration: registration,
+        }
+    }
+}
+
+impl ConfigurationProvider for IniConfigurationProvider {
+    fn get(&self, key: &str) -> Option<String> {
+        self.inner.get(key)
+    }
+
+    fn reload_token(&self) -> Box<dyn ChangeToken> {
+        self.inner.reload_token()
+    }
+
+    fn load(&mut self) {
+        self.inner.load(false)
+    }
+
+    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
+        self.inner.child_keys(earlier_keys, parent_path)
     }
 }
 
 /// Represents a [configuration source](trait.ConfigurationSource.html) for INI files.
 pub struct IniConfigurationSource {
-    path: PathBuf,
-    optional: bool,
+    file: FileSource,
 }
 
 impl IniConfigurationSource {
@@ -90,19 +155,15 @@ impl IniConfigurationSource {
     ///
     /// # Arguments
     ///
-    /// * `path` - The path of the INI file
-    /// * `optional` - Indicates whether the INI file must exist
-    pub fn new(path: &Path, optional: bool) -> Self {
-        Self { path: path.to_path_buf(), optional }
+    /// * `file` - The [INI file](struct.FileSource.html) information
+    pub fn new(file: FileSource) -> Self {
+        Self { file }
     }
 }
 
 impl ConfigurationSource for IniConfigurationSource {
     fn build(&self, _builder: &dyn ConfigurationBuilder) -> Box<dyn ConfigurationProvider> {
-        Box::new(IniConfigurationProvider::new(
-            self.path.clone(),
-            self.optional,
-        ))
+        Box::new(IniConfigurationProvider::new(self.file.clone()))
     }
 }
 
@@ -116,37 +177,20 @@ pub mod ext {
         ///
         /// # Arguments
         ///
-        /// * `path` - The path of the INI file
-        fn add_ini_file(&mut self, path: &Path) -> &mut Self;
-
-        /// Adds an optional INI file as a configuration source.
-        ///
-        /// # Arguments
-        ///
-        /// * `path` - The path of the INI file
-        fn add_optional_ini_file(&mut self, path: &Path) -> &mut Self;
+        /// * `file` - The [INI file](struct.FileSource.html) information
+        fn add_ini_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
     }
 
     impl IniConfigurationExtensions for dyn ConfigurationBuilder {
-        fn add_ini_file(&mut self, path: &Path) -> &mut Self {
-            self.add(Box::new(IniConfigurationSource::new(path, false)));
-            self
-        }
-
-        fn add_optional_ini_file(&mut self, path: &Path) -> &mut Self {
-            self.add(Box::new(IniConfigurationSource::new(path, true)));
+        fn add_ini_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self {
+            self.add(Box::new(IniConfigurationSource::new(file.into())));
             self
         }
     }
 
     impl<T: ConfigurationBuilder> IniConfigurationExtensions for T {
-        fn add_ini_file(&mut self, path: &Path) -> &mut Self {
-            self.add(Box::new(IniConfigurationSource::new(path, false)));
-            self
-        }
-
-        fn add_optional_ini_file(&mut self, path: &Path) -> &mut Self {
-            self.add(Box::new(IniConfigurationSource::new(path, true)));
+        fn add_ini_file<F: Into<FileSource>>(&mut self, file: F) -> &mut Self {
+            self.add(Box::new(IniConfigurationSource::new(file.into())));
             self
         }
     }
