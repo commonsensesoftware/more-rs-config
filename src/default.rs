@@ -1,105 +1,53 @@
 use crate::{util::fmt_debug_view, *};
 use std::any::Any;
-use std::cell::{Cell, RefCell, UnsafeCell};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FormatResult};
+use std::iter::Map;
 use std::ops::Deref;
-use std::rc::{Rc, Weak};
-use std::sync::Mutex;
-use tokens::{ChangeToken, SharedChangeToken};
+use std::rc::Rc;
+use std::slice::Iter;
+use tokens::{ChangeToken, CompositeChangeToken, SharedChangeToken};
 
-struct Mediator {
-    sync: Mutex<String>,
-    token: RefCell<SharedChangeToken>,
-    providers: UnsafeCell<Vec<Box<dyn ConfigurationProvider>>>,
-    tokens: Cell<Vec<Box<dyn ChangeToken>>>,
-    me: Weak<Mediator>,
+struct ProviderIter<'a, F>
+where
+    F: FnMut(&Box<dyn ConfigurationProvider>) -> &dyn ConfigurationProvider,
+{
+    items: &'a Vec<Box<dyn ConfigurationProvider>>,
+    selector: F,
 }
 
-impl Mediator {
-    fn new(providers: Vec<Box<dyn ConfigurationProvider>>) -> Rc<Self> {
-        Rc::new_cyclic(|me| {
-            let tokens = Cell::new(Mediator::to_tokens(me, &providers));
-            Self {
-                sync: Mutex::default(),
-                token: RefCell::default(),
-                providers: UnsafeCell::new(providers),
-                tokens,
-                me: me.clone(),
-            }
-        })
+impl<'a, F> ProviderIter<'a, F>
+where
+    F: FnMut(&Box<dyn ConfigurationProvider>) -> &dyn ConfigurationProvider,
+{
+    pub fn new(items: &'a Vec<Box<dyn ConfigurationProvider>>, selector: F) -> Self {
+        Self { items, selector }
     }
+}
 
-    fn to_tokens(
-        me: &Weak<Mediator>,
-        providers: &Vec<Box<dyn ConfigurationProvider>>,
-    ) -> Vec<Box<dyn ChangeToken>> {
-        providers
-            .iter()
-            .filter_map(|provider| provider.reload_token())
-            .map(|token| {
-                let this: Weak<Mediator> = me.clone();
-                token.register(Box::new(move || this.upgrade().unwrap().raise_changed()));
-                token
-            })
-            .collect()
+impl<'a, F> IntoIterator for ProviderIter<'a, F>
+where
+    F: FnMut(&Box<dyn ConfigurationProvider>) -> &dyn ConfigurationProvider,
+{
+    type Item = &'a dyn ConfigurationProvider;
+    type IntoIter = Map<Iter<'a, Box<dyn ConfigurationProvider>>, F>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.iter().map(self.selector)
     }
+}
 
-    fn providers(&self) -> &[Box<dyn ConfigurationProvider>] {
-        unsafe { &*self.providers.get() }
-    }
-
-    fn reload(&self) {
-        let _unused = self.sync.lock().unwrap();
-
-        // SAFETY: this is a 'chicken and egg' problem. there doesn't seem to be a better way that to moment.
-        // 1. 'reload()' requires mutability, but mutability cannot be shared (e.g. Rc/Arc)
-        // 2. interior mutability cannot be used because there is no way to then reference the slice of providers
-        // 3. pushing interior mutability to providers breaks accessing values without copying the values
-        //
-        // reloading is not expected to be a common occurrence. while possible, it's also unlikely to be reloading
-        // and reading a value at the same time. holding onto a configuration value reference instead of
-        // copying/cloning it could be problematic. some providers (ex: in-memory) may do nothing when loaded or
-        // do not support reloading. all providers are safely loaded at least once.
-        //
-        // consider refactoring to address this issue in the future.
-        unsafe {
-            for provider in &mut (*self.providers.get()).iter_mut() {
-                provider.load();
-            }
-        }
-    }
-
-    fn reload_token(&self) -> Box<dyn ChangeToken> {
-        let token;
-
-        {
-            let _unused = self.sync.lock().unwrap();
-            token = self.token.borrow().clone();
-        }
-
-        Box::new(token)
-    }
-
-    fn raise_changed(&self) {
-        let tokens;
-
-        unsafe {
-            let _unused = self.sync.lock().unwrap();
-            tokens = Mediator::to_tokens(&self.me, &*self.providers.get());
-        }
-
-        let token = self.token.replace(SharedChangeToken::default());
-        self.tokens.set(tokens);
-        let callback = token.trigger().upgrade().unwrap();
-        (callback)()
-    }
+impl<'a, F> ConfigurationProviderIterator<'a> for Map<Iter<'a, Box<dyn ConfigurationProvider>>, F> where
+    F: FnMut(&Box<dyn ConfigurationProvider>) -> &dyn ConfigurationProvider
+{
 }
 
 /// Represents the root of a configuration.
 #[derive(Clone)]
 pub struct DefaultConfigurationRoot {
-    mediator: Rc<Mediator>,
+    token: SharedChangeToken<CompositeChangeToken>,
+    providers: Rc<Vec<Box<dyn ConfigurationProvider>>>,
 }
 
 impl DefaultConfigurationRoot {
@@ -109,24 +57,46 @@ impl DefaultConfigurationRoot {
     ///
     /// * `providers` - The list of [configuration providers](trait.ConfigurationProvider.html) used in the configuration
     pub fn new(mut providers: Vec<Box<dyn ConfigurationProvider>>) -> Self {
+        let mut tokens = Vec::with_capacity(providers.len());
+
         for provider in providers.iter_mut() {
             provider.load();
+            tokens.push(provider.reload_token());
         }
 
         Self {
-            mediator: Mediator::new(providers),
+            token: SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter())),
+            providers: Rc::new(providers),
         }
     }
 }
 
 impl ConfigurationRoot for DefaultConfigurationRoot {
-    fn reload(&mut self) {
-        self.mediator.reload();
-        self.mediator.raise_changed()
+    fn reload(&mut self) -> bool {
+        let reloaded;
+
+        if let Some(providers) = Rc::get_mut(&mut self.providers) {
+            let mut tokens = Vec::with_capacity(providers.len());
+
+            for provider in providers {
+                provider.load();
+                tokens.push(provider.reload_token());
+            }
+
+            let new_token = SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter()));
+            let old_token = std::mem::replace(&mut self.token, new_token);
+
+            old_token.notify();
+            reloaded = true
+        } else {
+            reloaded = false
+        }
+
+        reloaded
     }
 
-    fn providers(&self) -> &[Box<dyn ConfigurationProvider>] {
-        self.mediator.providers()
+    fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_> {
+        Box::new(ProviderIter::new(&self.providers, |p| p.deref()).into_iter())
     }
 
     fn as_config(&self) -> Box<dyn Configuration> {
@@ -135,8 +105,8 @@ impl ConfigurationRoot for DefaultConfigurationRoot {
 }
 
 impl Configuration for DefaultConfigurationRoot {
-    fn get(&self, key: &str) -> Option<&str> {
-        for provider in self.providers().iter().rev() {
+    fn get(&self, key: &str) -> Option<String> {
+        for provider in self.providers().rev() {
             if let Some(value) = provider.get(key) {
                 return Some(value);
             }
@@ -153,21 +123,20 @@ impl Configuration for DefaultConfigurationRoot {
     }
 
     fn children(&self) -> Vec<Box<dyn ConfigurationSection>> {
-        let keys: HashSet<_> = self
-            .providers()
-            .iter()
+        self.providers()
             .fold(Vec::new(), |mut earlier_keys, provider| {
                 provider.child_keys(&mut earlier_keys, None);
                 earlier_keys
             })
             .into_iter()
-            .collect();
-
-        keys.iter().map(|key| self.section(key)).collect()
+            .collect::<HashSet<_>>()
+            .iter()
+            .map(|key| self.section(key))
+            .collect()
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
-        self.mediator.reload_token()
+        Box::new(self.token.clone())
     }
 
     fn iter_relative(
@@ -181,6 +150,18 @@ impl Configuration for DefaultConfigurationRoot {
 impl Debug for DefaultConfigurationRoot {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> FormatResult {
         fmt_debug_view(self, formatter)
+    }
+}
+
+impl<'a> AsRef<dyn Configuration + 'a> for DefaultConfigurationRoot {
+    fn as_ref(&self) -> &(dyn Configuration + 'a) {
+        self
+    }
+}
+
+impl<'a> Borrow<dyn Configuration + 'a> for DefaultConfigurationRoot {
+    fn borrow(&self) -> &(dyn Configuration + 'a) {
+        self
     }
 }
 
@@ -219,7 +200,7 @@ impl DefaultConfigurationSection {
 }
 
 impl Configuration for DefaultConfigurationSection {
-    fn get(&self, key: &str) -> Option<&str> {
+    fn get(&self, key: &str) -> Option<String> {
         self.root.get(&self.subkey(key))
     }
 
@@ -228,18 +209,17 @@ impl Configuration for DefaultConfigurationSection {
     }
 
     fn children(&self) -> Vec<Box<dyn ConfigurationSection>> {
-        let keys: HashSet<_> = self
-            .root
+        self.root
             .providers()
-            .iter()
             .fold(Vec::new(), |mut earlier_keys, provider| {
                 provider.child_keys(&mut earlier_keys, Some(&self.path));
                 earlier_keys
             })
             .into_iter()
-            .collect();
-
-        keys.iter().map(|key| self.section(key)).collect()
+            .collect::<HashSet<_>>()
+            .iter()
+            .map(|key| self.section(key))
+            .collect()
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
@@ -267,8 +247,22 @@ impl ConfigurationSection for DefaultConfigurationSection {
         &self.path
     }
 
-    fn value(&self) -> &str {
-        self.root.get(&self.path).unwrap_or("")
+    fn value(&self) -> String {
+        self.root
+            .get(&self.path)
+            .unwrap_or(String::with_capacity(0))
+    }
+}
+
+impl<'a> AsRef<dyn Configuration + 'a> for DefaultConfigurationSection {
+    fn as_ref(&self) -> &(dyn Configuration + 'a) {
+        self
+    }
+}
+
+impl<'a> Borrow<dyn Configuration + 'a> for DefaultConfigurationSection {
+    fn borrow(&self) -> &(dyn Configuration + 'a) {
+        self
     }
 }
 
