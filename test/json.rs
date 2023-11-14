@@ -1,4 +1,5 @@
 use config::{ext::*, *};
+use core::panic;
 use serde_json::json;
 use std::env::temp_dir;
 use std::fs::{remove_file, File};
@@ -23,7 +24,8 @@ fn add_json_file_should_load_settings_from_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path)
-        .build();
+        .build()
+        .unwrap();
     let section = config.section("Feature").section("NativeCopy");
 
     // act
@@ -38,20 +40,27 @@ fn add_json_file_should_load_settings_from_file() {
 }
 
 #[test]
-#[should_panic(
-    expected = r"The configuration file 'C:\fake\settings.json' was not found and is not optional."
-)]
-fn add_json_file_should_panic_if_file_does_not_exist() {
+fn add_json_file_should_fail_if_file_does_not_exist() {
     // arrange
     let path = PathBuf::from(r"C:\fake\settings.json");
 
     // act
-    let _ = DefaultConfigurationBuilder::new()
+    let result = DefaultConfigurationBuilder::new()
         .add_json_file(&path)
         .build();
 
     // assert
-    // panics
+    if let Err(error) = result {
+        if let ReloadError::Provider(errors) = error {
+            assert_eq!(
+                errors[0].1.message(),
+                r"The configuration file 'C:\fake\settings.json' was not found and is not optional."
+            );
+            return;
+        }
+    }
+
+    panic!("Unexpected error.");
 }
 
 #[test]
@@ -69,7 +78,8 @@ fn add_optional_json_file_should_load_settings_from_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(FileSource::optional(&path))
-        .build();
+        .build()
+        .unwrap();
     let section = config.section("Feature").section("NativeCopy");
 
     // act
@@ -91,7 +101,8 @@ fn add_json_file_should_not_panic_if_file_does_not_exist() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(FileSource::optional(&path))
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     assert_eq!(config.children().len(), 0);
@@ -109,7 +120,8 @@ fn simple_json_array_should_be_converted_to_key_value_pairs() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -135,7 +147,8 @@ fn complex_json_array_should_be_converted_to_key_value_pairs() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -162,7 +175,8 @@ fn nested_json_array_should_be_converted_to_key_value_pairs() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -191,7 +205,8 @@ fn json_array_item_should_be_implicitly_replaced() {
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path1)
         .add_json_file(&path2)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path1.exists() {
@@ -223,7 +238,8 @@ fn json_array_item_should_be_explicitly_replaced() {
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path1)
         .add_json_file(&path2)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path1.exists() {
@@ -255,7 +271,8 @@ fn json_arrays_should_be_merged() {
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path1)
         .add_json_file(&path2)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path1.exists() {
@@ -293,7 +310,8 @@ fn json_file_should_reload_when_changed() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_json_file(&path.is().reloadable())
-        .build();
+        .build()
+        .unwrap();
     let section = config.section("Feature").section("NativeCopy");
     let initial = section.get("Disabled").unwrap_or_default().into_owned();
 

@@ -4,7 +4,10 @@ use std::env::{set_var, var};
 #[test]
 fn add_env_vars_should_load_environment_variables() {
     // arrange
-    let config = DefaultConfigurationBuilder::new().add_env_vars().build();
+    let config = DefaultConfigurationBuilder::new()
+        .add_env_vars()
+        .build()
+        .unwrap();
     let expected = var("CARGO_PKG_NAME").unwrap();
 
     // act
@@ -19,7 +22,8 @@ fn add_env_vars_should_load_filtered_environment_variables() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
         .add_env_vars_with_prefix("CARGO_PKG_")
-        .build();
+        .build()
+        .unwrap();
     let expected = var("CARGO_PKG_NAME").unwrap();
 
     // act
@@ -34,10 +38,13 @@ fn add_env_vars_should_load_filtered_environment_variables() {
 fn add_env_vars_should_translate_double_underscore_to_colon() {
     // arrange
     let expected = "any";
-    
+
     set_var("Foo__Bar__Baz", expected);
-    
-    let config = DefaultConfigurationBuilder::new().add_env_vars().build();
+
+    let config = DefaultConfigurationBuilder::new()
+        .add_env_vars()
+        .build()
+        .unwrap();
 
     // act
     let value = config.get("Foo:Bar:Baz").unwrap();

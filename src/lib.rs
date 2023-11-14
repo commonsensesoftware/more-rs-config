@@ -43,10 +43,9 @@ mod binder;
 mod de;
 
 mod file;
-pub use file::*;
-
 pub use builder::*;
 pub use configuration::*;
+pub use file::*;
 pub use path::*;
 pub use provider::*;
 pub use root::*;

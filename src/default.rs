@@ -56,30 +56,46 @@ impl DefaultConfigurationRoot {
     /// # Arguments
     ///
     /// * `providers` - The list of [configuration providers](trait.ConfigurationProvider.html) used in the configuration
-    pub fn new(mut providers: Vec<Box<dyn ConfigurationProvider>>) -> Self {
+    pub fn new(mut providers: Vec<Box<dyn ConfigurationProvider>>) -> Result<Self, ReloadError> {
+        let mut errors = Vec::new();
         let mut tokens = Vec::with_capacity(providers.len());
 
         for provider in providers.iter_mut() {
-            provider.load();
+            let result = provider.load();
+
+            if let Err(error) = result {
+                errors.push((provider.name().to_owned(), error));
+            }
+
             tokens.push(provider.reload_token());
         }
 
-        Self {
-            token: SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter())),
-            providers: Rc::new(providers),
+        if errors.is_empty() {
+            Ok(Self {
+                token: SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter())),
+                providers: Rc::new(providers),
+            })
+        } else {
+            Err(ReloadError::Provider(errors))
         }
     }
 }
 
 impl ConfigurationRoot for DefaultConfigurationRoot {
-    fn reload(&mut self) -> bool {
-        let reloaded;
+    fn reload(&mut self) -> ReloadResult {
+        let borrowed = Rc::strong_count(&self.providers);
 
         if let Some(providers) = Rc::get_mut(&mut self.providers) {
+            let mut errors = Vec::new();
             let mut tokens = Vec::with_capacity(providers.len());
 
             for provider in providers {
-                provider.load();
+                let result = provider.load();
+
+                if let Err(error) = result {
+                    errors.push((provider.name().to_owned(), error));
+                }
+
                 tokens.push(provider.reload_token());
             }
 
@@ -87,12 +103,15 @@ impl ConfigurationRoot for DefaultConfigurationRoot {
             let old_token = std::mem::replace(&mut self.token, new_token);
 
             old_token.notify();
-            reloaded = true
-        } else {
-            reloaded = false
-        }
 
-        reloaded
+            if errors.is_empty() {
+                Ok(())
+            } else {
+                Err(ReloadError::Provider(errors))
+            }
+        } else {
+            Err(ReloadError::Borrowed(borrowed))
+        }
     }
 
     fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_> {
@@ -304,9 +323,9 @@ impl ConfigurationBuilder for DefaultConfigurationBuilder {
         self.sources.push(source)
     }
 
-    fn build(&self) -> Box<dyn ConfigurationRoot> {
-        Box::new(DefaultConfigurationRoot::new(
+    fn build(&self) -> Result<Box<dyn ConfigurationRoot>, ReloadError> {
+        Ok(Box::new(DefaultConfigurationRoot::new(
             self.sources.iter().map(|s| s.build(self)).collect(),
-        ))
+        )?))
     }
 }

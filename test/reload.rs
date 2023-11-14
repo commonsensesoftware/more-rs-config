@@ -1,11 +1,12 @@
 use config::*;
 use std::{
+    borrow::Cow,
     cell::RefCell,
     rc::Rc,
     sync::{
         atomic::{AtomicU8, Ordering},
         Arc,
-    }, borrow::Cow,
+    },
 };
 use tokens::{ChangeToken, SharedChangeToken, SingleChangeToken};
 
@@ -50,9 +51,10 @@ impl ConfigurationProvider for ReloadableConfigProvider {
         Box::new(self.trigger.token.borrow().clone())
     }
 
-    fn load(&mut self) {
+    fn load(&mut self) -> LoadResult {
         self.counter += 1;
         self.value = self.counter.to_string();
+        Ok(())
     }
 
     fn child_keys(&self, earlier_keys: &mut Vec<String>, _parent_path: Option<&str>) {
@@ -84,12 +86,12 @@ fn reload_should_load_providers() {
 
     builder.add(Box::new(ReloadableConfigSource::default()));
 
-    let mut root = builder.build();
+    let mut root = builder.build().unwrap();
 
     assert_eq!(*root.get("Test").unwrap(), "1");
 
     // act
-    root.reload();
+    root.reload().ok();
 
     // assert
     assert_eq!(*root.get("Test").unwrap(), "2");
@@ -104,12 +106,13 @@ fn reload_token_should_indicate_change_after_reload() {
 
     builder.add(Box::new(ReloadableConfigSource::default()));
 
-    let mut root = builder.build();
-    let _unused = root.reload_token()
+    let mut root = builder.build().unwrap();
+    let _unused = root
+        .reload_token()
         .register(Box::new(move || other.store(1, Ordering::SeqCst)));
 
     // act
-    root.reload();
+    root.reload().ok();
 
     // assert
     assert_eq!(data.load(Ordering::SeqCst), 1);
@@ -125,8 +128,9 @@ fn reload_token_should_indicate_change_after_provider_change() {
 
     builder.add(Box::new(ReloadableConfigSource::new(trigger.clone())));
 
-    let root = builder.build();
-    let _unused = root.reload_token()
+    let root = builder.build().unwrap();
+    let _unused = root
+        .reload_token()
         .register(Box::new(move || other.store(1, Ordering::SeqCst)));
 
     // act

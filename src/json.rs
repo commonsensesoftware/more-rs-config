@@ -2,7 +2,7 @@
 
 use crate::{
     util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
-    FileSource,
+    FileSource, LoadError, LoadResult,
 };
 use serde_json::{map::Map, Value};
 use std::borrow::Cow;
@@ -92,7 +92,7 @@ impl InnerProvider {
         }
     }
 
-    fn load(&self, reload: bool) {
+    fn load(&self, reload: bool) -> LoadResult {
         if !self.file.path.is_file() {
             if self.file.optional || reload {
                 let mut data = self.data.write().unwrap();
@@ -100,12 +100,15 @@ impl InnerProvider {
                     *data = HashMap::with_capacity(0);
                 }
 
-                return;
+                return Ok(());
             } else {
-                panic!(
-                    "The configuration file '{}' was not found and is not optional.",
-                    self.file.path.display()
-                );
+                return Err(LoadError::File {
+                    message: format!(
+                        "The configuration file '{}' was not found and is not optional.",
+                        self.file.path.display()
+                    ),
+                    path: self.file.path.clone(),
+                });
             }
         }
 
@@ -120,17 +123,20 @@ impl InnerProvider {
         } else if reload {
             *self.data.write().unwrap() = HashMap::with_capacity(0);
         } else {
-            panic!(
-                "Top-level JSON element must be an object. Instead, '{}' was found.",
-                match json {
-                    Value::Array(_) => "array",
-                    Value::Bool(_) => "Boolean",
-                    Value::Null => "null",
-                    Value::Number(_) => "number",
-                    Value::String(_) => "string",
-                    _ => unreachable!(),
-                }
-            );
+            return Err(LoadError::File {
+                message: format!(
+                    "Top-level JSON element must be an object. Instead, '{}' was found.",
+                    match json {
+                        Value::Array(_) => "array",
+                        Value::Bool(_) => "Boolean",
+                        Value::Null => "null",
+                        Value::Number(_) => "number",
+                        Value::String(_) => "string",
+                        _ => unreachable!(),
+                    }
+                ),
+                path: self.file.path.clone(),
+            });
         }
 
         let previous = std::mem::replace(
@@ -139,6 +145,7 @@ impl InnerProvider {
         );
 
         previous.notify();
+        Ok(())
     }
 
     fn get(&self, key: &str) -> Option<Cow<String>> {
@@ -181,7 +188,7 @@ impl JsonConfigurationProvider {
                 move || FileChangeToken::new(path.clone()),
                 move || {
                     std::thread::sleep(other.file.reload_delay);
-                    other.load(true);
+                    other.load(true).ok();
                 },
             )))
         } else {
@@ -204,7 +211,7 @@ impl ConfigurationProvider for JsonConfigurationProvider {
         self.inner.reload_token()
     }
 
-    fn load(&mut self) {
+    fn load(&mut self) -> LoadResult {
         self.inner.load(false)
     }
 
