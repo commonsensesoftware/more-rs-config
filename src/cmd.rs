@@ -1,5 +1,5 @@
 use crate::{
-    util::*, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
+    util::*, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, LoadResult,
 };
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -42,7 +42,7 @@ impl ConfigurationProvider for CommandLineConfigurationProvider {
         self.data.get(&key.to_uppercase()).map(|t| t.1.as_str())
     }
 
-    fn load(&mut self) {
+    fn load(&mut self) -> LoadResult {
         let mut data = HashMap::new();
         let mut args = self.args.iter();
 
@@ -108,6 +108,7 @@ impl ConfigurationProvider for CommandLineConfigurationProvider {
         }
 
         self.data = data;
+        Ok(())
     }
 
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {

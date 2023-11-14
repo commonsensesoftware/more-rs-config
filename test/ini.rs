@@ -19,7 +19,8 @@ fn add_ini_file_should_load_settings_from_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_ini_file(&path)
-        .build();
+        .build()
+        .unwrap();
     let section = config.section("Feature.Magic");
 
     // act
@@ -34,20 +35,27 @@ fn add_ini_file_should_load_settings_from_file() {
 }
 
 #[test]
-#[should_panic(
-    expected = r"The configuration file 'C:\fake\settings.ini' was not found and is not optional."
-)]
-fn add_ini_file_should_panic_if_file_does_not_exist() {
+fn add_ini_file_should_fail_if_file_does_not_exist() {
     // arrange
     let path = PathBuf::from(r"C:\fake\settings.ini");
 
     // act
-    let _ = DefaultConfigurationBuilder::new()
+    let result = DefaultConfigurationBuilder::new()
         .add_ini_file(&path)
         .build();
 
     // assert
-    // panics
+    if let Err(error) = result {
+        if let ReloadError::Provider(errors) = error {
+            assert_eq!(
+                errors[0].1.message(),
+                r"The configuration file 'C:\fake\settings.ini' was not found and is not optional."
+            );
+            return;
+        }
+    }
+
+    panic!("Unexpected error.");
 }
 
 #[test]
@@ -63,7 +71,8 @@ fn add_optional_ini_file_should_load_settings_from_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_ini_file(&path.is().optional())
-        .build();
+        .build()
+        .unwrap();
     let section = config.section("Feature.Magic");
 
     // act
@@ -85,7 +94,8 @@ fn add_ini_file_should_not_panic_if_file_does_not_exist() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_ini_file(&path.is().optional())
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     assert_eq!(config.children().len(), 0);
@@ -105,7 +115,8 @@ fn init_file_should_reload_when_changed() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_ini_file(&path.is().reloadable())
-        .build();
+        .build()
+        .unwrap();
     let section = config.section("Feature.Magic");
     let initial = section.get("Disabled").unwrap_or_default().into_owned();
 

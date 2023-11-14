@@ -38,7 +38,8 @@ fn reify_should_deserialize_configuration_to_options() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let options: ContactOptions = config.reify();
@@ -66,7 +67,8 @@ fn reify_should_deserialize_section_to_options() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
     let section = config.section("array");
     let expected = vec![
         "value00", "value10", "value20", "value30", "value40", "value50",
@@ -94,7 +96,8 @@ fn bind_should_deserialize_configuration_to_options() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
     let mut options = ContactOptions::default();
 
     // act
@@ -121,7 +124,8 @@ fn bind_at_should_deserialize_configuration_to_options() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
     let mut options = ContactOptions::default();
 
     // act
@@ -148,7 +152,8 @@ fn get_value_should_deserialize_configuration_value() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let primary: Option<bool> = config.get_value("primary").unwrap();
@@ -171,7 +176,8 @@ fn get_value_should_return_none_for_missing_configuration_value() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let primary: Option<bool> = config.get_value("primary").unwrap();
@@ -194,7 +200,8 @@ fn get_value_or_default_should_return_default_value_for_missing_configuration_va
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let primary: bool = config.get_value_or_default("primary").unwrap();
@@ -224,7 +231,8 @@ fn deserialization_should_preserve_case_in_ini_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_ini_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let mut settings = FileCopySettings::default();

@@ -1,4 +1,4 @@
-use crate::{ConfigurationRoot, ConfigurationSource};
+use crate::{ConfigurationRoot, ConfigurationSource, ReloadError};
 use std::any::Any;
 use std::collections::HashMap;
 
@@ -20,5 +20,5 @@ pub trait ConfigurationBuilder {
 
     /// Builds [configuration](trait.Configuration.html) with the keys and values from the set of registered
     /// [sources](trait.ConfigurationSource.html).
-    fn build(&self) -> Box<dyn ConfigurationRoot>;
+    fn build(&self) -> Result<Box<dyn ConfigurationRoot>, ReloadError>;
 }

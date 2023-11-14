@@ -1,5 +1,6 @@
 use crate::{
     util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
+    LoadResult,
 };
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -28,10 +29,12 @@ impl EnvironmentVariablesConfigurationProvider {
 
 impl ConfigurationProvider for EnvironmentVariablesConfigurationProvider {
     fn get(&self, key: &str) -> Option<Cow<String>> {
-        self.data.get(&key.to_uppercase()).map(|t| Cow::Borrowed(&t.1))
+        self.data
+            .get(&key.to_uppercase())
+            .map(|t| Cow::Borrowed(&t.1))
     }
 
-    fn load(&mut self) {
+    fn load(&mut self) -> LoadResult {
         let mut data = HashMap::new();
         let prefix = self.prefix.to_uppercase();
         let prefix_len = self.prefix.len();
@@ -44,6 +47,7 @@ impl ConfigurationProvider for EnvironmentVariablesConfigurationProvider {
         }
 
         self.data = data;
+        Ok(())
     }
 
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {

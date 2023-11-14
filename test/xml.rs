@@ -41,7 +41,8 @@ fn add_xml_file_should_load_settings_from_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
     let section = config.section("Data.Setting").section("DefaultConnection");
 
     // act
@@ -56,20 +57,27 @@ fn add_xml_file_should_load_settings_from_file() {
 }
 
 #[test]
-#[should_panic(
-    expected = r"The configuration file 'C:\fake\settings.xml' was not found and is not optional."
-)]
-fn add_xml_file_should_panic_if_file_does_not_exist() {
+fn add_xml_file_should_fail_if_file_does_not_exist() {
     // arrange
     let path = PathBuf::from(r"C:\fake\settings.xml");
 
     // act
-    let _ = DefaultConfigurationBuilder::new()
+    let result = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
         .build();
 
     // assert
-    // panics
+    if let Err(error) = result {
+        if let ReloadError::Provider(errors) = error {
+            assert_eq!(
+                errors[0].1.message(),
+                r"The configuration file 'C:\fake\settings.xml' was not found and is not optional."
+            );
+            return;
+        }
+    }
+
+    panic!("Unexpected error.");
 }
 
 #[test]
@@ -96,7 +104,8 @@ fn add_optional_xml_file_should_load_settings_from_file() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path.is().optional())
-        .build();
+        .build()
+        .unwrap();
     let section = config.section("Data.Setting").section("Inventory");
 
     // act
@@ -118,7 +127,8 @@ fn add_xml_file_should_not_panic_if_file_does_not_exist() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path.is().optional())
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     assert_eq!(config.children().len(), 0);
@@ -147,7 +157,8 @@ fn add_xml_file_should_process_attributes() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -184,7 +195,8 @@ fn add_xml_file_should_mix_elements_and_attributes() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -224,7 +236,8 @@ fn name_attribute_should_contribute_to_prefix(filename: &str, attribute: &str) {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -271,7 +284,8 @@ fn root_element_name_attribute_should_contribute_to_prefix() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -308,7 +322,8 @@ fn numeric_name_attribute_should_be_array_like() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -350,7 +365,8 @@ fn repeated_element_should_be_array_like(filename: &str, element: &str) {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -389,7 +405,8 @@ fn repeated_element_with_different_name_attribute_should_have_different_prefix()
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -428,7 +445,8 @@ fn nested_repeated_element_should_be_array_like() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -490,7 +508,8 @@ fn mixed_repeated_element_should_be_array_like() {
     // act
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -542,7 +561,8 @@ fn config_values_should_process_cdata() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let value = config.get("Data:Inventory:Provider");
@@ -581,7 +601,8 @@ fn xml_declaration_and_processing_instructions_should_be_ignored() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let value = config.get("Data:DefaultConnection:Provider");
@@ -594,8 +615,7 @@ fn xml_declaration_and_processing_instructions_should_be_ignored() {
 }
 
 #[test]
-#[should_panic(expected = "XML namespaces are not supported.")]
-fn load_should_panic_when_xml_namespace_is_encountered() {
+fn load_should_fail_when_xml_namespace_is_encountered() {
     // arrange
     let xml = concat!(
         "<settings xmlns:MyNamespace='http://w3c.org/test/mynamespace'>\n",
@@ -619,17 +639,23 @@ fn load_should_panic_when_xml_namespace_is_encountered() {
     let _file = TempFile(path.clone());
 
     // act
-    let _config = DefaultConfigurationBuilder::new()
+    let result = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
         .build();
 
     // assert
-    // panics
+    if let Err(error) = result {
+        if let ReloadError::Provider(errors) = error {
+            assert_eq!(errors[0].1.message(), "XML namespaces are not supported. (Data, Line: 2)");
+            return;
+        }
+    }
+
+    panic!("Unexpected error.");
 }
 
 #[test]
-#[should_panic(expected = "A duplicate key 'Data:DefaultConnection:ConnectionString' was found.")]
-fn load_should_panic_when_key_is_duplicated() {
+fn load_should_fail_when_key_is_duplicated() {
     // arrange
     let xml = concat!(
         "<settings>\n",
@@ -649,12 +675,24 @@ fn load_should_panic_when_key_is_duplicated() {
     let _file = TempFile(path.clone());
 
     // act
-    let _config = DefaultConfigurationBuilder::new()
+    let result = DefaultConfigurationBuilder::new()
         .add_xml_file(&path)
         .build();
 
     // assert
-    // panics
+    if let Err(error) = result {
+        if let ReloadError::Provider(errors) = error {
+            let message = errors[0].1.message();
+            
+            // this can vary because the key processing doesn't guarantee stable ordering
+            // the net effect is the same. it's just a matter of which one is hit first
+            assert!((message == "A duplicate key 'Data:DefaultConnection:ConnectionString' was found. (Data, Line: 7)") ||
+                    (message == "A duplicate key 'Data:DefaultConnection:ConnectionString' was found. (ConnectionString, Line: 4)"));
+            return;
+        }
+    }
+
+    panic!("Unexpected error.");
 }
 
 #[test]
@@ -677,7 +715,8 @@ fn xml_file_should_reload_when_changed() {
 
     let config = DefaultConfigurationBuilder::new()
         .add_xml_file(&path.is().reloadable())
-        .build();
+        .build()
+        .unwrap();
     let section = config.section("Connections").section("Connection");
     let initial = section.get("Retries").unwrap_or_default().into_owned();
 

@@ -91,7 +91,8 @@ fn from_config_should_deserialize_simple_struct() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let result = from_config::<Foo>(root.deref());
@@ -140,7 +141,8 @@ fn from_config_should_deserialize_parent_child_struct() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let result = from_config::<Parent>(root.deref());
@@ -193,7 +195,8 @@ fn from_config_should_fail_with_missing_value() {
                 .map(|t| (t.0.to_owned(), t.1.to_owned()))
                 .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let error = from_config::<Foo>(root.deref()).err().unwrap();
@@ -218,7 +221,8 @@ fn from_config_should_fail_with_invalid_type() {
             .map(|t| (t.0.to_owned(), t.1.to_owned()))
             .collect(),
         )
-        .build();
+        .build()
+        .unwrap();
 
     // act
     let error = from_config::<Foo>(root.deref()).err().unwrap();

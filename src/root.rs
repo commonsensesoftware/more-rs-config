@@ -1,5 +1,55 @@
-use crate::{Configuration, ConfigurationProvider};
-use std::{borrow::Borrow, fmt::Debug, ops::Deref};
+use crate::{Configuration, ConfigurationProvider, LoadError};
+use std::fmt::{Debug, Formatter, Result as FormatResult};
+use std::{borrow::Borrow, ops::Deref};
+
+/// Defines the possible reload errors.
+#[derive(PartialEq, Clone)]
+pub enum ReloadError {
+    /// Indicates one or more provider load errors occurred.
+    Provider(Vec<(String, LoadError)>),
+
+    /// Indicates reload cannot be performed because there
+    /// are N outstanding borrow references.
+    Borrowed(usize),
+}
+
+impl Debug for ReloadError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FormatResult {
+        match self {
+            Self::Provider(errors) => {
+                if errors.len() == 1 {
+                    f.write_str(errors[0].1.message())?;
+                    f.write_str(" (")?;
+                    f.write_str(&errors[0].0)?;
+                    f.write_str(")")?;
+                } else {
+                    f.write_str("One or more load errors occurred:")?;
+
+                    for (i, (provider, error)) in errors.iter().enumerate() {
+                        f.write_str("\n")?;
+                        f.write_str("  [")?;
+                        (i + 1).fmt(f)?;
+                        f.write_str("]: ")?;
+                        f.write_str(error.message())?;
+                        f.write_str(" (")?;
+                        f.write_str(provider)?;
+                        f.write_str(")")?;
+                    }
+                }
+            }
+            Self::Borrowed(count) => {
+                f.write_str("Reload failed because the are ")?;
+                count.fmt(f)?;
+                f.write_str(" outstanding borrow references.")?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+/// Represents a configuration reload result.
+pub type ReloadResult = std::result::Result<(), ReloadError>;
 
 /// Represents the root of a [configuration](trait.Configuration.html) hierarchy.
 pub trait ConfigurationRoot:
@@ -10,13 +60,7 @@ pub trait ConfigurationRoot:
     + Debug
 {
     /// Force the configuration values to be reloaded from the underlying [provider](trait.ConfigurationProvider.html).
-    ///
-    /// # Returns
-    ///
-    /// True if the configuration values were reloaded from their underlying providers; otherwise, false.
-    /// The configuration root must have exclusive access in order to reload from the underlying providers.
-    /// Any owned or borrowed references to the root or any of its sections will prevent the reload from occurring.
-    fn reload(&mut self) -> bool;
+    fn reload(&mut self) -> ReloadResult;
 
     /// Gets the [providers](trait.ConfigurationProvider.html) for this configuration.
     fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_>;

@@ -3,7 +3,7 @@
 use crate::FileSource;
 use crate::{
     util::accumulate_child_keys, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider,
-    ConfigurationSource,
+    ConfigurationSource, LoadError, LoadResult,
 };
 use configparser::ini::Ini;
 use std::borrow::Cow;
@@ -38,7 +38,7 @@ impl InnerProvider {
         Box::new(self.token.read().unwrap().clone())
     }
 
-    fn load(&self, reload: bool) {
+    fn load(&self, reload: bool) -> LoadResult {
         if !self.file.path.is_file() {
             if self.file.optional || reload {
                 let mut data = self.data.write().unwrap();
@@ -46,12 +46,15 @@ impl InnerProvider {
                     *data = HashMap::with_capacity(0);
                 }
 
-                return;
+                return Ok(());
             } else {
-                panic!(
-                    "The configuration file '{}' was not found and is not optional.",
-                    self.file.path.display()
-                );
+                return Err(LoadError::File {
+                    message: format!(
+                        "The configuration file '{}' was not found and is not optional.",
+                        self.file.path.display()
+                    ),
+                    path: self.file.path.clone(),
+                });
             }
         }
 
@@ -84,6 +87,7 @@ impl InnerProvider {
         );
 
         previous.notify();
+        Ok(())
     }
 
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
@@ -114,7 +118,7 @@ impl IniConfigurationProvider {
                 move || FileChangeToken::new(path.clone()),
                 move || {
                     std::thread::sleep(other.file.reload_delay);
-                    other.load(true);
+                    other.load(true).ok();
                 },
             )))
         } else {
@@ -137,7 +141,7 @@ impl ConfigurationProvider for IniConfigurationProvider {
         self.inner.reload_token()
     }
 
-    fn load(&mut self) {
+    fn load(&mut self) -> LoadResult {
         self.inner.load(false)
     }
 

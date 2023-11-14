@@ -2,7 +2,7 @@
 
 use crate::{
     util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
-    FileSource,
+    FileSource, LoadError, LoadResult,
 };
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -18,15 +18,18 @@ use xml_rs::name::OwnedName;
 use xml_rs::reader::{EventReader, XmlEvent};
 
 trait LocalNameResolver {
-    fn local_name_or_panic(&self) -> String;
+    fn local_name_or_error(&self, element: &OwnedName, line: usize) -> Result<String, String>;
 }
 
 impl LocalNameResolver for OwnedName {
-    fn local_name_or_panic(&self) -> String {
+    fn local_name_or_error(&self, element: &OwnedName, line: usize) -> Result<String, String> {
         if self.namespace.is_none() {
-            self.local_name.clone()
+            Ok(self.local_name.clone())
         } else {
-            panic!("XML namespaces are not supported.")
+            Err(format!(
+                "XML namespaces are not supported. ({}, Line: {})",
+                &element.local_name, line
+            ))
         }
     }
 }
@@ -34,6 +37,7 @@ impl LocalNameResolver for OwnedName {
 struct Attribute(String, String);
 
 struct Element {
+    line: usize,
     element_name: String,
     name: Option<String>,
     sibling_name: String,
@@ -43,30 +47,40 @@ struct Element {
 }
 
 impl Element {
-    fn new(element_name: OwnedName, attributes: Vec<OwnedAttribute>) -> Self {
-        let name = get_name(&attributes);
-        let element_name = element_name.local_name_or_panic();
+    fn new(
+        element_name: OwnedName,
+        attributes: Vec<OwnedAttribute>,
+        line: usize,
+    ) -> Result<Self, String> {
+        let name = get_name(&element_name, &attributes, line)?;
+        let local_name = element_name.local_name_or_error(&element_name, line)?;
         let sibling_name = name
             .as_ref()
             .and_then(|n| {
                 Some(ConfigurationPath::combine(&[
-                    &element_name.to_uppercase(),
+                    &local_name.to_uppercase(),
                     &n.to_uppercase(),
                 ]))
             })
-            .unwrap_or(element_name.to_uppercase());
+            .unwrap_or(local_name.to_uppercase());
 
-        Self {
-            element_name,
+        Ok(Self {
+            line,
+            element_name: local_name,
             name,
             sibling_name,
             children: HashMap::new(),
             text: None,
             attributes: attributes
                 .into_iter()
-                .map(|a| Attribute(a.name.local_name_or_panic(), a.value))
-                .collect(),
-        }
+                .map(|a| {
+                    Ok(Attribute(
+                        a.name.local_name_or_error(&element_name, line)?,
+                        a.value,
+                    ))
+                })
+                .collect::<Result<Vec<Attribute>, String>>()?,
+        })
     }
 }
 
@@ -105,36 +119,44 @@ impl ToString for Prefix {
     }
 }
 
-fn get_name(attributes: &Vec<OwnedAttribute>) -> Option<String> {
+fn get_name(
+    element: &OwnedName,
+    attributes: &Vec<OwnedAttribute>,
+    line: usize,
+) -> Result<Option<String>, String> {
     for attribute in attributes {
-        match attribute.name.local_name_or_panic().as_str() {
+        let local_name = attribute.name.local_name_or_error(element, line)?;
+
+        match local_name.as_str() {
             "name" | "Name" | "NAME" => {
-                return Some(attribute.value.clone());
+                return Ok(Some(attribute.value.clone()));
             }
             _ => {}
         }
     }
 
-    None
+    Ok(None)
 }
 
 fn process_element(
     prefix: &mut Prefix,
     element: &Element,
     config: &mut HashMap<String, (String, String)>,
-) {
-    process_attributes(prefix, element, config);
-    process_element_content(prefix, element, config);
-    process_children(prefix, element, config);
+) -> Result<(), String> {
+    process_attributes(prefix, element, config)?;
+    process_element_content(prefix, element, config)?;
+    process_children(prefix, element, config)
 }
 
 fn process_element_content(
     prefix: &mut Prefix,
     element: &Element,
     config: &mut HashMap<String, (String, String)>,
-) {
+) -> Result<(), String> {
     if let Some(ref value) = element.text {
-        add_to_config(prefix.to_string(), value.clone(), config);
+        add_to_config(prefix.to_string(), value.clone(), element, config)
+    } else {
+        Ok(())
     }
 }
 
@@ -143,7 +165,7 @@ fn process_element_child(
     child: &Element,
     index: Option<usize>,
     config: &mut HashMap<String, (String, String)>,
-) {
+) -> Result<(), String> {
     prefix.push(&child.element_name);
 
     if let Some(ref name) = child.name {
@@ -154,7 +176,7 @@ fn process_element_child(
         prefix.push(i.to_string());
     }
 
-    process_element(prefix, child, config);
+    process_element(prefix, child, config)?;
 
     if index.is_some() {
         prefix.pop();
@@ -165,43 +187,60 @@ fn process_element_child(
     }
 
     prefix.pop();
+    Ok(())
 }
 
 fn process_attributes(
     prefix: &mut Prefix,
     element: &Element,
     config: &mut HashMap<String, (String, String)>,
-) {
+) -> Result<(), String> {
     for attribute in &element.attributes {
         prefix.push(&attribute.0);
-        add_to_config(prefix.to_string(), attribute.1.clone(), config);
+        add_to_config(prefix.to_string(), attribute.1.clone(), element, config)?;
         prefix.pop();
     }
+
+    Ok(())
 }
 
 fn process_children(
     prefix: &mut Prefix,
     element: &Element,
     config: &mut HashMap<String, (String, String)>,
-) {
+) -> Result<(), String> {
     for children in element.children.values() {
         if children.len() == 1 {
-            process_element_child(prefix, &children[0].deref().borrow(), None, config);
+            process_element_child(prefix, &children[0].deref().borrow(), None, config)?;
         } else {
             for (i, child) in children.iter().enumerate() {
-                process_element_child(prefix, &child.deref().borrow(), Some(i), config);
+                process_element_child(prefix, &child.deref().borrow(), Some(i), config)?;
             }
         }
     }
+
+    Ok(())
 }
 
-fn add_to_config(key: String, value: String, config: &mut HashMap<String, (String, String)>) {
+fn add_to_config(
+    key: String,
+    value: String,
+    element: &Element,
+    config: &mut HashMap<String, (String, String)>,
+) -> Result<(), String> {
     if let Some((dup_key, _)) = config.insert(key.to_uppercase(), (key, value)) {
-        panic!("A duplicate key '{}' was found.", &dup_key);
+        Err(format!(
+            "A duplicate key '{}' was found. ({}, Line: {})",
+            &dup_key, &element.element_name, element.line
+        ))
+    } else {
+        Ok(())
     }
 }
 
-fn to_config(mut root: Option<Rc<RefCell<Element>>>) -> HashMap<String, (String, String)> {
+fn to_config(
+    mut root: Option<Rc<RefCell<Element>>>,
+) -> Result<HashMap<String, (String, String)>, String> {
     if let Some(cell) = root.take() {
         let element = &cell.deref().borrow();
         let mut data = HashMap::new();
@@ -211,26 +250,31 @@ fn to_config(mut root: Option<Rc<RefCell<Element>>>) -> HashMap<String, (String,
             prefix.push(name);
         }
 
-        process_element(&mut prefix, &element, &mut data);
-        data
+        process_element(&mut prefix, &element, &mut data)?;
+        Ok(data)
     } else {
-        HashMap::with_capacity(0)
+        Ok(HashMap::with_capacity(0))
     }
 }
 
-fn visit(file: File) -> HashMap<String, (String, String)> {
+fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
     let content = BufReader::new(file);
     let events = EventReader::new(content);
-
+    let mut has_content = false;
+    let mut last_name = None;
+    let mut line = 0;
     let mut root = None;
     let mut current = Vec::<Rc<RefCell<Element>>>::new();
 
-    for event in events {
+    for event in events.into_iter() {
         match event {
             Ok(XmlEvent::StartElement {
                 name, attributes, ..
             }) => {
-                let element = Element::new(name, attributes);
+                line += 1;
+                has_content = false;
+                last_name = Some(name.clone());
+                let element = Element::new(name, attributes, line)?;
                 let key = element.sibling_name.clone();
                 let child = Rc::new(RefCell::new(element));
 
@@ -247,12 +291,21 @@ fn visit(file: File) -> HashMap<String, (String, String)> {
 
                 current.push(child);
             }
-            Ok(XmlEvent::EndElement { .. }) => {
+            Ok(XmlEvent::EndElement { name }) => {
+                if has_content {
+                    if let Some(ref last) = last_name {
+                        if last != &name {
+                            line += 1;
+                        }
+                    }
+                }
+
                 if !current.is_empty() {
                     let _ = current.pop();
                 }
             }
             Ok(XmlEvent::CData(text)) | Ok(XmlEvent::Characters(text)) => {
+                has_content = true;
                 if let Some(parent) = current.last() {
                     parent.borrow_mut().text = Some(text);
                 }
@@ -279,7 +332,7 @@ impl InnerProvider {
         }
     }
 
-    fn load(&self, reload: bool) {
+    fn load(&self, reload: bool) -> LoadResult {
         if !self.file.path.is_file() {
             if self.file.optional || reload {
                 let mut data = self.data.write().unwrap();
@@ -287,17 +340,23 @@ impl InnerProvider {
                     *data = HashMap::with_capacity(0);
                 }
 
-                return;
+                return Ok(());
             } else {
-                panic!(
-                    "The configuration file '{}' was not found and is not optional.",
-                    self.file.path.display()
-                );
+                return Err(LoadError::File {
+                    message: format!(
+                        "The configuration file '{}' was not found and is not optional.",
+                        self.file.path.display()
+                    ),
+                    path: self.file.path.clone(),
+                });
             }
         }
 
         if let Ok(file) = File::open(&self.file.path) {
-            let data = visit(file);
+            let data = visit(file).map_err(|e| LoadError::File {
+                message: e,
+                path: self.file.path.clone(),
+            })?;
             *self.data.write().unwrap() = data;
         } else {
             *self.data.write().unwrap() = HashMap::with_capacity(0);
@@ -309,6 +368,7 @@ impl InnerProvider {
         );
 
         previous.notify();
+        Ok(())
     }
 
     fn get(&self, key: &str) -> Option<Cow<String>> {
@@ -351,7 +411,7 @@ impl XmlConfigurationProvider {
                 move || FileChangeToken::new(path.clone()),
                 move || {
                     std::thread::sleep(other.file.reload_delay);
-                    other.load(true);
+                    other.load(true).ok();
                 },
             )))
         } else {
@@ -374,7 +434,7 @@ impl ConfigurationProvider for XmlConfigurationProvider {
         self.inner.reload_token()
     }
 
-    fn load(&mut self) {
+    fn load(&mut self) -> LoadResult {
         self.inner.load(false)
     }
 
