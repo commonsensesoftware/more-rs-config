@@ -33,9 +33,9 @@ fn build_should_load_and_combine_different_configuration_sources() {
     let config = builder.build();
 
     // assert
-    assert_eq!(config.get("mem1:keyinmem1").unwrap(), "ValueInMem1");
-    assert_eq!(config.get("Mem2:KeyInMem2").unwrap(), "ValueInMem2");
-    assert_eq!(config.get("MEM3:KEYINMEM3").unwrap(), "ValueInMem3");
+    assert_eq!(*config.get("mem1:keyinmem1").unwrap(), "ValueInMem1");
+    assert_eq!(*config.get("Mem2:KeyInMem2").unwrap(), "ValueInMem2");
+    assert_eq!(*config.get("MEM3:KEYINMEM3").unwrap(), "ValueInMem3");
 }
 
 #[test]
@@ -74,9 +74,9 @@ fn add_configuration_should_chain_configurations() {
     let config = builder2.build();
 
     // assert
-    assert_eq!(config.get("mem1:keyinmem1").unwrap(), "ValueInMem1");
-    assert_eq!(config.get("Mem2:KeyInMem2").unwrap(), "ValueInMem2");
-    assert_eq!(config.get("MEM3:KEYINMEM3").unwrap(), "ValueInMem3");
+    assert_eq!(*config.get("mem1:keyinmem1").unwrap(), "ValueInMem1");
+    assert_eq!(*config.get("Mem2:KeyInMem2").unwrap(), "ValueInMem2");
+    assert_eq!(*config.get("MEM3:KEYINMEM3").unwrap(), "ValueInMem3");
     assert!(config.get("Nonexistent").is_none());
 }
 
@@ -315,7 +315,7 @@ fn new_configuration_provider_should_override_old_one_when_key_is_duplicated() {
     let config = builder.build();
 
     // assert
-    assert_eq!(config.get("Key1:Key2").unwrap(), "ValueInMem2");
+    assert_eq!(*config.get("Key1:Key2").unwrap(), "ValueInMem2");
 }
 
 #[test]
@@ -342,7 +342,7 @@ fn new_configuration_root_should_be_built_from_existing_with_duplicate_keys() {
         .build();
 
     // assert
-    assert_eq!(root2.get("keya:keyb").unwrap(), "valueB");
+    assert_eq!(*root2.get("keya:keyb").unwrap(), "valueB");
 }
 
 #[test]
@@ -382,14 +382,14 @@ fn section_should_return_parts_from_root_configuration() {
 
     // assert
     assert_eq!(
-        section.get("DB1:Connection1").unwrap(),
+        *section.get("DB1:Connection1").unwrap(),
         "MemVal1"
     );
     assert_eq!(
-        section.get("DB1:Connection2").unwrap(),
+        *section.get("DB1:Connection2").unwrap(),
         "MemVal2"
     );
-    assert_eq!(section.value(), "MemVal4");
+    assert_eq!(*section.value(), "MemVal4");
     assert!(section.get("DB2:Connection").is_none());
     assert!(section.get("Source:DB2:Connection").is_none());
 }
@@ -432,7 +432,7 @@ fn section_should_return_children() {
     // assert
     assert_eq!(sections.len(), 2);
     assert_eq!(
-        sections
+        *sections
             .iter()
             .find(|s| s.key() == "DB1")
             .unwrap()
@@ -441,7 +441,7 @@ fn section_should_return_children() {
         "MemVal1"
     );
     assert_eq!(
-        sections
+        *sections
             .iter()
             .find(|s| s.key() == "DB1")
             .unwrap()
@@ -450,7 +450,7 @@ fn section_should_return_children() {
         "MemVal2"
     );
     assert_eq!(
-        sections
+        *sections
             .iter()
             .find(|s| s.key() == "DB2Connection")
             .unwrap()

@@ -4,6 +4,7 @@ use crate::{
     util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
     FileSource,
 };
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
@@ -310,12 +311,12 @@ impl InnerProvider {
         previous.notify();
     }
 
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Cow<String>> {
         self.data
             .read()
             .unwrap()
             .get(&key.to_uppercase())
-            .map(|t| t.1.clone())
+            .map(|t| Cow::Owned(t.1.clone()))
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
@@ -365,7 +366,7 @@ impl XmlConfigurationProvider {
 }
 
 impl ConfigurationProvider for XmlConfigurationProvider {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Cow<String>> {
         self.inner.get(key)
     }
 

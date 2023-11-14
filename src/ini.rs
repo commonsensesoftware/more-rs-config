@@ -6,6 +6,7 @@ use crate::{
     ConfigurationSource,
 };
 use configparser::ini::Ini;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken};
@@ -25,12 +26,12 @@ impl InnerProvider {
         }
     }
 
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Cow<String>> {
         self.data
             .read()
             .unwrap()
             .get(&key.to_uppercase())
-            .map(|t| t.1.clone())
+            .map(|t| Cow::Owned(t.1.clone()))
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
@@ -128,7 +129,7 @@ impl IniConfigurationProvider {
 }
 
 impl ConfigurationProvider for IniConfigurationProvider {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Cow<String>> {
         self.inner.get(key)
     }
 
