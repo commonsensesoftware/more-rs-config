@@ -33,11 +33,17 @@ mod json;
 #[cfg(feature = "cmd")]
 mod cmd;
 
+#[cfg(feature = "xml")]
+mod xml;
+
 #[cfg(feature = "binder")]
 mod binder;
 
 #[cfg(feature = "binder")]
 mod de;
+
+mod file;
+pub use file::*;
 
 pub use builder::*;
 pub use configuration::*;
@@ -71,6 +77,9 @@ pub use json::{JsonConfigurationProvider, JsonConfigurationSource};
 #[cfg(feature = "cmd")]
 pub use cmd::{CommandLineConfigurationProvider, CommandLineConfigurationSource};
 
+#[cfg(feature = "xml")]
+pub use xml::{XmlConfigurationProvider, XmlConfigurationSource};
+
 /// Contains configuration extension methods.
 pub mod ext {
 
@@ -93,6 +102,9 @@ pub mod ext {
 
     #[cfg(feature = "cmd")]
     pub use cmd::ext::*;
+
+    #[cfg(feature = "xml")]
+    pub use super::xml::ext::*;
 
     #[cfg(feature = "binder")]
     pub use binder::*;
