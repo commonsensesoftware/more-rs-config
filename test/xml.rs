@@ -52,7 +52,7 @@ fn add_xml_file_should_load_settings_from_file() {
         remove_file(&path).ok();
     }
     let value = result.unwrap();
-    assert_eq!(value, "SqlClient");
+    assert_eq!(*value, "SqlClient");
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn add_optional_xml_file_should_load_settings_from_file() {
         remove_file(&path).ok();
     }
     let value = result.unwrap();
-    assert_eq!(value, "MySql");
+    assert_eq!(*value, "MySql");
 }
 
 #[test]
@@ -153,12 +153,12 @@ fn add_xml_file_should_process_attributes() {
     if path.exists() {
         remove_file(&path).ok();
     }
-    assert_eq!(config.get("Port"), Some("8008".into()));
+    assert_eq!(*config.get("Port").unwrap(), "8008");
     assert_eq!(
-        config.get("Data:DefaultConnection:Provider"),
-        Some("SqlClient".into())
+        *config.get("Data:DefaultConnection:Provider").unwrap(),
+        "SqlClient"
     );
-    assert_eq!(config.get("Data:Inventory:Provider"), Some("MySql".into()));
+    assert_eq!(*config.get("Data:Inventory:Provider").unwrap(), "MySql");
 }
 
 #[test]
@@ -190,12 +190,12 @@ fn add_xml_file_should_mix_elements_and_attributes() {
     if path.exists() {
         remove_file(&path).ok();
     }
-    assert_eq!(config.get("Port"), Some("8008".into()));
+    assert_eq!(*config.get("Port").unwrap(), "8008");
     assert_eq!(
-        config.get("Data:DefaultConnection:Provider"),
-        Some("SqlClient".into())
+        *config.get("Data:DefaultConnection:Provider").unwrap(),
+        "SqlClient"
     );
-    assert_eq!(config.get("Data:Inventory:Provider"), Some("MySql".into()));
+    assert_eq!(*config.get("Data:Inventory:Provider").unwrap(), "MySql");
 }
 
 #[test_case("test_settings_5.1.xml", "Name" ; "with titlecase")]
@@ -231,19 +231,21 @@ fn name_attribute_should_contribute_to_prefix(filename: &str, attribute: &str) {
         remove_file(&path).ok();
     }
     assert_eq!(
-        config.get("Data:DefaultConnection:Name"),
-        Some("DefaultConnection".into())
+        *config.get("Data:DefaultConnection:Name").unwrap(),
+        "DefaultConnection"
     );
     assert_eq!(
-        config.get("Data:DefaultConnection:ConnectionString"),
-        Some("TestConnectionString".into())
+        *config
+            .get("Data:DefaultConnection:ConnectionString")
+            .unwrap(),
+        "TestConnectionString"
     );
     assert_eq!(
-        config.get("Data:DefaultConnection:Provider"),
-        Some("SqlClient".into())
+        *config.get("Data:DefaultConnection:Provider").unwrap(),
+        "SqlClient"
     );
-    assert_eq!(config.get("Data:Inventory:Name"), Some("Inventory".into()));
-    assert_eq!(config.get("Data:Inventory:Provider"), Some("MySql".into()));
+    assert_eq!(*config.get("Data:Inventory:Name").unwrap(), "Inventory");
+    assert_eq!(*config.get("Data:Inventory:Provider").unwrap(), "MySql");
 }
 
 #[test]
@@ -275,12 +277,12 @@ fn root_element_name_attribute_should_contribute_to_prefix() {
     if path.exists() {
         remove_file(&path).ok();
     }
-    assert_eq!(config.get("Data:Name"), Some("Data".into()));
+    assert_eq!(*config.get("Data:Name").unwrap(), "Data");
     assert_eq!(
-        config.get("Data:DefaultConnection:Provider"),
-        Some("SqlClient".into())
+        *config.get("Data:DefaultConnection:Provider").unwrap(),
+        "SqlClient"
     );
-    assert_eq!(config.get("Data:Inventory:Provider"), Some("MySql".into()));
+    assert_eq!(*config.get("Data:Inventory:Provider").unwrap(), "MySql");
 }
 
 #[test]
@@ -313,12 +315,12 @@ fn numeric_name_attribute_should_be_array_like() {
         remove_file(&path).ok();
     }
     assert_eq!(
-        config.get("DefaultConnection:0:Provider"),
-        Some("SqlClient1".into())
+        *config.get("DefaultConnection:0:Provider").unwrap(),
+        "SqlClient1"
     );
     assert_eq!(
-        config.get("DefaultConnection:1:Provider"),
-        Some("SqlClient2".into())
+        *config.get("DefaultConnection:1:Provider").unwrap(),
+        "SqlClient2"
     );
 }
 
@@ -355,12 +357,12 @@ fn repeated_element_should_be_array_like(filename: &str, element: &str) {
         remove_file(&path).ok();
     }
     assert_eq!(
-        config.get("DefaultConnection:0:Provider"),
-        Some("SqlClient1".into())
+        *config.get("DefaultConnection:0:Provider").unwrap(),
+        "SqlClient1"
     );
     assert_eq!(
-        config.get("DefaultConnection:1:Provider"),
-        Some("SqlClient2".into())
+        *config.get("DefaultConnection:1:Provider").unwrap(),
+        "SqlClient2"
     );
 }
 
@@ -394,12 +396,12 @@ fn repeated_element_with_different_name_attribute_should_have_different_prefix()
         remove_file(&path).ok();
     }
     assert_eq!(
-        config.get("DefaultConnection:Data1:Provider"),
-        Some("SqlClient1".into())
+        *config.get("DefaultConnection:Data1:Provider").unwrap(),
+        "SqlClient1"
     );
     assert_eq!(
-        config.get("DefaultConnection:Data2:Provider"),
-        Some("SqlClient2".into())
+        *config.get("DefaultConnection:Data2:Provider").unwrap(),
+        "SqlClient2"
     );
 }
 
@@ -433,20 +435,28 @@ fn nested_repeated_element_should_be_array_like() {
         remove_file(&path).ok();
     }
     assert_eq!(
-        config.get("DefaultConnection:0:ConnectionString:0"),
-        Some("TestConnectionString1".into())
+        *config
+            .get("DefaultConnection:0:ConnectionString:0")
+            .unwrap(),
+        "TestConnectionString1"
     );
     assert_eq!(
-        config.get("DefaultConnection:0:ConnectionString:1"),
-        Some("TestConnectionString2".into())
+        *config
+            .get("DefaultConnection:0:ConnectionString:1")
+            .unwrap(),
+        "TestConnectionString2"
     );
     assert_eq!(
-        config.get("DefaultConnection:1:ConnectionString:0"),
-        Some("TestConnectionString3".into())
+        *config
+            .get("DefaultConnection:1:ConnectionString:0")
+            .unwrap(),
+        "TestConnectionString3"
     );
     assert_eq!(
-        config.get("DefaultConnection:1:ConnectionString:1"),
-        Some("TestConnectionString4".into())
+        *config
+            .get("DefaultConnection:1:ConnectionString:1")
+            .unwrap(),
+        "TestConnectionString4"
     );
 }
 
@@ -487,30 +497,30 @@ fn mixed_repeated_element_should_be_array_like() {
         remove_file(&path).ok();
     }
     assert_eq!(
-        config.get("DefaultConnection:0:ConnectionString"),
-        Some("TestConnectionString1".into())
+        *config.get("DefaultConnection:0:ConnectionString").unwrap(),
+        "TestConnectionString1"
     );
     assert_eq!(
-        config.get("DefaultConnection:1:ConnectionString"),
-        Some("TestConnectionString2".into())
+        *config.get("DefaultConnection:1:ConnectionString").unwrap(),
+        "TestConnectionString2"
     );
     assert_eq!(
-        config.get("DefaultConnection:2:ConnectionString"),
-        Some("TestConnectionString3".into())
+        *config.get("DefaultConnection:2:ConnectionString").unwrap(),
+        "TestConnectionString3"
     );
     assert_eq!(
-        config.get("DefaultConnection:0:Provider"),
-        Some("SqlClient1".into())
+        *config.get("DefaultConnection:0:Provider").unwrap(),
+        "SqlClient1"
     );
     assert_eq!(
-        config.get("DefaultConnection:1:Provider"),
-        Some("SqlClient2".into())
+        *config.get("DefaultConnection:1:Provider").unwrap(),
+        "SqlClient2"
     );
     assert_eq!(
-        config.get("DefaultConnection:2:Provider"),
-        Some("SqlClient3".into())
+        *config.get("DefaultConnection:2:Provider").unwrap(),
+        "SqlClient3"
     );
-    assert_eq!(config.get("OtherValue:Value"), Some("MyValue".into()));
+    assert_eq!(*config.get("OtherValue:Value").unwrap(), "MyValue");
 }
 
 #[test]
@@ -535,13 +545,13 @@ fn config_values_should_process_cdata() {
         .build();
 
     // act
-    let value = config.get("Data:Inventory:Provider").unwrap();
+    let value = config.get("Data:Inventory:Provider");
 
     // assert
     if path.exists() {
         remove_file(&path).ok();
     }
-    assert_eq!(value, "SpecialStringWith<>");
+    assert_eq!(*value.unwrap(), "SpecialStringWith<>");
 }
 
 #[test]
@@ -580,7 +590,7 @@ fn xml_declaration_and_processing_instructions_should_be_ignored() {
     if path.exists() {
         remove_file(&path).ok();
     }
-    assert_eq!(value, Some("SqlClient".into()));
+    assert_eq!(*value.unwrap(), "SqlClient");
 }
 
 #[test]
@@ -669,7 +679,7 @@ fn xml_file_should_reload_when_changed() {
         .add_xml_file(&path.is().reloadable())
         .build();
     let section = config.section("Connections").section("Connection");
-    let initial = section.get("Retries").unwrap_or_default();
+    let initial = section.get("Retries").unwrap_or_default().into_owned();
 
     drop(section);
 
@@ -716,5 +726,5 @@ fn xml_file_should_reload_when_changed() {
     }
 
     assert_eq!(&initial, "3");
-    assert_eq!(&current, "5");
+    assert_eq!(*current, "5");
 }

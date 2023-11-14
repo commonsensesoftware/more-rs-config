@@ -1,4 +1,4 @@
-use std::any::type_name;
+use std::{any::type_name, borrow::Cow};
 use tokens::{ChangeToken, NeverChangeToken};
 
 /// Defines the behavior of an object that provides configuration key/values for an application.
@@ -13,7 +13,7 @@ pub trait ConfigurationProvider {
     /// # Arguments
     ///
     /// * `key` - The key of the value to retrieve
-    fn get(&self, key: &str) -> Option<String>;
+    fn get(&self, key: &str) -> Option<Cow<String>>;
 
     /// Returns a change token if this provider supports change tracking.
     fn reload_token(&self) -> Box<dyn ChangeToken> {

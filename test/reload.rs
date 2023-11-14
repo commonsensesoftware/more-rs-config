@@ -5,7 +5,7 @@ use std::{
     sync::{
         atomic::{AtomicU8, Ordering},
         Arc,
-    },
+    }, borrow::Cow,
 };
 use tokens::{ChangeToken, SharedChangeToken, SingleChangeToken};
 
@@ -38,9 +38,9 @@ impl ReloadableConfigProvider {
 }
 
 impl ConfigurationProvider for ReloadableConfigProvider {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Cow<String>> {
         if key == "Test" {
-            Some(self.value.clone())
+            Some(Cow::Borrowed(&self.value))
         } else {
             None
         }
@@ -86,13 +86,13 @@ fn reload_should_load_providers() {
 
     let mut root = builder.build();
 
-    assert_eq!(root.get("Test").unwrap(), "1");
+    assert_eq!(*root.get("Test").unwrap(), "1");
 
     // act
     root.reload();
 
     // assert
-    assert_eq!(root.get("Test").unwrap(), "2");
+    assert_eq!(*root.get("Test").unwrap(), "2");
 }
 
 #[test]

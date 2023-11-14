@@ -1,4 +1,5 @@
 use crate::*;
+use std::borrow::Cow;
 use std::cmp::{min, Ordering};
 use std::collections::HashMap;
 use std::fmt::{Formatter, Result as FormatResult, Write};
@@ -172,7 +173,7 @@ fn recurse_children<'a, T: ConfigurationRoot>(
 fn get_value_and_provider<'a, T: ConfigurationRoot>(
     root: &'a T,
     key: &str,
-) -> Option<(String, &'a str)> {
+) -> Option<(Cow<'a, String>, &'a str)> {
     for provider in root.providers().rev() {
         if let Some(value) = provider.get(key) {
             return Some((value, provider.name()));

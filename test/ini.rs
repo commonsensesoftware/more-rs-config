@@ -30,7 +30,7 @@ fn add_ini_file_should_load_settings_from_file() {
         remove_file(&path).ok();
     }
     let value = result.unwrap();
-    assert_eq!(value, "true");
+    assert_eq!(*value, "true");
 }
 
 #[test]
@@ -74,7 +74,7 @@ fn add_optional_ini_file_should_load_settings_from_file() {
         remove_file(&path).ok();
     }
     let value = result.unwrap();
-    assert_eq!(value, "true");
+    assert_eq!(*value, "true");
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn init_file_should_reload_when_changed() {
         .add_ini_file(&path.is().reloadable())
         .build();
     let section = config.section("Feature.Magic");
-    let initial = section.get("Disabled").unwrap_or_default();
+    let initial = section.get("Disabled").unwrap_or_default().into_owned();
 
     drop(section);
 
@@ -147,5 +147,5 @@ fn init_file_should_reload_when_changed() {
     }
 
     assert_eq!(&initial, "true");
-    assert_eq!(&current, "false");
+    assert_eq!(*current, "false");
 }
