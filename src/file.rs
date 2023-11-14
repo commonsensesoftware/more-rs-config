@@ -75,6 +75,24 @@ impl From<&Path> for FileSource {
     }
 }
 
+impl From<&str> for FileSource {
+    fn from(value: &str) -> Self {
+        Self::from(PathBuf::from(value))
+    }
+}
+
+impl From<String> for FileSource {
+    fn from(value: String) -> Self {
+        Self::from(PathBuf::from(value))
+    }
+}
+
+impl From<&String> for FileSource {
+    fn from(value: &String) -> Self {
+        Self::from(PathBuf::from(value))
+    }
+}
+
 /// Represents a builder for a file source.
 pub struct FileSourceBuilder {
     path: PathBuf,
