@@ -35,16 +35,16 @@ impl ReloadableConfigProvider {
 }
 
 impl ConfigurationProvider for ReloadableConfigProvider {
-    fn get(&self, key: &str) -> Option<&str> {
+    fn get(&self, key: &str) -> Option<String> {
         if key == "Test" {
-            Some(&self.value)
+            Some(self.value.clone())
         } else {
             None
         }
     }
 
-    fn reload_token(&self) -> Option<Box<dyn ChangeToken>> {
-        Some(Box::new(self.trigger.token.borrow().clone()))
+    fn reload_token(&self) -> Box<dyn ChangeToken> {
+        Box::new(self.trigger.token.borrow().clone())
     }
 
     fn load(&mut self) {

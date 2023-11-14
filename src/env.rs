@@ -26,8 +26,8 @@ impl EnvironmentVariablesConfigurationProvider {
 }
 
 impl ConfigurationProvider for EnvironmentVariablesConfigurationProvider {
-    fn get(&self, key: &str) -> Option<&str> {
-        self.data.get(&key.to_uppercase()).map(|t| t.1.as_str())
+    fn get(&self, key: &str) -> Option<String> {
+        self.data.get(&key.to_uppercase()).map(|t| t.1.clone())
     }
 
     fn load(&mut self) {

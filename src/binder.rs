@@ -1,6 +1,6 @@
 use crate::{ext::*, *};
 use serde::de::DeserializeOwned;
-use std::str::FromStr;
+use std::{str::FromStr, ops::Deref};
 
 /// Provides binder extension methods for a [Configuration](trait.Configuration.html).
 pub trait ConfigurationBinder {
@@ -50,14 +50,14 @@ impl ConfigurationBinder for dyn Configuration {
         let section = self.section(key.as_ref());
 
         if section.exists() {
-            bind_config(section.deref(), instance).unwrap()
+            bind_config(section.deref().as_ref(), instance).unwrap()
         }
     }
 
     fn get_value<T: FromStr>(&self, key: impl AsRef<str>) -> Result<Option<T>, T::Err> {
         let section = self.section(key.as_ref());
         let value = if section.exists() {
-            Some(T::from_str(section.value())?)
+            Some(T::from_str(section.value().as_str())?)
         } else {
             None
         };
@@ -68,7 +68,7 @@ impl ConfigurationBinder for dyn Configuration {
     fn get_value_or_default<T: FromStr + Default>(&self, key: impl AsRef<str>) -> Result<T, T::Err> {
         let section = self.section(key.as_ref());
         let value = if section.exists() {
-            T::from_str(section.value())?
+            T::from_str(section.value().as_str())?
         } else {
             T::default()
         };
@@ -90,14 +90,14 @@ impl<C: AsRef<dyn Configuration>> ConfigurationBinder for C {
         let section = self.as_ref().section(key.as_ref());
 
         if section.exists() {
-            bind_config(section.deref(), instance).unwrap()
+            bind_config(section.deref().as_ref(), instance).unwrap()
         }
     }
 
     fn get_value<T: FromStr>(&self, key: impl AsRef<str>) -> Result<Option<T>, T::Err> {
         let section = self.as_ref().section(key.as_ref());
         let value = if section.exists() {
-            Some(T::from_str(section.value())?)
+            Some(T::from_str(section.value().as_str())?)
         } else {
             None
         };
@@ -108,7 +108,7 @@ impl<C: AsRef<dyn Configuration>> ConfigurationBinder for C {
     fn get_value_or_default<T: FromStr + Default>(&self, key: impl AsRef<str>) -> Result<T, T::Err> {
         let section = self.as_ref().section(key.as_ref());
         let value = if section.exists() {
-            T::from_str(section.value())?
+            T::from_str(section.value().as_str())?
         } else {
             T::default()
         };

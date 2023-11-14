@@ -1,27 +1,8 @@
 use crate::{
-    util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
+    util::*, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
 };
 use std::borrow::Cow;
 use std::collections::HashMap;
-
-fn to_pascal_case<T: AsRef<str>>(text: T) -> String {
-    let parts = text.as_ref().split('-');
-    let mut pascal_case = String::with_capacity(text.as_ref().len());
-
-    for part in parts {
-        let mut chars = part.chars();
-
-        if let Some(first) = chars.next() {
-            pascal_case.push(first.to_ascii_uppercase());
-
-            for ch in chars {
-                pascal_case.push(ch);
-            }
-        }
-    }
-
-    pascal_case
-}
 
 /// Represents a [configuration provider](trait.ConfigurationProvider.html) that
 /// provides command line configuration values.
@@ -57,7 +38,7 @@ impl CommandLineConfigurationProvider {
 }
 
 impl ConfigurationProvider for CommandLineConfigurationProvider {
-    fn get(&self, key: &str) -> Option<&str> {
+    fn get(&self, key: &str) -> Option<String> {
         self.data.get(&key.to_uppercase()).map(|t| t.1.as_str())
     }
 
@@ -122,7 +103,7 @@ impl ConfigurationProvider for CommandLineConfigurationProvider {
                 }
             }
 
-            key = to_pascal_case(key);
+            key = to_pascal_case_parts(key, '-');
             data.insert(key.to_uppercase(), (key, value));
         }
 
@@ -441,17 +422,5 @@ mod tests {
 
         // assert
         assert!(child_keys.is_empty());
-    }
-
-    #[test]
-    fn to_pascal_case_should_normalize_argument_name() {
-        // arrange
-        let argument = "no-build";
-    
-        // act
-        let pascal_case = to_pascal_case(argument);
-    
-        // assert
-        assert_eq!(pascal_case, "NoBuild");
     }
 }

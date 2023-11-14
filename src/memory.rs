@@ -26,8 +26,8 @@ impl MemoryConfigurationProvider {
 }
 
 impl ConfigurationProvider for MemoryConfigurationProvider {
-    fn get(&self, key: &str) -> Option<&str> {
-        self.data.get(&key.to_uppercase()).map(|t| t.1.as_str())
+    fn get(&self, key: &str) -> Option<String> {
+        self.data.get(&key.to_uppercase()).map(|t| t.1.clone())
     }
 
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
