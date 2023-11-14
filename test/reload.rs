@@ -1,20 +1,23 @@
 use config::*;
 use std::{
-    cell::{Cell, RefCell},
+    cell::RefCell,
     rc::Rc,
+    sync::{
+        atomic::{AtomicU8, Ordering},
+        Arc,
+    },
 };
-use tokens::{ChangeToken, SharedChangeToken};
+use tokens::{ChangeToken, SharedChangeToken, SingleChangeToken};
 
 #[derive(Default)]
 struct Trigger {
-    token: RefCell<SharedChangeToken>,
+    token: RefCell<SharedChangeToken<SingleChangeToken>>,
 }
 
 impl Trigger {
     fn fire(&self) {
         let token = self.token.replace(SharedChangeToken::default());
-        let callback = token.trigger().upgrade().unwrap();
-        (callback)()
+        token.notify();
     }
 }
 
@@ -95,42 +98,40 @@ fn reload_should_load_providers() {
 #[test]
 fn reload_token_should_indicate_change_after_reload() {
     // arrange
-    let data = Rc::<Cell<u8>>::default();
+    let data = Arc::<AtomicU8>::default();
     let other = data.clone();
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(ReloadableConfigSource::default()));
 
     let mut root = builder.build();
-
-    root.reload_token()
-        .register(Box::new(move || other.clone().set(1)));
+    let _unused = root.reload_token()
+        .register(Box::new(move || other.store(1, Ordering::SeqCst)));
 
     // act
     root.reload();
 
     // assert
-    assert_eq!(data.get(), 1);
+    assert_eq!(data.load(Ordering::SeqCst), 1);
 }
 
 #[test]
 fn reload_token_should_indicate_change_after_provider_change() {
     // arrange
     let trigger = Rc::new(Trigger::default());
-    let data = Rc::<Cell<u8>>::default();
+    let data = Arc::<AtomicU8>::default();
     let other = data.clone();
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(ReloadableConfigSource::new(trigger.clone())));
 
     let root = builder.build();
-
-    root.reload_token()
-        .register(Box::new(move || other.clone().set(1)));
+    let _unused = root.reload_token()
+        .register(Box::new(move || other.store(1, Ordering::SeqCst)));
 
     // act
     trigger.fire();
 
     // assert
-    assert_eq!(data.get(), 1);
+    assert_eq!(data.load(Ordering::SeqCst), 1);
 }
