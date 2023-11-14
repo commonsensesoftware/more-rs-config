@@ -1,8 +1,13 @@
 use crate::Configuration;
-use std::ops::Deref;
+use std::{borrow::Borrow, ops::Deref};
 
 /// Defines the behavior for a section of application configuration values.
-pub trait ConfigurationSection: Configuration + Deref<Target = dyn Configuration> {
+pub trait ConfigurationSection:
+    Configuration
+    + AsRef<dyn Configuration>
+    + Borrow<dyn Configuration>
+    + Deref<Target = dyn Configuration>
+{
     /// Gets the key this section occupies in its parent.
     fn key(&self) -> &str;
 
@@ -10,7 +15,7 @@ pub trait ConfigurationSection: Configuration + Deref<Target = dyn Configuration
     fn path(&self) -> &str;
 
     /// Gets the section value.
-    fn value(&self) -> &str;
+    fn value(&self) -> String;
 }
 
 pub mod ext {
