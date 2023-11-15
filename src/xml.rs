@@ -34,6 +34,26 @@ impl LocalNameResolver for OwnedName {
     }
 }
 
+trait VecExtensions<TKey: PartialEq, TValue> {
+    // fn get_or_add(vec: &mut Vec<(String, Vec<Rc<RefCell<Element>>>)>, key: String) -> &mut Vec<Rc<RefCell<Element>>>;
+    fn get_or_add(&mut self, key: TKey) -> &mut TValue;
+}
+
+impl VecExtensions<String, Vec<Rc<RefCell<Element>>>> for Vec<(String, Vec<Rc<RefCell<Element>>>)> {
+    fn get_or_add(&mut self, key: String) -> &mut Vec<Rc<RefCell<Element>>> {
+        let index = self
+            .iter_mut()
+            .position(|i| &i.0 == &key)
+            .unwrap_or(self.len());
+
+        if index == self.len() {
+            self.push((key, Vec::new()));
+        }
+
+        &mut self[index].1
+    }
+}
+
 struct Attribute(String, String);
 
 struct Element {
@@ -41,7 +61,7 @@ struct Element {
     element_name: String,
     name: Option<String>,
     sibling_name: String,
-    children: HashMap<String, Vec<Rc<RefCell<Element>>>>,
+    children: Vec<(String, Vec<Rc<RefCell<Element>>>)>,
     text: Option<String>,
     attributes: Vec<Attribute>,
 }
@@ -69,7 +89,7 @@ impl Element {
             element_name: local_name,
             name,
             sibling_name,
-            children: HashMap::new(),
+            children: Default::default(),
             text: None,
             attributes: attributes
                 .into_iter()
@@ -209,7 +229,7 @@ fn process_children(
     element: &Element,
     config: &mut HashMap<String, (String, String)>,
 ) -> Result<(), String> {
-    for children in element.children.values() {
+    for children in element.children.iter().map(|i| &i.1) {
         if children.len() == 1 {
             process_element_child(prefix, &children[0].deref().borrow(), None, config)?;
         } else {
@@ -264,7 +284,7 @@ fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
     let mut last_name = None;
     let mut line = 0;
     let mut root = None;
-    let mut current = Vec::<Rc<RefCell<Element>>>::new();
+    let mut current = Vec::<(OwnedName, Rc<RefCell<Element>>)>::new();
 
     for event in events.into_iter() {
         match event {
@@ -274,22 +294,22 @@ fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
                 line += 1;
                 has_content = false;
                 last_name = Some(name.clone());
-                let element = Element::new(name, attributes, line)?;
+                let element = Element::new(name.clone(), attributes, line)?;
                 let key = element.sibling_name.clone();
                 let child = Rc::new(RefCell::new(element));
 
                 if let Some(parent) = current.last() {
                     parent
+                        .1
                         .borrow_mut()
                         .children
-                        .entry(key)
-                        .or_insert(Vec::new())
+                        .get_or_add(key)
                         .push(child.clone());
                 } else {
                     root = Some(child.clone());
                 }
 
-                current.push(child);
+                current.push((name, child));
             }
             Ok(XmlEvent::EndElement { name }) => {
                 if has_content {
@@ -300,14 +320,14 @@ fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
                     }
                 }
 
-                if !current.is_empty() {
-                    let _ = current.pop();
+                if let Some((current_name, _)) = current.pop() {
+                    last_name = Some(current_name);
                 }
             }
             Ok(XmlEvent::CData(text)) | Ok(XmlEvent::Characters(text)) => {
                 has_content = true;
                 if let Some(parent) = current.last() {
-                    parent.borrow_mut().text = Some(text);
+                    parent.1.borrow_mut().text = Some(text);
                 }
             }
             _ => {}

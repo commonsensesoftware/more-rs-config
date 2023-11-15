@@ -72,12 +72,13 @@ fn add_xml_file_should_fail_if_file_does_not_exist() {
             assert_eq!(
                 errors[0].1.message(),
                 r"The configuration file 'C:\fake\settings.xml' was not found and is not optional."
-            );
-            return;
+            )
+        } else {
+            panic!("{:#?}", error)
         }
+    } else {
+        panic!("No error occurred.")
     }
-
-    panic!("Unexpected error.");
 }
 
 #[test]
@@ -646,12 +647,16 @@ fn load_should_fail_when_xml_namespace_is_encountered() {
     // assert
     if let Err(error) = result {
         if let ReloadError::Provider(errors) = error {
-            assert_eq!(errors[0].1.message(), "XML namespaces are not supported. (Data, Line: 2)");
-            return;
+            assert_eq!(
+                errors[0].1.message(),
+                "XML namespaces are not supported. (Data, Line: 2)"
+            )
+        } else {
+            panic!("{:#?}", error)
         }
+    } else {
+        panic!("No error occurred.")
     }
-
-    panic!("Unexpected error.");
 }
 
 #[test]
@@ -682,17 +687,13 @@ fn load_should_fail_when_key_is_duplicated() {
     // assert
     if let Err(error) = result {
         if let ReloadError::Provider(errors) = error {
-            let message = errors[0].1.message();
-            
-            // this can vary because the key processing doesn't guarantee stable ordering
-            // the net effect is the same. it's just a matter of which one is hit first
-            assert!((message == "A duplicate key 'Data:DefaultConnection:ConnectionString' was found. (Data, Line: 7)") ||
-                    (message == "A duplicate key 'Data:DefaultConnection:ConnectionString' was found. (ConnectionString, Line: 4)"));
-            return;
+            assert_eq!(errors[0].1.message(), "A duplicate key 'Data:DefaultConnection:ConnectionString' was found. (Data, Line: 7)")
+        } else {
+            panic!("{:#?}", error)
         }
+    } else {
+        panic!("No error occurred.")
     }
-
-    panic!("Unexpected error.");
 }
 
 #[test]
