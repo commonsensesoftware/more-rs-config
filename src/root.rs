@@ -18,29 +18,17 @@ impl Debug for ReloadError {
         match self {
             Self::Provider(errors) => {
                 if errors.len() == 1 {
-                    f.write_str(errors[0].1.message())?;
-                    f.write_str(" (")?;
-                    f.write_str(&errors[0].0)?;
-                    f.write_str(")")?;
+                    write!(f, "{} ({})", errors[0].1.message(), &errors[0].0)?;
                 } else {
                     f.write_str("One or more load errors occurred:")?;
 
                     for (i, (provider, error)) in errors.iter().enumerate() {
-                        f.write_str("\n")?;
-                        f.write_str("  [")?;
-                        (i + 1).fmt(f)?;
-                        f.write_str("]: ")?;
-                        f.write_str(error.message())?;
-                        f.write_str(" (")?;
-                        f.write_str(provider)?;
-                        f.write_str(")")?;
+                        write!(f, "\n  [{}]: {} ({})", (i+1), error.message(), provider)?;
                     }
                 }
             }
             Self::Borrowed(count) => {
-                f.write_str("Reload failed because the are ")?;
-                count.fmt(f)?;
-                f.write_str(" outstanding borrow references.")?;
+                write!(f, "Reload failed because the are {} outstanding borrow references.", count)?;
             }
         }
 
