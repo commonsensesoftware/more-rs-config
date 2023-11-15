@@ -54,12 +54,13 @@ fn add_json_file_should_fail_if_file_does_not_exist() {
             assert_eq!(
                 errors[0].1.message(),
                 r"The configuration file 'C:\fake\settings.json' was not found and is not optional."
-            );
-            return;
+            )
+        } else {
+            panic!("{:#?}", error)
         }
+    } else {
+        panic!("No error occurred.")
     }
-
-    panic!("Unexpected error.");
 }
 
 #[test]
