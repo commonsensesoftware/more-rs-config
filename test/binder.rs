@@ -27,17 +27,12 @@ struct ArrayExample {
 fn reify_should_deserialize_configuration_to_options() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("name", "John Doe"),
-                ("primary", "true"),
-                ("phones:0", "+44 1234567"),
-                ("phones:1", "+44 2345678"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("name", "John Doe"),
+            ("primary", "true"),
+            ("phones:0", "+44 1234567"),
+            ("phones:1", "+44 2345678"),
+        ])
         .build()
         .unwrap();
 
@@ -54,19 +49,14 @@ fn reify_should_deserialize_configuration_to_options() {
 fn reify_should_deserialize_section_to_options() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("array:entries:0", "value00"),
-                ("array:entries:1", "value10"),
-                ("array:entries:2", "value20"),
-                ("array:entries:3", "value30"),
-                ("array:entries:4", "value40"),
-                ("array:entries:5", "value50"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("array:entries:0", "value00"),
+            ("array:entries:1", "value10"),
+            ("array:entries:2", "value20"),
+            ("array:entries:3", "value30"),
+            ("array:entries:4", "value40"),
+            ("array:entries:5", "value50"),
+        ])
         .build()
         .unwrap();
     let section = config.section("array");
@@ -85,17 +75,12 @@ fn reify_should_deserialize_section_to_options() {
 fn bind_should_deserialize_configuration_to_options() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("name", "John Doe"),
-                ("primary", "true"),
-                ("phones:0", "+44 1234567"),
-                ("phones:1", "+44 2345678"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("name", "John Doe"),
+            ("primary", "true"),
+            ("phones:0", "+44 1234567"),
+            ("phones:1", "+44 2345678"),
+        ])
         .build()
         .unwrap();
     let mut options = ContactOptions::default();
@@ -113,17 +98,12 @@ fn bind_should_deserialize_configuration_to_options() {
 fn bind_at_should_deserialize_configuration_to_options() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("contact:name", "John Doe"),
-                ("contact:primary", "true"),
-                ("contact:phones:0", "+44 1234567"),
-                ("contact:phones:1", "+44 2345678"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("contact:name", "John Doe"),
+            ("contact:primary", "true"),
+            ("contact:phones:0", "+44 1234567"),
+            ("contact:phones:1", "+44 2345678"),
+        ])
         .build()
         .unwrap();
     let mut options = ContactOptions::default();
@@ -141,17 +121,12 @@ fn bind_at_should_deserialize_configuration_to_options() {
 fn get_value_should_deserialize_configuration_value() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("name", "John Doe"),
-                ("primary", "true"),
-                ("phones:0", "+44 1234567"),
-                ("phones:1", "+44 2345678"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("name", "John Doe"),
+            ("primary", "true"),
+            ("phones:0", "+44 1234567"),
+            ("phones:1", "+44 2345678"),
+        ])
         .build()
         .unwrap();
 
@@ -166,16 +141,11 @@ fn get_value_should_deserialize_configuration_value() {
 fn get_value_should_return_none_for_missing_configuration_value() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("name", "John Doe"),
-                ("phones:0", "+44 1234567"),
-                ("phones:1", "+44 2345678"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("name", "John Doe"),
+            ("phones:0", "+44 1234567"),
+            ("phones:1", "+44 2345678"),
+        ])
         .build()
         .unwrap();
 
@@ -190,16 +160,11 @@ fn get_value_should_return_none_for_missing_configuration_value() {
 fn get_value_or_default_should_return_default_value_for_missing_configuration_value() {
     // arrange
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("name", "John Doe"),
-                ("phones:0", "+44 1234567"),
-                ("phones:1", "+44 2345678"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("name", "John Doe"),
+            ("phones:0", "+44 1234567"),
+            ("phones:1", "+44 2345678"),
+        ])
         .build()
         .unwrap();
 

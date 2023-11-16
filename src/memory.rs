@@ -1,7 +1,7 @@
 use crate::{
     util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
 };
-use std::{collections::HashMap, borrow::Cow};
+use std::{borrow::Cow, collections::HashMap};
 
 /// Represents a [configuration provider](trait.ConfigurationProvider.html) that
 /// provides in-memory configuration values.
@@ -27,7 +27,9 @@ impl MemoryConfigurationProvider {
 
 impl ConfigurationProvider for MemoryConfigurationProvider {
     fn get(&self, key: &str) -> Option<Cow<String>> {
-        self.data.get(&key.to_uppercase()).map(|t| Cow::Borrowed(&t.1))
+        self.data
+            .get(&key.to_uppercase())
+            .map(|t| Cow::Borrowed(&t.1))
     }
 
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
@@ -48,8 +50,13 @@ impl MemoryConfigurationSource {
     /// # Arguments
     ///
     /// * `initial_data` - The list of key/value pairs representing the initial data
-    pub fn new(initial_data: Vec<(String, String)>) -> Self {
-        Self { initial_data }
+    pub fn new<S: AsRef<str>>(initial_data: &[(S, S)]) -> Self {
+        Self {
+            initial_data: initial_data
+                .iter()
+                .map(|t| (t.0.as_ref().to_owned(), t.1.as_ref().to_owned()))
+                .collect(),
+        }
     }
 }
 
@@ -75,18 +82,18 @@ pub mod ext {
         /// # Arguments
         ///
         /// * `data` - The data to add to memory configuration provider
-        fn add_in_memory(&mut self, data: Vec<(String, String)>) -> &mut Self;
+        fn add_in_memory<S: AsRef<str>>(&mut self, data: &[(S, S)]) -> &mut Self;
     }
 
     impl MemoryConfigurationBuilderExtensions for dyn ConfigurationBuilder {
-        fn add_in_memory(&mut self, data: Vec<(String, String)>) -> &mut Self {
+        fn add_in_memory<S: AsRef<str>>(&mut self, data: &[(S, S)]) -> &mut Self {
             self.add(Box::new(MemoryConfigurationSource::new(data)));
             self
         }
     }
 
     impl<T: ConfigurationBuilder> MemoryConfigurationBuilderExtensions for T {
-        fn add_in_memory(&mut self, data: Vec<(String, String)>) -> &mut Self {
+        fn add_in_memory<S: AsRef<str>>(&mut self, data: &[(S, S)]) -> &mut Self {
             self.add(Box::new(MemoryConfigurationSource::new(data)));
             self
         }
