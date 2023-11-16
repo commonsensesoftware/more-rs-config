@@ -74,23 +74,18 @@ pub struct Parent {
 #[test]
 fn from_config_should_deserialize_simple_struct() {
     let root = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("Bar", "test"),
-                ("Baz", "true"),
-                ("Doom:0", "1"),
-                ("Doom:1", "2"),
-                ("Doom:2", "3"),
-                ("Boom", ""),
-                ("Size", "small"),
-                ("Provided", "test"),
-                ("NewType", "42"),
-                ("Child:Ignored", "42"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("Bar", "test"),
+            ("Baz", "true"),
+            ("Doom:0", "1"),
+            ("Doom:1", "2"),
+            ("Doom:2", "3"),
+            ("Boom", ""),
+            ("Size", "small"),
+            ("Provided", "test"),
+            ("NewType", "42"),
+            ("Child:Ignored", "42"),
+        ])
         .build()
         .unwrap();
 
@@ -121,26 +116,21 @@ fn from_config_should_deserialize_simple_struct() {
 #[test]
 fn from_config_should_deserialize_parent_child_struct() {
     let root = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("Name:First", "Jane"),
-                ("Name:Last", "Doe"),
-                ("Child:Name:First", "John"),
-                ("Child:Name:Last", "Doe"),
-                ("Child:MagicNumbers:0", "42"),
-                ("Child:MagicNumbers:1", "7"),
-                ("Child:MagicNumbers:2", "13"),
-                ("Child:Children:0:Name:First", "Bob"),
-                ("Child:Children:0:Name:Last", "Doe"),
-                ("Child:Children:0:Age", "7"),
-                ("Child:Children:1:Name:First", "Sally"),
-                ("Child:Children:1:Name:Last", "Doe"),
-                ("Child:Children:1:Age", "5"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("Name:First", "Jane"),
+            ("Name:Last", "Doe"),
+            ("Child:Name:First", "John"),
+            ("Child:Name:Last", "Doe"),
+            ("Child:MagicNumbers:0", "42"),
+            ("Child:MagicNumbers:1", "7"),
+            ("Child:MagicNumbers:2", "13"),
+            ("Child:Children:0:Name:First", "Bob"),
+            ("Child:Children:0:Name:Last", "Doe"),
+            ("Child:Children:0:Age", "7"),
+            ("Child:Children:1:Name:First", "Sally"),
+            ("Child:Children:1:Name:Last", "Doe"),
+            ("Child:Children:1:Age", "5"),
+        ])
         .build()
         .unwrap();
 
@@ -189,12 +179,7 @@ fn from_config_should_deserialize_parent_child_struct() {
 fn from_config_should_fail_with_missing_value() {
     // arrange
     let root = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [("Bar", "test"), ("Baz", "true")]
-                .iter()
-                .map(|t| (t.0.to_owned(), t.1.to_owned()))
-                .collect(),
-        )
+        .add_in_memory(&[("Bar", "test"), ("Baz", "true")])
         .build()
         .unwrap();
 
@@ -209,18 +194,13 @@ fn from_config_should_fail_with_missing_value() {
 fn from_config_should_fail_with_invalid_type() {
     // arrange
     let root = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("Bar", "test"),
-                ("Baz", "notabool"),
-                ("Doom:0", "1"),
-                ("Doom:1", "2"),
-                ("Doom:2", "3"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("Bar", "test"),
+            ("Baz", "notabool"),
+            ("Doom:0", "1"),
+            ("Doom:1", "2"),
+            ("Doom:2", "3"),
+        ])
         .build()
         .unwrap();
 

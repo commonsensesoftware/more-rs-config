@@ -5,24 +5,9 @@ use test_case::test_case;
 #[test]
 fn build_should_load_and_combine_different_configuration_sources() {
     // arrange
-    let source1 = MemoryConfigurationSource::new(
-        [("Mem1:KeyInMem1", "ValueInMem1")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
-    let source2 = MemoryConfigurationSource::new(
-        [("Mem2:KeyInMem2", "ValueInMem2")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
-    let source3 = MemoryConfigurationSource::new(
-        [("Mem3:KeyInMem3", "ValueInMem3")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
+    let source1 = MemoryConfigurationSource::new(&[("Mem1:KeyInMem1", "ValueInMem1")]);
+    let source2 = MemoryConfigurationSource::new(&[("Mem2:KeyInMem2", "ValueInMem2")]);
+    let source3 = MemoryConfigurationSource::new(&[("Mem3:KeyInMem3", "ValueInMem3")]);
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(source1));
@@ -41,24 +26,9 @@ fn build_should_load_and_combine_different_configuration_sources() {
 #[test]
 fn add_configuration_should_chain_configurations() {
     // arrange
-    let source1 = MemoryConfigurationSource::new(
-        [("Mem1:KeyInMem1", "ValueInMem1")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
-    let source2 = MemoryConfigurationSource::new(
-        [("Mem2:KeyInMem2", "ValueInMem2")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
-    let source3 = MemoryConfigurationSource::new(
-        [("Mem3:KeyInMem3", "ValueInMem3")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
+    let source1 = MemoryConfigurationSource::new(&[("Mem1:KeyInMem1", "ValueInMem1")]);
+    let source2 = MemoryConfigurationSource::new(&[("Mem2:KeyInMem2", "ValueInMem2")]);
+    let source3 = MemoryConfigurationSource::new(&[("Mem3:KeyInMem3", "ValueInMem3")]);
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(source1));
@@ -84,39 +54,24 @@ fn add_configuration_should_chain_configurations() {
 #[test_case(true ; "with relative path")]
 fn iter_should_flatten_into_hashmap(make_paths_relative: bool) {
     // arrange
-    let source1 = MemoryConfigurationSource::new(
-        [
-            ("Mem1", "Value1"),
-            ("Mem1:", "NoKeyValue1"),
-            ("Mem1:KeyInMem1", "ValueInMem1"),
-            ("Mem1:KeyInMem1:Deep1", "ValueDeep1"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
-    let source2 = MemoryConfigurationSource::new(
-        [
-            ("Mem2", "Value2"),
-            ("Mem2:", "NoKeyValue2"),
-            ("Mem2:KeyInMem2", "ValueInMem2"),
-            ("Mem2:KeyInMem2:Deep2", "ValueDeep2"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
-    let source3 = MemoryConfigurationSource::new(
-        [
-            ("Mem3", "Value3"),
-            ("Mem3:", "NoKeyValue3"),
-            ("Mem3:KeyInMem3", "ValueInMem3"),
-            ("Mem3:KeyInMem3:Deep3", "ValueDeep3"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
+    let source1 = MemoryConfigurationSource::new(&[
+        ("Mem1", "Value1"),
+        ("Mem1:", "NoKeyValue1"),
+        ("Mem1:KeyInMem1", "ValueInMem1"),
+        ("Mem1:KeyInMem1:Deep1", "ValueDeep1"),
+    ]);
+    let source2 = MemoryConfigurationSource::new(&[
+        ("Mem2", "Value2"),
+        ("Mem2:", "NoKeyValue2"),
+        ("Mem2:KeyInMem2", "ValueInMem2"),
+        ("Mem2:KeyInMem2:Deep2", "ValueDeep2"),
+    ]);
+    let source3 = MemoryConfigurationSource::new(&[
+        ("Mem3", "Value3"),
+        ("Mem3:", "NoKeyValue3"),
+        ("Mem3:KeyInMem3", "ValueInMem3"),
+        ("Mem3:KeyInMem3:Deep3", "ValueDeep3"),
+    ]);
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(source1));
@@ -146,39 +101,24 @@ fn iter_should_flatten_into_hashmap(make_paths_relative: bool) {
 #[test_case(true ; "with relative path")]
 fn chained_iter_should_flatten_into_hashmap(make_paths_relative: bool) {
     // arrange
-    let source1 = MemoryConfigurationSource::new(
-        [
-            ("Mem1", "Value1"),
-            ("Mem1:", "NoKeyValue1"),
-            ("Mem1:KeyInMem1", "ValueInMem1"),
-            ("Mem1:KeyInMem1:Deep1", "ValueDeep1"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
-    let source2 = MemoryConfigurationSource::new(
-        [
-            ("Mem2", "Value2"),
-            ("Mem2:", "NoKeyValue2"),
-            ("Mem2:KeyInMem2", "ValueInMem2"),
-            ("Mem2:KeyInMem2:Deep2", "ValueDeep2"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
-    let source3 = MemoryConfigurationSource::new(
-        [
-            ("Mem3", "Value3"),
-            ("Mem3:", "NoKeyValue3"),
-            ("Mem3:KeyInMem3", "ValueInMem3"),
-            ("Mem3:KeyInMem3:Deep3", "ValueDeep3"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
+    let source1 = MemoryConfigurationSource::new(&[
+        ("Mem1", "Value1"),
+        ("Mem1:", "NoKeyValue1"),
+        ("Mem1:KeyInMem1", "ValueInMem1"),
+        ("Mem1:KeyInMem1:Deep1", "ValueDeep1"),
+    ]);
+    let source2 = MemoryConfigurationSource::new(&[
+        ("Mem2", "Value2"),
+        ("Mem2:", "NoKeyValue2"),
+        ("Mem2:KeyInMem2", "ValueInMem2"),
+        ("Mem2:KeyInMem2:Deep2", "ValueDeep2"),
+    ]);
+    let source3 = MemoryConfigurationSource::new(&[
+        ("Mem3", "Value3"),
+        ("Mem3:", "NoKeyValue3"),
+        ("Mem3:KeyInMem3", "ValueInMem3"),
+        ("Mem3:KeyInMem3:Deep3", "ValueDeep3"),
+    ]);
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(source1));
@@ -213,41 +153,26 @@ fn chained_iter_should_flatten_into_hashmap(make_paths_relative: bool) {
 #[test]
 fn iter_should_strip_key_from_children() {
     // arrange
-    let source1 = MemoryConfigurationSource::new(
-        [
-            ("Mem1", "Value1"),
-            ("Mem1:", "NoKeyValue1"),
-            ("Mem1:KeyInMem1", "ValueInMem1"),
-            ("Mem1:KeyInMem1:Deep1", "ValueDeep1"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
-    let source2 = MemoryConfigurationSource::new(
-        [
-            ("Mem2", "Value2"),
-            ("Mem2:", "NoKeyValue2"),
-            ("Mem2:KeyInMem2", "ValueInMem2"),
-            ("Mem2:KeyInMem2:Deep2", "ValueDeep2"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
-    let source3 = MemoryConfigurationSource::new(
-        [
-            ("Mem3", "Value3"),
-            ("Mem3:", "NoKeyValue3"),
-            ("Mem3:KeyInMem3", "ValueInMem3"),
-            ("Mem3:KeyInMem4", "ValueInMem4"),
-            ("Mem3:KeyInMem3:Deep3", "ValueDeep3"),
-            ("Mem3:KeyInMem3:Deep4", "ValueDeep4"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
+    let source1 = MemoryConfigurationSource::new(&[
+        ("Mem1", "Value1"),
+        ("Mem1:", "NoKeyValue1"),
+        ("Mem1:KeyInMem1", "ValueInMem1"),
+        ("Mem1:KeyInMem1:Deep1", "ValueDeep1"),
+    ]);
+    let source2 = MemoryConfigurationSource::new(&[
+        ("Mem2", "Value2"),
+        ("Mem2:", "NoKeyValue2"),
+        ("Mem2:KeyInMem2", "ValueInMem2"),
+        ("Mem2:KeyInMem2:Deep2", "ValueDeep2"),
+    ]);
+    let source3 = MemoryConfigurationSource::new(&[
+        ("Mem3", "Value3"),
+        ("Mem3:", "NoKeyValue3"),
+        ("Mem3:KeyInMem3", "ValueInMem3"),
+        ("Mem3:KeyInMem4", "ValueInMem4"),
+        ("Mem3:KeyInMem3:Deep3", "ValueDeep3"),
+        ("Mem3:KeyInMem3:Deep4", "ValueDeep4"),
+    ]);
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(source1));
@@ -281,18 +206,8 @@ fn iter_should_strip_key_from_children() {
 #[test]
 fn new_configuration_provider_should_override_old_one_when_key_is_duplicated() {
     // arrange
-    let source1 = MemoryConfigurationSource::new(
-        [("Key1:Key2", "ValueInMem1")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
-    let source2 = MemoryConfigurationSource::new(
-        [("Key1:Key2", "ValueInMem2")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
+    let source1 = MemoryConfigurationSource::new(&[("Key1:Key2", "ValueInMem1")]);
+    let source2 = MemoryConfigurationSource::new(&[("Key1:Key2", "ValueInMem2")]);
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(source1));
@@ -309,24 +224,14 @@ fn new_configuration_provider_should_override_old_one_when_key_is_duplicated() {
 fn new_configuration_root_should_be_built_from_existing_with_duplicate_keys() {
     // arrange
     let root1 = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [("keya:keyb", "valueA")]
-                .iter()
-                .map(|t| (t.0.to_owned(), t.1.to_owned()))
-                .collect(),
-        )
-        .add_in_memory(
-            [("KEYA:KEYB", "valueB")]
-                .iter()
-                .map(|t| (t.0.to_owned(), t.1.to_owned()))
-                .collect(),
-        )
+        .add_in_memory(&[("keya:keyb", "valueA")])
+        .add_in_memory(&[("KEYA:KEYB", "valueB")])
         .build()
         .unwrap();
 
     // act
     let root2 = DefaultConfigurationBuilder::new()
-        .add_in_memory(root1.iter().collect())
+        .add_in_memory(&root1.iter().collect::<Vec<_>>())
         .build()
         .unwrap();
 
@@ -337,27 +242,12 @@ fn new_configuration_root_should_be_built_from_existing_with_duplicate_keys() {
 #[test]
 fn section_should_return_parts_from_root_configuration() {
     // arrange
-    let source1 = MemoryConfigurationSource::new(
-        [
-            ("Data:DB1:Connection1", "MemVal1"),
-            ("Data:DB1:Connection2", "MemVal2"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
-    let source2 = MemoryConfigurationSource::new(
-        [("DataSource:DB2:Connection", "MemVal3")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
-    let source3 = MemoryConfigurationSource::new(
-        [("Data", "MemVal4")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
+    let source1 = MemoryConfigurationSource::new(&[
+        ("Data:DB1:Connection1", "MemVal1"),
+        ("Data:DB1:Connection2", "MemVal2"),
+    ]);
+    let source2 = MemoryConfigurationSource::new(&[("DataSource:DB2:Connection", "MemVal3")]);
+    let source3 = MemoryConfigurationSource::new(&[("Data", "MemVal4")]);
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(source1));
@@ -380,27 +270,12 @@ fn section_should_return_parts_from_root_configuration() {
 #[test]
 fn section_should_return_children() {
     // arrange
-    let source1 = MemoryConfigurationSource::new(
-        [
-            ("Data:DB1:Connection1", "MemVal1"),
-            ("Data:DB1:Connection2", "MemVal2"),
-        ]
-        .iter()
-        .map(|t| (t.0.to_owned(), t.1.to_owned()))
-        .collect(),
-    );
-    let source2 = MemoryConfigurationSource::new(
-        [("Data:DB2Connection", "MemVal3")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
-    let source3 = MemoryConfigurationSource::new(
-        [("DataSource:DB3:Connection", "MemVal4")]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-    );
+    let source1 = MemoryConfigurationSource::new(&[
+        ("Data:DB1:Connection1", "MemVal1"),
+        ("Data:DB1:Connection2", "MemVal2"),
+    ]);
+    let source2 = MemoryConfigurationSource::new(&[("Data:DB2Connection", "MemVal3")]);
+    let source3 = MemoryConfigurationSource::new(&[("DataSource:DB3:Connection", "MemVal4")]);
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(source1));
@@ -448,12 +323,7 @@ fn section_should_return_children() {
 fn section_without_children(value: &str, expected: bool) {
     // arrange
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [("Mem1", value)]
-                .iter()
-                .map(|t| (t.0.to_owned(), t.1.to_owned()))
-                .collect(),
-        )
+        .add_in_memory(&[("Mem1", value)])
         .build()
         .unwrap();
 
@@ -470,16 +340,11 @@ fn section_with_children_should_exist() {
 
     // act
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [
-                ("Mem1:KeyInMem1", "ValueInMem1"),
-                ("Mem1:KeyInMem1:Deep1", "ValueDeep1"),
-                ("Mem2:KeyInMem2:Deep1", "ValueDeep2"),
-            ]
-            .iter()
-            .map(|t| (t.0.to_owned(), t.1.to_owned()))
-            .collect(),
-        )
+        .add_in_memory(&[
+            ("Mem1:KeyInMem1", "ValueInMem1"),
+            ("Mem1:KeyInMem1:Deep1", "ValueDeep1"),
+            ("Mem2:KeyInMem2:Deep1", "ValueDeep2"),
+        ])
         .build()
         .unwrap();
 
@@ -492,12 +357,7 @@ fn section_with_children_should_exist() {
 #[test]
 fn key_starting_with_colon_means_first_section_has_empty_name() {
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [(":Key2", "value")]
-                .iter()
-                .map(|t| (t.0.to_owned(), t.1.to_owned()))
-                .collect(),
-        )
+        .add_in_memory(&[(":Key2", "value")])
         .build()
         .unwrap();
 
@@ -514,12 +374,7 @@ fn key_starting_with_colon_means_first_section_has_empty_name() {
 #[test]
 fn key_ending_with_colon_means_last_section_has_empty_name() {
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [("Key1:", "value")]
-                .iter()
-                .map(|t| (t.0.to_owned(), t.1.to_owned()))
-                .collect(),
-        )
+        .add_in_memory(&[("Key1:", "value")])
         .build()
         .unwrap();
 
@@ -536,12 +391,7 @@ fn key_ending_with_colon_means_last_section_has_empty_name() {
 #[test]
 fn key_ending_with_double_colon_has_section_with_empty_name() {
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(
-            [("Key1::Key3", "value")]
-                .iter()
-                .map(|t| (t.0.to_owned(), t.1.to_owned()))
-                .collect(),
-        )
+        .add_in_memory(&[("Key1::Key3", "value")])
         .build()
         .unwrap();
 
