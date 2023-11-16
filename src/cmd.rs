@@ -28,11 +28,7 @@ impl CommandLineConfigurationProvider {
         Self {
             data: Default::default(),
             args,
-            switch_mappings: switch_mappings
-                .iter()
-                .filter(|m| m.0.starts_with("--") || m.0.starts_with('-'))
-                .map(|(k, v)| (k.to_uppercase(), v.clone()))
-                .collect(),
+            switch_mappings,
         }
     }
 }
@@ -136,11 +132,36 @@ impl CommandLineConfigurationSource {
     ///
     /// * `args` - The command line arguments
     /// * `switch_mappings` - The mapping of switches to configuration values
-    pub fn new(args: Vec<String>, switch_mappings: HashMap<String, String>) -> Self {
+    ///
+    /// # Remarks
+    ///
+    /// Only switch mapping keys that start with `--` or `-` are acceptable. Command
+    /// line arguments may start with `--`, `-`, or `/`
+    pub fn new<I, S1, S2>(args: I, switch_mappings: &[(S2, S2)]) -> Self
+    where
+        I: Iterator<Item = S1>,
+        S1: AsRef<str>,
+        S2: AsRef<str>,
+    {
         Self {
-            args,
-            switch_mappings,
+            args: args.map(|a| a.as_ref().to_owned()).collect(),
+            switch_mappings: switch_mappings
+                .iter()
+                .filter(|m| m.0.as_ref().starts_with("--") || m.0.as_ref().starts_with('-'))
+                .map(|(k, v)| (k.as_ref().to_uppercase(), v.as_ref().to_owned()))
+                .collect(),
         }
+    }
+}
+
+impl<I, S> From<I> for CommandLineConfigurationSource
+where
+    I: Iterator<Item = S>,
+    S: AsRef<str>,
+{
+    fn from(value: I) -> Self {
+        let switch_mappings = Vec::<(&str, &str)>::with_capacity(0);
+        Self::new(value, &switch_mappings)
     }
 }
 
@@ -159,42 +180,35 @@ pub mod ext {
 
     /// Defines extension methods for the [ConfigurationBuilder](trait.ConfigurationBuilder.html) trait.
     pub trait CommandLineConfigurationBuilderExtensions {
-        /// Adds the command line configuration source using the specified data.
-        ///
-        /// # Arguments
-        ///
-        /// * `args` - The command line arguments
-        fn add_command_line(&mut self, args: Vec<String>) -> &mut Self;
+        /// Adds the command line configuration source.
+        fn add_command_line(&mut self) -> &mut Self;
 
-        /// Adds the command line configuration source using the specified data.
+        /// Adds the command line configuration source.
         ///
         /// # Arguments
         ///
-        /// * `args` - The command line arguments
         /// * `switch_mappings` - The mapping of switches to configuration values
-        fn add_command_line_map(
-            &mut self,
-            args: Vec<String>,
-            switch_mappings: HashMap<String, String>,
-        ) -> &mut Self;
+        fn add_command_line_map<I, S>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self
+        where
+            I: Iterator<Item = S>,
+            S: AsRef<str>;
     }
 
     impl CommandLineConfigurationBuilderExtensions for dyn ConfigurationBuilder {
-        fn add_command_line(&mut self, args: Vec<String>) -> &mut Self {
-            self.add(Box::new(CommandLineConfigurationSource::new(
-                args,
-                Default::default(),
+        fn add_command_line(&mut self) -> &mut Self {
+            self.add(Box::new(CommandLineConfigurationSource::from(
+                std::env::args(),
             )));
             self
         }
 
-        fn add_command_line_map(
-            &mut self,
-            args: Vec<String>,
-            switch_mappings: HashMap<String, String>,
-        ) -> &mut Self {
+        fn add_command_line_map<I, S>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self
+        where
+            I: Iterator<Item = S>,
+            S: AsRef<str>,
+        {
             self.add(Box::new(CommandLineConfigurationSource::new(
-                args,
+                std::env::args(),
                 switch_mappings,
             )));
             self
@@ -202,21 +216,20 @@ pub mod ext {
     }
 
     impl<T: ConfigurationBuilder> CommandLineConfigurationBuilderExtensions for T {
-        fn add_command_line(&mut self, args: Vec<String>) -> &mut Self {
-            self.add(Box::new(CommandLineConfigurationSource::new(
-                args,
-                Default::default(),
+        fn add_command_line(&mut self) -> &mut Self {
+            self.add(Box::new(CommandLineConfigurationSource::from(
+                std::env::args(),
             )));
             self
         }
 
-        fn add_command_line_map(
-            &mut self,
-            args: Vec<String>,
-            switch_mappings: HashMap<String, String>,
-        ) -> &mut Self {
+        fn add_command_line_map<I, S>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self
+        where
+            I: Iterator<Item = S>,
+            S: AsRef<str>,
+        {
             self.add(Box::new(CommandLineConfigurationSource::new(
-                args,
+                std::env::args(),
                 switch_mappings,
             )));
             self
@@ -229,14 +242,32 @@ mod tests {
 
     use super::*;
 
+    struct TestConfigurationBuilder;
+
+    impl ConfigurationBuilder for TestConfigurationBuilder {
+        fn properties(&self) -> &HashMap<String, Box<dyn std::any::Any>> {
+            unimplemented!()
+        }
+
+        fn sources(&self) -> &[Box<dyn ConfigurationSource>] {
+            unimplemented!()
+        }
+
+        fn add(&mut self, _source: Box<dyn ConfigurationSource>) {
+            unimplemented!()
+        }
+
+        fn build(&self) -> Result<Box<dyn crate::ConfigurationRoot>, crate::ReloadError> {
+            unimplemented!()
+        }
+    }
+
     #[test]
     fn load_should_ignore_unknown_arguments() {
         // arrange
-        let args: Vec<_> = vec!["foo", "/bar=baz"]
-            .into_iter()
-            .map(String::from)
-            .collect();
-        let mut provider = CommandLineConfigurationProvider::new(args, Default::default());
+        let args = ["foo", "/bar=baz"].iter();
+        let source = CommandLineConfigurationSource::from(args);
+        let mut provider = source.build(&TestConfigurationBuilder);
         let mut child_keys = Vec::with_capacity(2);
 
         // act
@@ -251,7 +282,7 @@ mod tests {
     #[test]
     fn load_should_ignore_arguments_in_the_middle() {
         // arrange
-        let args: Vec<_> = vec![
+        let args = [
             "Key1=Value1",
             "--Key2=Value2",
             "/Key3=Value3",
@@ -263,10 +294,9 @@ mod tests {
             "Value5",
             "Bogus3",
         ]
-        .into_iter()
-        .map(String::from)
-        .collect();
-        let mut provider = CommandLineConfigurationProvider::new(args, Default::default());
+        .iter();
+        let source = CommandLineConfigurationSource::from(args);
+        let mut provider = source.build(&TestConfigurationBuilder);
         let mut child_keys = Vec::with_capacity(5);
 
         // act
@@ -284,7 +314,7 @@ mod tests {
     #[test]
     fn load_should_process_key_value_pairs_without_mappings() {
         // arrange
-        let args: Vec<_> = vec![
+        let args = [
             "Key1=Value1",
             "--Key2=Value2",
             "/Key3=Value3",
@@ -295,10 +325,9 @@ mod tests {
             "--single=1",
             "--two-part=2",
         ]
-        .into_iter()
-        .map(String::from)
-        .collect();
-        let mut provider = CommandLineConfigurationProvider::new(args, Default::default());
+        .iter();
+        let source = CommandLineConfigurationSource::from(args);
+        let mut provider = source.build(&TestConfigurationBuilder);
 
         // act
         provider.load().unwrap();
@@ -316,7 +345,7 @@ mod tests {
     #[test]
     fn load_should_process_key_value_pairs_with_mappings() {
         // arrange
-        let args: Vec<_> = vec![
+        let args = [
             "-K1=Value1",
             "--Key2=Value2",
             "/Key3=Value3",
@@ -326,18 +355,14 @@ mod tests {
             "Value5",
             "/Key6=Value6",
         ]
-        .into_iter()
-        .map(String::from)
-        .collect();
-        let switch_mappings: HashMap<_, _> = vec![
+        .iter();
+        let switch_mappings = [
             ("-K1", "LongKey1"),
             ("--Key2", "SuperLongKey2"),
             ("--Key6", "SuchALongKey6"),
-        ]
-        .into_iter()
-        .map(|(k, v)| (k.to_owned(), v.to_owned()))
-        .collect();
-        let mut provider = CommandLineConfigurationProvider::new(args, switch_mappings);
+        ];
+        let source = CommandLineConfigurationSource::new(args, &switch_mappings);
+        let mut provider = source.build(&TestConfigurationBuilder);
 
         // act
         provider.load().unwrap();
@@ -354,11 +379,9 @@ mod tests {
     #[test]
     fn load_should_override_value_when_key_is_duplicated() {
         // arrange
-        let args: Vec<_> = vec!["/Key1=Value1", "--Key1=Value2"]
-            .into_iter()
-            .map(String::from)
-            .collect();
-        let mut provider = CommandLineConfigurationProvider::new(args, Default::default());
+        let args = ["/Key1=Value1", "--Key1=Value2"].iter();
+        let source = CommandLineConfigurationSource::from(args);
+        let mut provider = source.build(&TestConfigurationBuilder);
 
         // act
         provider.load().unwrap();
@@ -370,11 +393,9 @@ mod tests {
     #[test]
     fn load_should_ignore_key_when_value_is_missing() {
         // arrange
-        let args: Vec<_> = vec!["--Key1", "Value1", "/Key2"]
-            .into_iter()
-            .map(String::from)
-            .collect();
-        let mut provider = CommandLineConfigurationProvider::new(args, Default::default());
+        let args = ["--Key1", "Value1", "/Key2"].iter();
+        let source = CommandLineConfigurationSource::from(args);
+        let mut provider = source.build(&TestConfigurationBuilder);
         let mut child_keys = Vec::with_capacity(2);
 
         // act
@@ -389,11 +410,9 @@ mod tests {
     #[test]
     fn load_should_ignore_unrecognizable_argument() {
         // arrange
-        let args: Vec<_> = vec!["ArgWithoutPrefixAndEqualSign"]
-            .into_iter()
-            .map(String::from)
-            .collect();
-        let mut provider = CommandLineConfigurationProvider::new(args, Default::default());
+        let args = ["ArgWithoutPrefixAndEqualSign"].iter();
+        let source = CommandLineConfigurationSource::from(args);
+        let mut provider = source.build(&TestConfigurationBuilder);
         let mut child_keys = Vec::with_capacity(1);
 
         // act
@@ -407,15 +426,10 @@ mod tests {
     #[test]
     fn load_should_ignore_argument_when_short_switch_is_undefined() {
         // arrange
-        let args: Vec<_> = vec!["-Key1", "Value1"]
-            .into_iter()
-            .map(String::from)
-            .collect();
-        let switch_mappings: HashMap<_, _> = vec![("-Key2", "LongKey2")]
-            .into_iter()
-            .map(|(k, v)| (k.to_owned(), v.to_owned()))
-            .collect();
-        let mut provider = CommandLineConfigurationProvider::new(args, switch_mappings);
+        let args = ["-Key1", "Value1"].iter();
+        let switch_mappings = [("-Key2", "LongKey2")];
+        let source = CommandLineConfigurationSource::new(args, &switch_mappings);
+        let mut provider = source.build(&TestConfigurationBuilder);
         let mut child_keys = Vec::with_capacity(1);
 
         // act
