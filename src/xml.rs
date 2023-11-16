@@ -35,7 +35,6 @@ impl LocalNameResolver for OwnedName {
 }
 
 trait VecExtensions<TKey: PartialEq, TValue> {
-    // fn get_or_add(vec: &mut Vec<(String, Vec<Rc<RefCell<Element>>>)>, key: String) -> &mut Vec<Rc<RefCell<Element>>>;
     fn get_or_add(&mut self, key: TKey) -> &mut TValue;
 }
 
