@@ -4,6 +4,7 @@ use std::cmp::{min, Ordering};
 use std::collections::HashMap;
 use std::fmt::{Formatter, Result as FormatResult, Write};
 
+#[cfg(feature = "json")]
 pub(crate) fn to_pascal_case<T: AsRef<str>>(text: T) -> String {
     let mut chars = text.as_ref().chars();
 
@@ -14,7 +15,7 @@ pub(crate) fn to_pascal_case<T: AsRef<str>>(text: T) -> String {
     }
 }
 
-#[allow(dead_code)]
+#[cfg(feature = "cmd")]
 pub(crate) fn to_pascal_case_parts<T: AsRef<str>>(text: T, sep: char) -> String {
     let parts = text.as_ref().split(sep);
     let mut pascal_case = String::with_capacity(text.as_ref().len());
