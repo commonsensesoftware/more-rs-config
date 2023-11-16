@@ -38,8 +38,10 @@ impl CommandLineConfigurationProvider {
 }
 
 impl ConfigurationProvider for CommandLineConfigurationProvider {
-    fn get(&self, key: &str) -> Option<String> {
-        self.data.get(&key.to_uppercase()).map(|t| t.1.as_str())
+    fn get(&self, key: &str) -> Option<Cow<String>> {
+        self.data
+            .get(&key.to_uppercase())
+            .map(|t| Cow::Borrowed(&t.1))
     }
 
     fn load(&mut self) -> LoadResult {
@@ -238,12 +240,12 @@ mod tests {
         let mut child_keys = Vec::with_capacity(2);
 
         // act
-        provider.load();
+        provider.load().unwrap();
         provider.child_keys(&mut child_keys, None);
 
         // assert
         assert_eq!(child_keys.len(), 1);
-        assert_eq!(provider.get("bar").unwrap(), "baz");
+        assert_eq!(*provider.get("bar").unwrap(), "baz");
     }
 
     #[test]
@@ -268,16 +270,15 @@ mod tests {
         let mut child_keys = Vec::with_capacity(5);
 
         // act
-        provider.load();
+        provider.load().unwrap();
         provider.child_keys(&mut child_keys, None);
 
         // assert
-        // assert_eq!(child_keys.len(), 5);
-        assert_eq!(provider.get("Key1").unwrap(), "Value1");
-        assert_eq!(provider.get("Key2").unwrap(), "Value2");
-        assert_eq!(provider.get("Key3").unwrap(), "Value3");
-        assert_eq!(provider.get("Key4").unwrap(), "Value4");
-        assert_eq!(provider.get("Key5").unwrap(), "Value5");
+        assert_eq!(*provider.get("Key1").unwrap(), "Value1");
+        assert_eq!(*provider.get("Key2").unwrap(), "Value2");
+        assert_eq!(*provider.get("Key3").unwrap(), "Value3");
+        assert_eq!(*provider.get("Key4").unwrap(), "Value4");
+        assert_eq!(*provider.get("Key5").unwrap(), "Value5");
     }
 
     #[test]
@@ -300,16 +301,16 @@ mod tests {
         let mut provider = CommandLineConfigurationProvider::new(args, Default::default());
 
         // act
-        provider.load();
+        provider.load().unwrap();
 
         // assert
-        assert_eq!(provider.get("Key1").unwrap(), "Value1");
-        assert_eq!(provider.get("Key2").unwrap(), "Value2");
-        assert_eq!(provider.get("Key3").unwrap(), "Value3");
-        assert_eq!(provider.get("Key4").unwrap(), "Value4");
-        assert_eq!(provider.get("Key5").unwrap(), "Value5");
-        assert_eq!(provider.get("Single").unwrap(), "1");
-        assert_eq!(provider.get("TwoPart").unwrap(), "2");
+        assert_eq!(*provider.get("Key1").unwrap(), "Value1");
+        assert_eq!(*provider.get("Key2").unwrap(), "Value2");
+        assert_eq!(*provider.get("Key3").unwrap(), "Value3");
+        assert_eq!(*provider.get("Key4").unwrap(), "Value4");
+        assert_eq!(*provider.get("Key5").unwrap(), "Value5");
+        assert_eq!(*provider.get("Single").unwrap(), "1");
+        assert_eq!(*provider.get("TwoPart").unwrap(), "2");
     }
 
     #[test]
@@ -339,15 +340,15 @@ mod tests {
         let mut provider = CommandLineConfigurationProvider::new(args, switch_mappings);
 
         // act
-        provider.load();
+        provider.load().unwrap();
 
         // assert
-        assert_eq!(provider.get("LongKey1").unwrap(), "Value1");
-        assert_eq!(provider.get("SuperLongKey2").unwrap(), "Value2");
-        assert_eq!(provider.get("Key3").unwrap(), "Value3");
-        assert_eq!(provider.get("Key4").unwrap(), "Value4");
-        assert_eq!(provider.get("Key5").unwrap(), "Value5");
-        assert_eq!(provider.get("SuchALongKey6").unwrap(), "Value6");
+        assert_eq!(*provider.get("LongKey1").unwrap(), "Value1");
+        assert_eq!(*provider.get("SuperLongKey2").unwrap(), "Value2");
+        assert_eq!(*provider.get("Key3").unwrap(), "Value3");
+        assert_eq!(*provider.get("Key4").unwrap(), "Value4");
+        assert_eq!(*provider.get("Key5").unwrap(), "Value5");
+        assert_eq!(*provider.get("SuchALongKey6").unwrap(), "Value6");
     }
 
     #[test]
@@ -360,10 +361,10 @@ mod tests {
         let mut provider = CommandLineConfigurationProvider::new(args, Default::default());
 
         // act
-        provider.load();
+        provider.load().unwrap();
 
         // assert
-        assert_eq!(provider.get("Key1").unwrap(), "Value2");
+        assert_eq!(*provider.get("Key1").unwrap(), "Value2");
     }
 
     #[test]
@@ -377,12 +378,12 @@ mod tests {
         let mut child_keys = Vec::with_capacity(2);
 
         // act
-        provider.load();
+        provider.load().unwrap();
         provider.child_keys(&mut child_keys, None);
 
         // assert
         assert_eq!(child_keys.len(), 1);
-        assert_eq!(provider.get("Key1").unwrap(), "Value1");
+        assert_eq!(*provider.get("Key1").unwrap(), "Value1");
     }
 
     #[test]
@@ -396,7 +397,7 @@ mod tests {
         let mut child_keys = Vec::with_capacity(1);
 
         // act
-        provider.load();
+        provider.load().unwrap();
         provider.child_keys(&mut child_keys, None);
 
         // assert
@@ -418,7 +419,7 @@ mod tests {
         let mut child_keys = Vec::with_capacity(1);
 
         // act
-        provider.load();
+        provider.load().unwrap();
         provider.child_keys(&mut child_keys, Some(""));
 
         // assert
