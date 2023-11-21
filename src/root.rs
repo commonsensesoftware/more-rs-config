@@ -9,8 +9,9 @@ pub enum ReloadError {
     Provider(Vec<(String, LoadError)>),
 
     /// Indicates reload cannot be performed because there
-    /// are N outstanding borrow references.
-    Borrowed(usize),
+    /// are borrowed references. The number of references
+    /// may be reported if known.
+    Borrowed(Option<usize>),
 }
 
 impl Debug for ReloadError {
@@ -28,7 +29,13 @@ impl Debug for ReloadError {
                 }
             }
             Self::Borrowed(count) => {
-                write!(f, "Reload failed because the are {} outstanding borrow references.", count)?;
+                write!(f, "Reload failed because the are")?;
+
+                if let Some(value) = count {
+                    write!(f, "{} ", value)?;
+                }
+
+                write!(f, " outstanding borrow references.")?;
             }
         }
 
