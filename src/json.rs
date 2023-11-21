@@ -1,5 +1,3 @@
-#![allow(dyn_drop)]
-
 use crate::{
     util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
     FileSource, LoadError, LoadResult,
@@ -9,7 +7,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::{Arc, RwLock};
-use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken};
+use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken, Subscription};
 
 #[derive(Default)]
 struct JsonVisitor {
@@ -169,7 +167,7 @@ impl InnerProvider {
 /// Represents a [configuration provider](trait.ConfigurationProvider.html) for JSON files.
 pub struct JsonConfigurationProvider {
     inner: Arc<InnerProvider>,
-    _registration: Option<Box<dyn Drop>>,
+    _subscription: Option<Box<dyn Subscription>>,
 }
 
 impl JsonConfigurationProvider {
@@ -181,9 +179,7 @@ impl JsonConfigurationProvider {
     pub fn new(file: FileSource) -> Self {
         let path = file.path.clone();
         let inner = Arc::new(InnerProvider::new(file));
-        let registration: Option<Box<dyn Drop>> = if inner.file.reload_on_change {
-            let other = inner.clone();
-
+        let subscription: Option<Box<dyn Subscription>> = if inner.file.reload_on_change {
             Some(Box::new(tokens::on_change(
                 move || FileChangeToken::new(path.clone()),
                 |state| {
@@ -199,7 +195,7 @@ impl JsonConfigurationProvider {
 
         Self {
             inner,
-            _registration: registration,
+            _subscription: subscription,
         }
     }
 }
