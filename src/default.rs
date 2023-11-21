@@ -83,7 +83,7 @@ impl DefaultConfigurationRoot {
 
 impl ConfigurationRoot for DefaultConfigurationRoot {
     fn reload(&mut self) -> ReloadResult {
-        let borrowed = Rc::strong_count(&self.providers);
+        let borrowed = (Rc::strong_count(&self.providers) - 1) + Rc::weak_count(&self.providers);
 
         if let Some(providers) = Rc::get_mut(&mut self.providers) {
             let mut errors = Vec::new();
@@ -110,7 +110,7 @@ impl ConfigurationRoot for DefaultConfigurationRoot {
                 Err(ReloadError::Provider(errors))
             }
         } else {
-            Err(ReloadError::Borrowed(borrowed))
+            Err(ReloadError::Borrowed(Some(borrowed)))
         }
     }
 
