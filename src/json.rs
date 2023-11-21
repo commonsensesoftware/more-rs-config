@@ -186,10 +186,12 @@ impl JsonConfigurationProvider {
 
             Some(Box::new(tokens::on_change(
                 move || FileChangeToken::new(path.clone()),
-                move || {
-                    std::thread::sleep(other.file.reload_delay);
-                    other.load(true).ok();
+                |state| {
+                    let provider = state.unwrap();
+                    std::thread::sleep(provider.file.reload_delay);
+                    provider.load(true).ok();
                 },
+                Some(inner.clone())
             )))
         } else {
             None

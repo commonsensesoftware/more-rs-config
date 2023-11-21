@@ -101,15 +101,21 @@ fn reload_should_load_providers() {
 fn reload_token_should_indicate_change_after_reload() {
     // arrange
     let data = Arc::<AtomicU8>::default();
-    let other = data.clone();
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(ReloadableConfigSource::default()));
 
     let mut root = builder.build().unwrap();
-    let _unused = root
-        .reload_token()
-        .register(Box::new(move || other.store(1, Ordering::SeqCst)));
+    let _unused = root.reload_token().register(
+        Box::new(|state| {
+            state
+                .unwrap()
+                .downcast_ref::<AtomicU8>()
+                .unwrap()
+                .store(1, Ordering::SeqCst)
+        }),
+        Some(data.clone()),
+    );
 
     // act
     root.reload().ok();
@@ -123,15 +129,21 @@ fn reload_token_should_indicate_change_after_provider_change() {
     // arrange
     let trigger = Rc::new(Trigger::default());
     let data = Arc::<AtomicU8>::default();
-    let other = data.clone();
     let mut builder = DefaultConfigurationBuilder::new();
 
     builder.add(Box::new(ReloadableConfigSource::new(trigger.clone())));
 
     let root = builder.build().unwrap();
-    let _unused = root
-        .reload_token()
-        .register(Box::new(move || other.store(1, Ordering::SeqCst)));
+    let _unused = root.reload_token().register(
+        Box::new(|state| {
+            state
+                .unwrap()
+                .downcast_ref::<AtomicU8>()
+                .unwrap()
+                .store(1, Ordering::SeqCst)
+        }),
+        Some(data.clone()),
+    );
 
     // act
     trigger.fire();

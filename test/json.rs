@@ -319,12 +319,15 @@ fn json_file_should_reload_when_changed() {
 
     let token = config.reload_token();
     let state = Arc::new((Mutex::new(false), Condvar::new()));
-    let other_state = Arc::clone(&state);
-    let _unused = token.register(Box::new(move || {
-        let (reloaded, event) = &*other_state;
-        *reloaded.lock().unwrap() = true;
-        event.notify_one();
-    }));
+    let _unused = token.register(
+        Box::new(|s| {
+            let data = s.unwrap();
+            let (reloaded, event) = &*(data.downcast_ref::<(Mutex<bool>, Condvar)>().unwrap());
+            *reloaded.lock().unwrap() = true;
+            event.notify_one();
+        }),
+        Some(state.clone()),
+    );
 
     json = json!(
     {
