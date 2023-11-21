@@ -1,5 +1,3 @@
-#![allow(dyn_drop)]
-
 use crate::{
     util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
     FileSource, LoadError, LoadResult,
@@ -12,7 +10,7 @@ use std::io::BufReader;
 use std::ops::Deref;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
-use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken};
+use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken, Subscription};
 use xml_rs::attribute::OwnedAttribute;
 use xml_rs::name::OwnedName;
 use xml_rs::reader::{EventReader, XmlEvent};
@@ -411,7 +409,7 @@ impl InnerProvider {
 /// Represents a [configuration provider](trait.ConfigurationProvider.html) for XML files.
 pub struct XmlConfigurationProvider {
     inner: Arc<InnerProvider>,
-    _registration: Option<Box<dyn Drop>>,
+    _subscription: Option<Box<dyn Subscription>>,
 }
 
 impl XmlConfigurationProvider {
@@ -423,9 +421,7 @@ impl XmlConfigurationProvider {
     pub fn new(file: FileSource) -> Self {
         let path = file.path.clone();
         let inner = Arc::new(InnerProvider::new(file));
-        let registration: Option<Box<dyn Drop>> = if inner.file.reload_on_change {
-            let other = inner.clone();
-
+        let subscription: Option<Box<dyn Subscription>> = if inner.file.reload_on_change {
             Some(Box::new(tokens::on_change(
                 move || FileChangeToken::new(path.clone()),
                 |state| {
@@ -441,7 +437,7 @@ impl XmlConfigurationProvider {
 
         Self {
             inner,
-            _registration: registration,
+            _subscription: subscription,
         }
     }
 }
