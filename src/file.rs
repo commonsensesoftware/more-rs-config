@@ -103,9 +103,9 @@ pub struct FileSourceBuilder {
 
 impl FileSourceBuilder {
     /// Initializes a new file source builder.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `path` - The path to build a file source for
     pub fn new(path: PathBuf) -> Self {
         Self {
@@ -157,14 +157,19 @@ impl From<&FileSourceBuilder> for FileSource {
     }
 }
 
-/// Provides extension methods to create a
-/// [file source builder](struct.FileSourceBuilder.html).
-pub trait FileSourceBuilderExtensions {
-    fn is(&self) -> FileSourceBuilder;
-}
+pub mod ext {
 
-impl<T: AsRef<Path>> FileSourceBuilderExtensions for T {
-    fn is(&self) -> FileSourceBuilder {
-        FileSourceBuilder::new(self.as_ref().to_path_buf())
+    use super::*;
+
+    /// Provides extension methods to create a
+    /// [file source builder](struct.FileSourceBuilder.html).
+    pub trait FileSourceBuilderExtensions {
+        fn is(&self) -> FileSourceBuilder;
+    }
+
+    impl<T: AsRef<Path>> FileSourceBuilderExtensions for T {
+        fn is(&self) -> FileSourceBuilder {
+            FileSourceBuilder::new(self.as_ref().to_path_buf())
+        }
     }
 }

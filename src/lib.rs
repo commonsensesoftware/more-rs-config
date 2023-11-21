@@ -112,4 +112,5 @@ pub mod ext {
     pub use de::*;
 
     pub use section::ext::*;
+    pub use file::ext::*;
 }
