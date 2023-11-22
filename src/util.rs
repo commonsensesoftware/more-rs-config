@@ -1,5 +1,4 @@
 use crate::*;
-use std::borrow::Cow;
 use std::cmp::{min, Ordering};
 use std::collections::HashMap;
 use std::fmt::{Formatter, Result as FormatResult, Write};
@@ -150,7 +149,7 @@ fn recurse_children<'a, T: ConfigurationRoot>(
 
         if let Some((value, provider)) = get_value_and_provider(root, child.path()) {
             formatter.write_char('=')?;
-            formatter.write_str(value.as_str())?;
+            formatter.write_str(&value)?;
             formatter.write_str(" (")?;
             formatter.write_str(provider)?;
             formatter.write_char(')')?;
@@ -174,7 +173,7 @@ fn recurse_children<'a, T: ConfigurationRoot>(
 fn get_value_and_provider<'a, T: ConfigurationRoot>(
     root: &'a T,
     key: &str,
-) -> Option<(Cow<'a, String>, &'a str)> {
+) -> Option<(String, &'a str)> {
     for provider in root.providers().rev() {
         if let Some(value) = provider.get(key) {
             return Some((value, provider.name()));

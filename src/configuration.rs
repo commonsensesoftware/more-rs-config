@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::ConfigurationSection;
 use tokens::ChangeToken;
 
@@ -10,7 +8,7 @@ pub trait Configuration {
     /// # Arguments
     ///
     /// * `key` - The configuration key
-    fn get(&self, key: &str) -> Option<Cow<String>>;
+    fn get(&self, key: &str) -> Option<String>;
 
     /// Gets a [configuration section](trait.ConfigurationSection.html) with the specified key.
     fn section(&self, key: &str) -> Box<dyn ConfigurationSection>;
@@ -68,7 +66,7 @@ impl ConfigurationIterator {
 
             if !make_paths_relative {
                 let key = root.path()[prefix_length..].to_owned();
-                let value = root.value().into_owned();
+                let value = root.value();
 
                 first = Some((key, value));
             }
@@ -95,7 +93,7 @@ impl Iterator for ConfigurationIterator {
 
             if let Some(section) = config.as_section() {
                 let key = section.path()[self.prefix_length..].to_owned();
-                let value = section.value().into_owned();
+                let value = section.value();
                 return Some((key, value));
             }
         }

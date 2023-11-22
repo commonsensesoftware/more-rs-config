@@ -1,6 +1,6 @@
 use crate::{util::fmt_debug_view, *};
 use std::any::Any;
-use std::borrow::{Borrow, Cow};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FormatResult};
 use std::iter::Map;
@@ -124,7 +124,7 @@ impl ConfigurationRoot for DefaultConfigurationRoot {
 }
 
 impl Configuration for DefaultConfigurationRoot {
-    fn get(&self, key: &str) -> Option<Cow<String>> {
+    fn get(&self, key: &str) -> Option<String> {
         for provider in self.providers().rev() {
             if let Some(value) = provider.get(key) {
                 return Some(value);
@@ -219,7 +219,7 @@ impl DefaultConfigurationSection {
 }
 
 impl Configuration for DefaultConfigurationSection {
-    fn get(&self, key: &str) -> Option<Cow<String>> {
+    fn get(&self, key: &str) -> Option<String> {
         self.root.get(&self.subkey(key))
     }
 
@@ -266,10 +266,8 @@ impl ConfigurationSection for DefaultConfigurationSection {
         &self.path
     }
 
-    fn value(&self) -> Cow<String> {
-        self.root
-            .get(&self.path)
-            .unwrap_or(Cow::Owned(String::with_capacity(0)))
+    fn value(&self) -> String {
+        self.root.get(&self.path).unwrap_or_default()
     }
 }
 

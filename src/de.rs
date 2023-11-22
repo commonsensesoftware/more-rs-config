@@ -126,7 +126,7 @@ impl<'de> de::Deserializer<'de> for Value {
     where
         V: de::Visitor<'de>,
     {
-        self.0.value().into_owned().into_deserializer().deserialize_any(visitor)
+        self.0.value().into_deserializer().deserialize_any(visitor)
     }
 
     fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -210,7 +210,7 @@ impl<'de> de::Deserializer<'de> for Value {
     where
         V: de::Visitor<'de>,
     {
-        visitor.visit_enum(self.0.value().into_owned().into_deserializer())
+        visitor.visit_enum(self.0.value().into_deserializer())
     }
 
     serde::forward_to_deserialize_any! {
