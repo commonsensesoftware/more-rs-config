@@ -3,7 +3,6 @@ use crate::{
     FileSource, LoadError, LoadResult,
 };
 use serde_json::{map::Map, Value};
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::{Arc, RwLock};
@@ -146,12 +145,12 @@ impl InnerProvider {
         Ok(())
     }
 
-    fn get(&self, key: &str) -> Option<Cow<String>> {
+    fn get(&self, key: &str) -> Option<String> {
         self.data
             .read()
             .unwrap()
             .get(&key.to_uppercase())
-            .map(|t| Cow::Owned(t.1.clone()))
+            .map(|t| t.1.clone())
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
@@ -201,7 +200,7 @@ impl JsonConfigurationProvider {
 }
 
 impl ConfigurationProvider for JsonConfigurationProvider {
-    fn get(&self, key: &str) -> Option<Cow<String>> {
+    fn get(&self, key: &str) -> Option<String> {
         self.inner.get(key)
     }
 

@@ -34,10 +34,10 @@ impl CommandLineConfigurationProvider {
 }
 
 impl ConfigurationProvider for CommandLineConfigurationProvider {
-    fn get(&self, key: &str) -> Option<Cow<String>> {
+    fn get(&self, key: &str) -> Option<String> {
         self.data
             .get(&key.to_uppercase())
-            .map(|t| Cow::Borrowed(&t.1))
+            .map(|t| t.1.clone())
     }
 
     fn load(&mut self) -> LoadResult {
@@ -136,7 +136,7 @@ impl CommandLineConfigurationSource {
     /// # Remarks
     ///
     /// Only switch mapping keys that start with `--` or `-` are acceptable. Command
-    /// line arguments may start with `--`, `-`, or `/`
+    /// line arguments may start with `--`, `-`, or `/`.
     pub fn new<I, S1, S2>(args: I, switch_mappings: &[(S2, S2)]) -> Self
     where
         I: Iterator<Item = S1>,
@@ -276,7 +276,7 @@ mod tests {
 
         // assert
         assert_eq!(child_keys.len(), 1);
-        assert_eq!(*provider.get("bar").unwrap(), "baz");
+        assert_eq!(&provider.get("bar").unwrap(), "baz");
     }
 
     #[test]
@@ -304,11 +304,11 @@ mod tests {
         provider.child_keys(&mut child_keys, None);
 
         // assert
-        assert_eq!(*provider.get("Key1").unwrap(), "Value1");
-        assert_eq!(*provider.get("Key2").unwrap(), "Value2");
-        assert_eq!(*provider.get("Key3").unwrap(), "Value3");
-        assert_eq!(*provider.get("Key4").unwrap(), "Value4");
-        assert_eq!(*provider.get("Key5").unwrap(), "Value5");
+        assert_eq!(&provider.get("Key1").unwrap(), "Value1");
+        assert_eq!(&provider.get("Key2").unwrap(), "Value2");
+        assert_eq!(&provider.get("Key3").unwrap(), "Value3");
+        assert_eq!(&provider.get("Key4").unwrap(), "Value4");
+        assert_eq!(&provider.get("Key5").unwrap(), "Value5");
     }
 
     #[test]
@@ -333,13 +333,13 @@ mod tests {
         provider.load().unwrap();
 
         // assert
-        assert_eq!(*provider.get("Key1").unwrap(), "Value1");
-        assert_eq!(*provider.get("Key2").unwrap(), "Value2");
-        assert_eq!(*provider.get("Key3").unwrap(), "Value3");
-        assert_eq!(*provider.get("Key4").unwrap(), "Value4");
-        assert_eq!(*provider.get("Key5").unwrap(), "Value5");
-        assert_eq!(*provider.get("Single").unwrap(), "1");
-        assert_eq!(*provider.get("TwoPart").unwrap(), "2");
+        assert_eq!(&provider.get("Key1").unwrap(), "Value1");
+        assert_eq!(&provider.get("Key2").unwrap(), "Value2");
+        assert_eq!(&provider.get("Key3").unwrap(), "Value3");
+        assert_eq!(&provider.get("Key4").unwrap(), "Value4");
+        assert_eq!(&provider.get("Key5").unwrap(), "Value5");
+        assert_eq!(&provider.get("Single").unwrap(), "1");
+        assert_eq!(&provider.get("TwoPart").unwrap(), "2");
     }
 
     #[test]
@@ -368,12 +368,12 @@ mod tests {
         provider.load().unwrap();
 
         // assert
-        assert_eq!(*provider.get("LongKey1").unwrap(), "Value1");
-        assert_eq!(*provider.get("SuperLongKey2").unwrap(), "Value2");
-        assert_eq!(*provider.get("Key3").unwrap(), "Value3");
-        assert_eq!(*provider.get("Key4").unwrap(), "Value4");
-        assert_eq!(*provider.get("Key5").unwrap(), "Value5");
-        assert_eq!(*provider.get("SuchALongKey6").unwrap(), "Value6");
+        assert_eq!(&provider.get("LongKey1").unwrap(), "Value1");
+        assert_eq!(&provider.get("SuperLongKey2").unwrap(), "Value2");
+        assert_eq!(&provider.get("Key3").unwrap(), "Value3");
+        assert_eq!(&provider.get("Key4").unwrap(), "Value4");
+        assert_eq!(&provider.get("Key5").unwrap(), "Value5");
+        assert_eq!(&provider.get("SuchALongKey6").unwrap(), "Value6");
     }
 
     #[test]
@@ -387,7 +387,7 @@ mod tests {
         provider.load().unwrap();
 
         // assert
-        assert_eq!(*provider.get("Key1").unwrap(), "Value2");
+        assert_eq!(&provider.get("Key1").unwrap(), "Value2");
     }
 
     #[test]
@@ -404,7 +404,7 @@ mod tests {
 
         // assert
         assert_eq!(child_keys.len(), 1);
-        assert_eq!(*provider.get("Key1").unwrap(), "Value1");
+        assert_eq!(&provider.get("Key1").unwrap(), "Value1");
     }
 
     #[test]

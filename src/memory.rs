@@ -1,7 +1,7 @@
 use crate::{
     util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
 };
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
 /// Represents a [configuration provider](trait.ConfigurationProvider.html) that
 /// provides in-memory configuration values.
@@ -26,10 +26,10 @@ impl MemoryConfigurationProvider {
 }
 
 impl ConfigurationProvider for MemoryConfigurationProvider {
-    fn get(&self, key: &str) -> Option<Cow<String>> {
+    fn get(&self, key: &str) -> Option<String> {
         self.data
             .get(&key.to_uppercase())
-            .map(|t| Cow::Borrowed(&t.1))
+            .map(|t| t.1.clone())
     }
 
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {

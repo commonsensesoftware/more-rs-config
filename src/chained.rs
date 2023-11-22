@@ -3,7 +3,7 @@ use tokens::ChangeToken;
 use crate::{
     util::cmp_keys, Configuration, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
 };
-use std::borrow::{Borrow, Cow};
+use std::borrow::Borrow;
 use std::rc::Rc;
 
 /// Represents a chained [configuration provider](trait.ConfigurationProvider.html).
@@ -23,7 +23,7 @@ impl ChainedConfigurationProvider {
 }
 
 impl ConfigurationProvider for ChainedConfigurationProvider {
-    fn get(&self, key: &str) -> Option<Cow<String>> {
+    fn get(&self, key: &str) -> Option<String> {
         self.configuration.get(key)
     }
 

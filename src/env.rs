@@ -2,7 +2,6 @@ use crate::{
     util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
     LoadResult,
 };
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::env::vars;
 
@@ -28,10 +27,10 @@ impl EnvironmentVariablesConfigurationProvider {
 }
 
 impl ConfigurationProvider for EnvironmentVariablesConfigurationProvider {
-    fn get(&self, key: &str) -> Option<Cow<String>> {
+    fn get(&self, key: &str) -> Option<String> {
         self.data
             .get(&key.to_uppercase())
-            .map(|t| Cow::Borrowed(&t.1))
+            .map(|t| t.1.clone())
     }
 
     fn load(&mut self) -> LoadResult {

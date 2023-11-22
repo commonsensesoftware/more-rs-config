@@ -1,12 +1,13 @@
 [package]
 name = "more-config"
-version = "1.0.2"
+version = "2.0.0"
 edition = "2018"
-authors = ["Chris Martinez <chris_martinez_77@hotmail.com>"]
+authors = ["Chris Martinez <chris.s.martinez@hotmail.com>"]
 description = "Provides support for configuration"
 keywords = ["more", "configuration", "config"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://commonsensesoftware.github.io/more-rs-config/"
 repository = "https://github.com/commonsensesoftware/more-rs-config"
 include = ["*.rs", "!build.rs", "README.md"]
 
@@ -23,15 +24,22 @@ chained = ["util"]
 mem = ["util"]
 env = ["util"]
 cmd = ["util"]
-ini = ["util", "configparser"]
+ini = ["util", "configparser", "more-changetoken/fs"]
 binder = ["serde"]
-json = ["util", "serde_json"]
+json = ["util", "serde_json", "more-changetoken/fs"]
+xml = ["util", "xml_rs", "more-changetoken/fs"]
 
 [dependencies]
-more-changetoken = "1.0"
+#more-changetoken = "1.0"
+more-changetoken = { path = "../../more-rs-changetoken" }
 configparser = { version = "3.0", optional = true }
 serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
+xml_rs = { version = "0.8", package = "xml", optional = true }
 
 [dev-dependencies]
 test-case = "2.2"
+
+[dev-dependencies.more-config]
+path = "."
+features = ["cmd"]
