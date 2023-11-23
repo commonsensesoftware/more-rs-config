@@ -89,7 +89,7 @@ impl DefaultConfigurationRoot {
     ///
     /// # Arguments
     ///
-    /// * `providers` - The list of [configuration providers](trait.ConfigurationProvider.html) used in the configuration
+    /// * `providers` - The [`ConfigurationProvider`](crate::ConfigurationProvider) list used in the configuration
     pub fn new(mut providers: Vec<Box<dyn ConfigurationProvider>>) -> Result<Self, ReloadError> {
         let mut errors = Vec::new();
         let mut tokens = Vec::with_capacity(providers.len());
@@ -237,7 +237,7 @@ impl DefaultConfigurationSection {
     ///
     /// # Arguments
     ///
-    /// * `root` - A reference to the [configuration root](trait.ConfigurationRoot.html)
+    /// * `root` - A reference to the [`ConfigurationRoot`](crate::ConfigurationRoot)
     /// * `path` - The path of the configuration section
     pub fn new(root: Box<dyn ConfigurationRoot>, path: &str) -> Self {
         Self {

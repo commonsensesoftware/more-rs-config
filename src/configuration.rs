@@ -10,26 +10,26 @@ pub trait Configuration {
     /// * `key` - The configuration key
     fn get(&self, key: &str) -> Option<Value>;
 
-    /// Gets a [configuration section](trait.ConfigurationSection.html) with the specified key.
+    /// Gets a [`ConfigurationSection`](crate::ConfigurationSection) with the specified key.
     fn section(&self, key: &str) -> Box<dyn ConfigurationSection>;
 
-    /// Gets the sequence of child [configuration sections](trait.ConfigurationSection.html).
+    /// Gets the sequence of [`ConfigurationSection`](crate::ConfigurationSection) children.
     fn children(&self) -> Vec<Box<dyn ConfigurationSection>>;
 
-    /// Returns a change token that can be used to observe when this configuration is reloaded.
+    /// Returns a [`ChangeToken`](tokens::ChangeToken) that can be used to observe when this configuration is reloaded.
     fn reload_token(&self) -> Box<dyn ChangeToken>;
 
-    /// Attempts to convert the [configuration](trait.Configuration.html) as a [configuration section](trait.ConfigurationSection.html).
+    /// Attempts to convert the [`Configuration`] as a [`ConfigurationSection`](crate::ConfigurationSection).
     fn as_section(&self) -> Option<&dyn ConfigurationSection> {
         None
     }
 
-    /// Gets an iterator of the key/value pairs within the [configuration](trait.Configuration.html).
+    /// Gets an iterator of the key/value pairs within the [`Configuration`].
     fn iter(&self) -> Box<dyn Iterator<Item = (String, Value)>> {
         self.iter_relative(false)
     }
 
-    /// Gets an iterator of the key/value pairs within the [configuration](trait.Configuration.html).
+    /// Gets an iterator of the key/value pairs within the [`Configuration`].
     ///
     /// # Arguments
     ///
@@ -40,7 +40,7 @@ pub trait Configuration {
     ) -> Box<dyn Iterator<Item = (String, Value)>>;
 }
 
-/// Represents an iterator of key/value pairs for a [configuration](trait.Configuration.html).
+/// Represents an iterator of key/value pairs for a [`Configuration`].
 pub struct ConfigurationIterator {
     stack: Vec<Box<dyn ConfigurationSection>>,
     first: Option<(String, Value)>,
@@ -52,7 +52,7 @@ impl ConfigurationIterator {
     ///
     /// # Arguments
     ///
-    /// * `configuration` - The [configuration](trait.Configuration.html) to iterate
+    /// * `configuration` - The [`Configuration`] to iterate
     /// * `make_paths_relative` - If true, the child keys returned will have the current configuration's path trimmed from the front
     pub fn new(configuration: &dyn Configuration, make_paths_relative: bool) -> Self {
         let stack = configuration.children();

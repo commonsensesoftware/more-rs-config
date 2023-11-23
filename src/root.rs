@@ -46,7 +46,7 @@ impl Debug for ReloadError {
 /// Represents a configuration reload result.
 pub type ReloadResult = std::result::Result<(), ReloadError>;
 
-/// Represents the root of a [configuration](trait.Configuration.html) hierarchy.
+/// Represents the root of a [`Configuration`](crate::Configuration) hierarchy.
 pub trait ConfigurationRoot:
     Configuration
     + AsRef<dyn Configuration>
@@ -54,18 +54,19 @@ pub trait ConfigurationRoot:
     + Deref<Target = dyn Configuration>
     + Debug
 {
-    /// Force the configuration values to be reloaded from the underlying [provider](trait.ConfigurationProvider.html).
+    /// Force the configuration values to be reloaded from the underlying
+    /// [`ConfigurationProvider`](crate::ConfigurationProvider) collection.
     fn reload(&mut self) -> ReloadResult;
 
-    /// Gets the [providers](trait.ConfigurationProvider.html) for this configuration.
+    /// Gets the [`ConfigurationProvider`](crate::ConfigurationProvider) sequence for this configuration.
     fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_>;
 
-    /// Converts the [ConfigurationRoot](trait.ConfigurationRoot.html) into a [Configuration](trait.Configuration.html).
+    /// Converts the [`ConfigurationRoot``] into a [`Configuration``](crate::Configuration).
     fn as_config(&self) -> Box<dyn Configuration>;
 }
 
-/// Defines the behavior of an iterator over
-/// [configuration providers](trait.ConfigurationProvider.html).
+/// Defines the behavior of an iterator over a
+/// [`ConfigurationProvider`](crate::ConfigurationProvider) set.
 pub trait ConfigurationProviderIterator<'a>:
     Iterator<Item = Box<dyn ConfigurationProvider + 'a>>
     + ExactSizeIterator<Item = Box<dyn ConfigurationProvider + 'a>>
