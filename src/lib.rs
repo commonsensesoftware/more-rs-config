@@ -1,4 +1,11 @@
 #![doc = include_str!("README.md")]
+/// Represents the type alias for a configuration value.
+#[cfg(not(feature = "async"))]
+pub type Value = std::rc::Rc<String>;
+
+/// Represents the type alias for a configuration value.
+#[cfg(feature = "async")]
+pub type Value = std::sync::Arc<String>;
 
 mod builder;
 mod configuration;

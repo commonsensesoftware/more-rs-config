@@ -1,6 +1,6 @@
 use crate::{
     util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
-    FileSource, LoadError, LoadResult,
+    FileSource, LoadError, LoadResult, Value,
 };
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -157,7 +157,7 @@ fn get_name(
 fn process_element(
     prefix: &mut Prefix,
     element: &Element,
-    config: &mut HashMap<String, (String, String)>,
+    config: &mut HashMap<String, (String, Value)>,
 ) -> Result<(), String> {
     process_attributes(prefix, element, config)?;
     process_element_content(prefix, element, config)?;
@@ -167,7 +167,7 @@ fn process_element(
 fn process_element_content(
     prefix: &mut Prefix,
     element: &Element,
-    config: &mut HashMap<String, (String, String)>,
+    config: &mut HashMap<String, (String, Value)>,
 ) -> Result<(), String> {
     if let Some(ref value) = element.text {
         add_to_config(prefix.to_string(), value.clone(), element, config)
@@ -180,7 +180,7 @@ fn process_element_child(
     prefix: &mut Prefix,
     child: &Element,
     index: Option<usize>,
-    config: &mut HashMap<String, (String, String)>,
+    config: &mut HashMap<String, (String, Value)>,
 ) -> Result<(), String> {
     prefix.push(&child.element_name);
 
@@ -209,7 +209,7 @@ fn process_element_child(
 fn process_attributes(
     prefix: &mut Prefix,
     element: &Element,
-    config: &mut HashMap<String, (String, String)>,
+    config: &mut HashMap<String, (String, Value)>,
 ) -> Result<(), String> {
     for attribute in &element.attributes {
         prefix.push(&attribute.0);
@@ -223,7 +223,7 @@ fn process_attributes(
 fn process_children(
     prefix: &mut Prefix,
     element: &Element,
-    config: &mut HashMap<String, (String, String)>,
+    config: &mut HashMap<String, (String, Value)>,
 ) -> Result<(), String> {
     for children in element.children.iter().map(|i| &i.1) {
         if children.len() == 1 {
@@ -242,9 +242,9 @@ fn add_to_config(
     key: String,
     value: String,
     element: &Element,
-    config: &mut HashMap<String, (String, String)>,
+    config: &mut HashMap<String, (String, Value)>,
 ) -> Result<(), String> {
-    if let Some((dup_key, _)) = config.insert(key.to_uppercase(), (key, value)) {
+    if let Some((dup_key, _)) = config.insert(key.to_uppercase(), (key, value.into())) {
         Err(format!(
             "A duplicate key '{}' was found. ({}, Line: {})",
             &dup_key, &element.element_name, element.line
@@ -256,7 +256,7 @@ fn add_to_config(
 
 fn to_config(
     mut root: Option<Rc<RefCell<Element>>>,
-) -> Result<HashMap<String, (String, String)>, String> {
+) -> Result<HashMap<String, (String, Value)>, String> {
     if let Some(cell) = root.take() {
         let element = &cell.deref().borrow();
         let mut data = HashMap::new();
@@ -267,13 +267,14 @@ fn to_config(
         }
 
         process_element(&mut prefix, &element, &mut data)?;
+        data.shrink_to_fit();
         Ok(data)
     } else {
         Ok(HashMap::with_capacity(0))
     }
 }
 
-fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
+fn visit(file: File) -> Result<HashMap<String, (String, Value)>, String> {
     let content = BufReader::new(file);
     let events = EventReader::new(content);
     let mut has_content = false;
@@ -335,7 +336,7 @@ fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
 
 struct InnerProvider {
     file: FileSource,
-    data: RwLock<HashMap<String, (String, String)>>,
+    data: RwLock<HashMap<String, (String, Value)>>,
     token: RwLock<SharedChangeToken<SingleChangeToken>>,
 }
 
@@ -387,7 +388,7 @@ impl InnerProvider {
         Ok(())
     }
 
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         self.data
             .read()
             .unwrap()
@@ -442,7 +443,7 @@ impl XmlConfigurationProvider {
 }
 
 impl ConfigurationProvider for XmlConfigurationProvider {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         self.inner.get(key)
     }
 

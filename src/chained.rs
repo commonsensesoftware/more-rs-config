@@ -1,7 +1,8 @@
 use tokens::ChangeToken;
 
 use crate::{
-    util::cmp_keys, Configuration, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
+    util::cmp_keys, Configuration, ConfigurationBuilder, ConfigurationProvider,
+    ConfigurationSource, Value,
 };
 use std::borrow::Borrow;
 use std::rc::Rc;
@@ -23,7 +24,7 @@ impl ChainedConfigurationProvider {
 }
 
 impl ConfigurationProvider for ChainedConfigurationProvider {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         self.configuration.get(key)
     }
 

@@ -1,8 +1,8 @@
 use crate::{
     util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
-    FileSource, LoadError, LoadResult,
+    FileSource, LoadError, LoadResult, Value,
 };
-use serde_json::{map::Map, Value};
+use serde_json::{map::Map, Value as JsonValue};
 use std::collections::HashMap;
 use std::fs;
 use std::sync::{Arc, RwLock};
@@ -10,22 +10,22 @@ use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken,
 
 #[derive(Default)]
 struct JsonVisitor {
-    data: HashMap<String, (String, String)>,
+    data: HashMap<String, (String, Value)>,
     paths: Vec<String>,
 }
 
 impl JsonVisitor {
-    fn visit(mut self, root: &Map<String, Value>) -> HashMap<String, (String, String)> {
+    fn visit(mut self, root: &Map<String, JsonValue>) -> HashMap<String, (String, Value)> {
         self.visit_element(root);
         self.data.shrink_to_fit();
         self.data
     }
 
-    fn visit_element(&mut self, element: &Map<String, Value>) {
+    fn visit_element(&mut self, element: &Map<String, JsonValue>) {
         if element.is_empty() {
             if let Some(key) = self.paths.last() {
                 self.data
-                    .insert(key.to_uppercase(), (to_pascal_case(key), String::new()));
+                    .insert(key.to_uppercase(), (to_pascal_case(key), String::new().into()));
             }
         } else {
             for (name, value) in element {
@@ -36,27 +36,27 @@ impl JsonVisitor {
         }
     }
 
-    fn visit_value(&mut self, value: &Value) {
+    fn visit_value(&mut self, value: &JsonValue) {
         match value {
-            Value::Object(ref element) => self.visit_element(element),
-            Value::Array(array) => {
+            JsonValue::Object(ref element) => self.visit_element(element),
+            JsonValue::Array(array) => {
                 for (index, element) in array.iter().enumerate() {
                     self.enter_context(index.to_string());
                     self.visit_value(element);
                     self.exit_context();
                 }
             }
-            Value::Bool(value) => self.add_value(value),
-            Value::Null => self.add_value(String::new()),
-            Value::Number(value) => self.add_value(value),
-            Value::String(value) => self.add_value(value),
+            JsonValue::Bool(value) => self.add_value(value),
+            JsonValue::Null => self.add_value(String::new()),
+            JsonValue::Number(value) => self.add_value(value),
+            JsonValue::String(value) => self.add_value(value),
         }
     }
 
     fn add_value<T: ToString>(&mut self, value: T) {
         let key = self.paths.last().unwrap().to_string();
         self.data
-            .insert(key.to_uppercase(), (key, value.to_string()));
+            .insert(key.to_uppercase(), (key, value.to_string().into()));
     }
 
     fn enter_context(&mut self, context: String) {
@@ -76,7 +76,7 @@ impl JsonVisitor {
 
 struct InnerProvider {
     file: FileSource,
-    data: RwLock<HashMap<String, (String, String)>>,
+    data: RwLock<HashMap<String, (String, Value)>>,
     token: RwLock<SharedChangeToken<SingleChangeToken>>,
 }
 
@@ -111,7 +111,7 @@ impl InnerProvider {
 
         // REF: https://docs.serde.rs/serde_json/de/fn.from_reader.html
         let content = fs::read(&self.file.path).unwrap();
-        let json: Value = serde_json::from_slice(&content).unwrap();
+        let json: JsonValue = serde_json::from_slice(&content).unwrap();
 
         if let Some(root) = json.as_object() {
             let visitor = JsonVisitor::default();
@@ -124,11 +124,11 @@ impl InnerProvider {
                 message: format!(
                     "Top-level JSON element must be an object. Instead, '{}' was found.",
                     match json {
-                        Value::Array(_) => "array",
-                        Value::Bool(_) => "Boolean",
-                        Value::Null => "null",
-                        Value::Number(_) => "number",
-                        Value::String(_) => "string",
+                        JsonValue::Array(_) => "array",
+                        JsonValue::Bool(_) => "Boolean",
+                        JsonValue::Null => "null",
+                        JsonValue::Number(_) => "number",
+                        JsonValue::String(_) => "string",
                         _ => unreachable!(),
                     }
                 ),
@@ -145,7 +145,7 @@ impl InnerProvider {
         Ok(())
     }
 
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         self.data
             .read()
             .unwrap()
@@ -200,7 +200,7 @@ impl JsonConfigurationProvider {
 }
 
 impl ConfigurationProvider for JsonConfigurationProvider {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         self.inner.get(key)
     }
 

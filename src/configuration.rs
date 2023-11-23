@@ -1,4 +1,4 @@
-use crate::ConfigurationSection;
+use crate::{ConfigurationSection, Value};
 use tokens::ChangeToken;
 
 /// Defines the behavior of a configuration.
@@ -8,7 +8,7 @@ pub trait Configuration {
     /// # Arguments
     ///
     /// * `key` - The configuration key
-    fn get(&self, key: &str) -> Option<String>;
+    fn get(&self, key: &str) -> Option<Value>;
 
     /// Gets a [configuration section](trait.ConfigurationSection.html) with the specified key.
     fn section(&self, key: &str) -> Box<dyn ConfigurationSection>;
@@ -25,7 +25,7 @@ pub trait Configuration {
     }
 
     /// Gets an iterator of the key/value pairs within the [configuration](trait.Configuration.html).
-    fn iter(&self) -> Box<dyn Iterator<Item = (String, String)>> {
+    fn iter(&self) -> Box<dyn Iterator<Item = (String, Value)>> {
         self.iter_relative(false)
     }
 
@@ -37,13 +37,13 @@ pub trait Configuration {
     fn iter_relative(
         &self,
         make_paths_relative: bool,
-    ) -> Box<dyn Iterator<Item = (String, String)>>;
+    ) -> Box<dyn Iterator<Item = (String, Value)>>;
 }
 
 /// Represents an iterator of key/value pairs for a [configuration](trait.Configuration.html).
 pub struct ConfigurationIterator {
     stack: Vec<Box<dyn ConfigurationSection>>,
-    first: Option<(String, String)>,
+    first: Option<(String, Value)>,
     prefix_length: usize,
 }
 
@@ -81,7 +81,7 @@ impl ConfigurationIterator {
 }
 
 impl Iterator for ConfigurationIterator {
-    type Item = (String, String);
+    type Item = (String, Value);
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(first) = self.first.take() {

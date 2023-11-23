@@ -1,4 +1,4 @@
-use crate::Configuration;
+use crate::{Configuration, Value};
 use std::{borrow::Borrow, ops::Deref};
 
 /// Defines the behavior for a section of application configuration values.
@@ -15,7 +15,7 @@ pub trait ConfigurationSection:
     fn path(&self) -> &str;
 
     /// Gets the section value.
-    fn value(&self) -> String;
+    fn value(&self) -> Value;
 }
 
 pub mod ext {

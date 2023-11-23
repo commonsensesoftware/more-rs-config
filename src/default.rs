@@ -27,7 +27,7 @@ impl<'a> ProviderIter<'a> {
 struct Item<'a>(Ref<'a, Vec<Box<dyn ConfigurationProvider + 'a>>>, usize);
 
 impl ConfigurationProvider for Item<'_> {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         self.0[self.1].get(key)
     }
 
@@ -158,7 +158,7 @@ impl ConfigurationRoot for DefaultConfigurationRoot {
 }
 
 impl Configuration for DefaultConfigurationRoot {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         for provider in self.providers().rev() {
             if let Some(value) = provider.get(key) {
                 return Some(value);
@@ -195,7 +195,7 @@ impl Configuration for DefaultConfigurationRoot {
     fn iter_relative(
         &self,
         make_paths_relative: bool,
-    ) -> Box<dyn Iterator<Item = (String, String)>> {
+    ) -> Box<dyn Iterator<Item = (String, Value)>> {
         Box::new(ConfigurationIterator::new(self, make_paths_relative))
     }
 }
@@ -253,7 +253,7 @@ impl DefaultConfigurationSection {
 }
 
 impl Configuration for DefaultConfigurationSection {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         self.root.get(&self.subkey(key))
     }
 
@@ -286,7 +286,7 @@ impl Configuration for DefaultConfigurationSection {
     fn iter_relative(
         &self,
         make_paths_relative: bool,
-    ) -> Box<dyn Iterator<Item = (String, String)>> {
+    ) -> Box<dyn Iterator<Item = (String, Value)>> {
         Box::new(ConfigurationIterator::new(self, make_paths_relative))
     }
 }
@@ -300,7 +300,7 @@ impl ConfigurationSection for DefaultConfigurationSection {
         &self.path
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> Value {
         self.root.get(&self.path).unwrap_or_default()
     }
 }

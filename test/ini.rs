@@ -24,14 +24,14 @@ fn add_ini_file_should_load_settings_from_file() {
     let section = config.section("Feature.Magic");
 
     // act
-    let result = section.get("Disabled");
+    let value = section.get("Disabled");
 
     // assert
     if path.exists() {
         remove_file(&path).ok();
     }
-    let value = result.unwrap();
-    assert_eq!(&value, "true");
+
+    assert_eq!(value.unwrap().as_str(), "true");
 }
 
 #[test]
@@ -77,14 +77,14 @@ fn add_optional_ini_file_should_load_settings_from_file() {
     let section = config.section("Feature.Magic");
 
     // act
-    let result = section.get("Disabled");
+    let value = section.get("Disabled");
 
     // assert
     if path.exists() {
         remove_file(&path).ok();
     }
-    let value = result.unwrap();
-    assert_eq!(&value, "true");
+
+    assert_eq!(value.unwrap().as_str(), "true");
 }
 
 #[test]
@@ -161,6 +161,6 @@ fn init_file_should_reload_when_changed() {
         remove_file(&path).ok();
     }
 
-    assert_eq!(&initial, "true");
-    assert_eq!(&current, "false");
+    assert_eq!(initial.as_str(), "true");
+    assert_eq!(current.as_str(), "false");
 }

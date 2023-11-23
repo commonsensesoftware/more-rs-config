@@ -23,7 +23,7 @@ impl Trigger {
 
 struct ReloadableConfigProvider {
     counter: u8,
-    value: String,
+    value: Value,
     trigger: Rc<Trigger>,
 }
 
@@ -31,14 +31,14 @@ impl ReloadableConfigProvider {
     fn new(trigger: Rc<Trigger>) -> Self {
         Self {
             counter: 0,
-            value: "0".into(),
+            value: Value::new("0".into()),
             trigger,
         }
     }
 }
 
 impl ConfigurationProvider for ReloadableConfigProvider {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         if key == "Test" {
             Some(self.value.clone())
         } else {
@@ -52,7 +52,7 @@ impl ConfigurationProvider for ReloadableConfigProvider {
 
     fn load(&mut self) -> LoadResult {
         self.counter += 1;
-        self.value = self.counter.to_string();
+        self.value = self.counter.to_string().into();
         Ok(())
     }
 
@@ -87,13 +87,13 @@ fn reload_should_load_providers() {
 
     let mut root = builder.build().unwrap();
 
-    assert_eq!(&root.get("Test").unwrap(), "1");
+    assert_eq!(root.get("Test").unwrap().as_str(), "1");
 
     // act
     root.reload().ok();
 
     // assert
-    assert_eq!(&root.get("Test").unwrap(), "2");
+    assert_eq!(root.get("Test").unwrap().as_str(), "2");
 }
 
 #[test]

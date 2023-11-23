@@ -2,6 +2,8 @@ use std::fmt::{Debug, Formatter, Result as FormatResult};
 use std::{any::type_name, path::PathBuf};
 use tokens::{ChangeToken, NeverChangeToken};
 
+use crate::Value;
+
 /// Defines the possible load errors.
 #[derive(PartialEq, Clone)]
 pub enum LoadError {
@@ -52,7 +54,7 @@ pub trait ConfigurationProvider {
     /// # Arguments
     ///
     /// * `key` - The key of the value to retrieve
-    fn get(&self, key: &str) -> Option<String>;
+    fn get(&self, key: &str) -> Option<Value>;
 
     /// Returns a change token if this provider supports change tracking.
     fn reload_token(&self) -> Box<dyn ChangeToken> {
