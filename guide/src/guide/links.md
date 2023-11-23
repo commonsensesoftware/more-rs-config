@@ -8,8 +8,11 @@ REF: https://github.com/rust-lang/cargo/issues/739
 REF: https://github.com/tag1consulting/goose/issues/320
 -->
 
+[`ChangeToken`]: https://docs.rs/more-changetoken/2.0.0/tokens/trait.ChangeToken.html
+
 [`Value`]: https://docs.rs/more-config/2.0.0/config/type.Value.html
 
+[`ConfigurationRoot`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationRoot.html
 [`Configuration`]: https://docs.rs/more-config/2.0.0/config/trait.Configuration.html
 [`ConfigurationSection`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationSection.html
 [`section`]: https://docs.rs/more-config/2.0.0/config/trait.Configuration.html#method.section

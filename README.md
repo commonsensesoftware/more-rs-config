@@ -51,7 +51,7 @@ use config::{*, ext::*};
 
 fn main() {
     let config = DefaultConfigurationBuilder::new()
-        .add_in_memory(&[("Demo", "False")])
+        .add_in_memory(&[("Demo", "false")])
         .add_json_file("demo.json".is().optional())
         .add_env_vars()
         .add_command_line()
