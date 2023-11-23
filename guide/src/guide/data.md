@@ -39,10 +39,10 @@ fn main() {
         .build()
         .unwrap();
 
-    let my_key_value = config.get("MyKey").unwrap();
-    let title = config.get("Position:Title").unwrap();
-    let name = config.section("Position").get("Name").unwrap();
-    let default_log_level = config.get("Logging:LogLevel:Default").unwrap();
+    let my_key_value = config.get("MyKey").unwrap().as_str();
+    let title = config.get("Position:Title").unwrap().as_str();
+    let name = config.section("Position").get("Name").unwrap().as_str();
+    let default_log_level = config.get("Logging:LogLevel:Default").unwrap().as_str();
 
     println!("MyKey value: {}\n\
               Title: {}\n\
@@ -134,8 +134,8 @@ let section = config.section("section1");
 
 println!("section1:key0: {}\n\
           section1:key1: {}",
-          section.get("key0").unwrap(),
-          section.get("key1").unwrap());
+          section.get("key0").unwrap().as_str(),
+          section.get("key1").unwrap().as_str());
 ```
 
 The following code returns values for `section2:subsection0`:
@@ -145,8 +145,8 @@ let section = config.section("section2:subsection0");
 
 println!("section2:subsection0:key0: {}\n\
           section2:subsection0:key0: {}",
-          section.get("key0").unwrap(),
-          section.get("key1").unwrap());
+          section.get("key0").unwrap().as_str(),
+          section.get("key1").unwrap().as_str());
 ```
 
 If a matching section isn't found, an empty [`ConfigurationSection`] is returned.
@@ -167,8 +167,8 @@ if section.exists() {
               {} value: {}",
               &key1,
               &key2,
-              section.get(&key1).unwrap(),
-              section.get(&key2).unwrap());
+              section.get(&key1).unwrap().as_str(),
+              section.get(&key2).unwrap().as_str());
   }
 } else {
   println!("section2 does not exist.");
@@ -176,8 +176,8 @@ if section.exists() {
 
 println!("section1:key0: {}\n\
           section1:key1: {}",
-          section.get("key0").unwrap(),
-          section.get("key1").unwrap());
+          section.get("key0").unwrap().as_str(),
+          section.get("key1").unwrap().as_str());
 ```
 
 The preceding code uses the [`exists`] extension to verify the section exists.

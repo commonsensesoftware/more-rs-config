@@ -45,10 +45,10 @@ App=Warning
 The following code displays several of the preceding configurations settings:
 
 ```rust
-let my_key_value = config.get("MyKey").unwrap();
-let title = config.get("Position:Title").unwrap();
-let name = config.section("Position").get("Name").unwrap();
-let default_log_level = config.get("Logging:LogLevel:Default").unwrap();
+let my_key_value = config.get("MyKey").unwrap().as_str();
+let title = config.get("Position:Title").unwrap().as_str();
+let name = config.section("Position").get("Name").unwrap().as_str();
+let default_log_level = config.get("Logging:LogLevel:Default").unwrap().as_str();
 
 println!("MyKey value: {}\n\
           Title: {}\n\

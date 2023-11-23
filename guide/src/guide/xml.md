@@ -50,10 +50,10 @@ Consider the following configuration file:
 The following code displays several of the preceding configuration settings:
 
 ```rust
-let my_key_value = config.get("MyKey").unwrap();
-let title = config.get("Position:Title").unwrap();
-let name = config.section("Position").get("Name").unwrap();
-let default_log_level = config.get("Logging:LogLevel:Default").unwrap();
+let my_key_value = config.get("MyKey").unwrap().as_str();
+let title = config.get("Position:Title").unwrap().as_str();
+let name = config.section("Position").get("Name").unwrap().as_str();
+let default_log_level = config.get("Logging:LogLevel:Default").unwrap().as_str();
 
 println!("MyKey value: {}\n\
           Title: {}\n\
@@ -92,10 +92,10 @@ fn main() {
         .build()
         .unwrap();
 
-    let val00 = config.get("section:section0:key:key0");
-    let val01 = config.get("section:section0:key:key1");
-    let val10 = config.get("section:section1:key:key0");
-    let val11 = config.get("section:section1:key:key1");
+    let val00 = config.get("section:section0:key:key0").unwrap().as_str();
+    let val01 = config.get("section:section0:key:key1").unwrap().as_str();
+    let val10 = config.get("section:section1:key:key0").unwrap().as_str();
+    let val11 = config.get("section:section1:key:key1").unwrap().as_str();
 
     println!("section:section0:key:key0 value: {}\n\
               section:section0:key:key1 value: {}\n\

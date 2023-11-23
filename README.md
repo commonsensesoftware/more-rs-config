@@ -60,8 +60,8 @@ fn main() {
     
     if let Some(demo) = config.get("demo") {
       if demo.as_str() == "true" {
-        println!("{}", config.get("Text").unwrap());
-        println!("{}", config.get("Clients:0:Region").unwrap());
+        println!("{}", config.get("Text").unwrap().as_str());
+        println!("{}", config.get("Clients:0:Region").unwrap().as_str());
         return;
       }
     }
