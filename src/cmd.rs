@@ -4,7 +4,7 @@ use crate::{
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-/// Represents a [configuration provider](trait.ConfigurationProvider.html) that
+/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) that
 /// provides command line configuration values.
 pub struct CommandLineConfigurationProvider {
     data: HashMap<String, (String, Value)>,
@@ -115,7 +115,7 @@ impl ConfigurationProvider for CommandLineConfigurationProvider {
     }
 }
 
-/// Represents a [configuration source](trait.ConfigurationSource.html) for command line data.
+/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for command line data.
 #[derive(Default)]
 pub struct CommandLineConfigurationSource {
     /// Gets or sets a collection of key/value pairs representing the mapping between
@@ -179,7 +179,7 @@ pub mod ext {
 
     use super::*;
 
-    /// Defines extension methods for the [ConfigurationBuilder](trait.ConfigurationBuilder.html) trait.
+    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
     pub trait CommandLineConfigurationBuilderExtensions {
         /// Adds the command line configuration source.
         fn add_command_line(&mut self) -> &mut Self;

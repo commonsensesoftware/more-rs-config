@@ -11,7 +11,7 @@ pub trait ConfigurationSection:
     /// Gets the key this section occupies in its parent.
     fn key(&self) -> &str;
 
-    /// Gets the full path to this section within the [configuration](trait.Configuration.html).
+    /// Gets the full path to this section within the [`Configuration`](crate::Configuration).
     fn path(&self) -> &str;
 
     /// Gets the section value.
@@ -22,7 +22,7 @@ pub mod ext {
 
     use super::*;
 
-    /// Defines extension methods for the [ConfigurationSection](trait.ConfigurationSection.html) trait.
+    /// Defines extension methods for [`ConfigurationSection`].
     pub trait ConfigurationSectionExtensions {
         /// Gets a value indicating whether the configuration section exists.
         ///

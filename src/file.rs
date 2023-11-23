@@ -134,7 +134,7 @@ impl FileSourceBuilder {
         self
     }
 
-    /// Creates and returns a new [file source](struct.FileSource.html).
+    /// Creates and returns a new [`FileSource`].
     pub fn build(&self) -> FileSource {
         FileSource::new(
             self.path.clone(),
@@ -161,8 +161,7 @@ pub mod ext {
 
     use super::*;
 
-    /// Provides extension methods to create a
-    /// [file source builder](struct.FileSourceBuilder.html).
+    /// Provides extension methods to create a [`FileSourceBuilder`].
     pub trait FileSourceBuilderExtensions {
         fn is(&self) -> FileSourceBuilder;
     }

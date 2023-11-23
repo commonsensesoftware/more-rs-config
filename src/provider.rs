@@ -56,7 +56,7 @@ pub trait ConfigurationProvider {
     /// * `key` - The key of the value to retrieve
     fn get(&self, key: &str) -> Option<Value>;
 
-    /// Returns a change token if this provider supports change tracking.
+    /// Returns a [`ChangeToken`](tokens::ChangeToken) if this provider supports change tracking.
     fn reload_token(&self) -> Box<dyn ChangeToken> {
         Box::new(NeverChangeToken::new())
     }
@@ -66,9 +66,9 @@ pub trait ConfigurationProvider {
         Ok(())
     }
 
-    /// Gets the immediate descendent configuration keys for a given parent path based on this
-    /// [provider](trait.ConfigurationProvider.html) and the set of keys returned by all of
-    /// the preceding [providers](trait.ConfigurationProvider.html).
+    /// Gets the immediate descendent configuration keys for a given parent path based
+    /// on this [`ConfigurationProvider`] and the set of keys returned by all of the
+    /// preceding [`ConfigurationProvider`].
     ///
     /// # Arguments
     ///

@@ -279,7 +279,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
 ///
 /// # Arguments
 ///
-/// * `configuration` - The [configuration](trait.Configuration.html) to deserialize
+/// * `configuration` - The [`Configuration`](crate::Configuration) to deserialize
 pub fn from_config<'a, T>(configuration: &'a dyn Configuration) -> Result<T, Error>
 where
     T: Deserialize<'a>,
@@ -291,7 +291,7 @@ where
 ///
 /// # Arguments
 ///
-/// * `configuration` - The [configuration](trait.Configuration.html) to deserialize
+/// * `configuration` - The [`Configuration`](crate::Configuration) to deserialize
 pub fn bind_config<'a, T>(configuration: &'a dyn Configuration, data: &mut T) -> Result<(), Error>
 where
     T: Deserialize<'a>,

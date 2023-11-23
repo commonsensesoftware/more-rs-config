@@ -406,18 +406,18 @@ impl InnerProvider {
     }
 }
 
-/// Represents a [configuration provider](trait.ConfigurationProvider.html) for XML files.
+/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) for `*.xml` files.
 pub struct XmlConfigurationProvider {
     inner: Arc<InnerProvider>,
     _subscription: Option<Box<dyn Subscription>>,
 }
 
 impl XmlConfigurationProvider {
-    /// Initializes a new XML file configuration provider.
+    /// Initializes a new `*.xml` file configuration provider.
     ///
     /// # Arguments
     ///
-    /// * `file` - The [XML file](struct.FileSource.html) information
+    /// * `file` - The `*.xml` [`FileSource`](crate::FileSource) information
     pub fn new(file: FileSource) -> Self {
         let path = file.path.clone();
         let inner = Arc::new(InnerProvider::new(file));
@@ -460,17 +460,17 @@ impl ConfigurationProvider for XmlConfigurationProvider {
     }
 }
 
-/// Represents a [configuration source](trait.ConfigurationSource.html) for XML files.
+/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for `*.xml` files.
 pub struct XmlConfigurationSource {
     file: FileSource,
 }
 
 impl XmlConfigurationSource {
-    /// Initializes a new XML file configuration source.
+    /// Initializes a new `*.xml` file configuration source.
     ///
     /// # Arguments
     ///
-    /// * `file` - The [XML file](struct.FileSource.html) information
+    /// * `file` - The `*.xml` [`FileSource`](crate::FileSource) information
     pub fn new(file: FileSource) -> Self {
         Self { file }
     }
@@ -486,13 +486,13 @@ pub mod ext {
 
     use super::*;
 
-    /// Defines extension methods for the [ConfigurationBuilder](trait.ConfigurationBuilder.html) trait.
+    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
     pub trait XmlConfigurationExtensions {
-        /// Adds a XML file as a configuration source.
+        /// Adds a `*.xml` file as a configuration source.
         ///
         /// # Arguments
         ///
-        /// * `file` - The [XML file](struct.FileSource.html) information
+        /// * `file` - The `*.xml` [`FileSource`](crate::FileSource) information
         fn add_xml_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
     }
 

@@ -163,18 +163,18 @@ impl InnerProvider {
     }
 }
 
-/// Represents a [configuration provider](trait.ConfigurationProvider.html) for JSON files.
+/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) for `*.json` files.
 pub struct JsonConfigurationProvider {
     inner: Arc<InnerProvider>,
     _subscription: Option<Box<dyn Subscription>>,
 }
 
 impl JsonConfigurationProvider {
-    /// Initializes a new JSON file configuration provider.
+    /// Initializes a new `*.json` file configuration provider.
     ///
     /// # Arguments
     ///
-    /// * `file` - The [JSON file](struct.FileSource.html) information
+    /// * `file` - The `*.json` [`FileSource`](crate::FileSource) information
     pub fn new(file: FileSource) -> Self {
         let path = file.path.clone();
         let inner = Arc::new(InnerProvider::new(file));
@@ -217,17 +217,17 @@ impl ConfigurationProvider for JsonConfigurationProvider {
     }
 }
 
-/// Represents a [configuration source](trait.ConfigurationSource.html) for JSON files.
+/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for `*.json` files.
 pub struct JsonConfigurationSource {
     file: FileSource,
 }
 
 impl JsonConfigurationSource {
-    /// Initializes a new JSON file configuration source.
+    /// Initializes a new `*.json` file configuration source.
     ///
     /// # Arguments
     ///
-    /// * `file` - The [JSON file](struct.FileSource.html) information
+    /// * `file` - The `*.json` [`FileSource`](crate::FileSource) information
     pub fn new(file: FileSource) -> Self {
         Self { file }
     }
@@ -243,13 +243,13 @@ pub mod ext {
 
     use super::*;
 
-    /// Defines extension methods for the [ConfigurationBuilder](trait.ConfigurationBuilder.html) trait.
+    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
     pub trait JsonConfigurationExtensions {
-        /// Adds a JSON file as a configuration source.
+        /// Adds a `*.json` file as a configuration source.
         ///
         /// # Arguments
         ///
-        /// * `file` - The [JSON file](struct.FileSource.html) information
+        /// * `file` - The `*.json` [`FileSource`](crate::FileSource) information
         fn add_json_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
     }
 

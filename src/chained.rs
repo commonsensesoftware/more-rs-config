@@ -7,7 +7,7 @@ use crate::{
 use std::borrow::Borrow;
 use std::rc::Rc;
 
-/// Represents a chained [configuration provider](trait.ConfigurationProvider.html).
+/// Represents a chained [`ConfigurationProvider`](crate::ConfigurationProvider).
 pub struct ChainedConfigurationProvider {
     configuration: Rc<dyn Configuration>,
 }
@@ -17,7 +17,7 @@ impl ChainedConfigurationProvider {
     ///
     /// # Arguments
     ///
-    /// * `configuration` - The [configuration](trait.Configuration.html) to chain
+    /// * `configuration` - The [`Configuration`](crate::Configuration) to chain
     pub fn new(configuration: Rc<dyn Configuration>) -> Self {
         Self { configuration }
     }
@@ -54,7 +54,7 @@ impl ConfigurationProvider for ChainedConfigurationProvider {
     }
 }
 
-/// Represents a chained [configuration source](trait.ConfigurationSource.html).
+/// Represents a chained [`ConfigurationSource`](crate::ConfigurationSource).
 pub struct ChainedConfigurationSource {
     configuration: Rc<dyn Configuration>,
 }
@@ -64,14 +64,14 @@ impl ChainedConfigurationSource {
     ///
     /// # Arguments
     ///
-    /// * `configuration` - The [configuration](trait.Configuration.html) to chain
+    /// * `configuration` - The [`Configuration`](crate::Configuration) to chain
     pub fn new(configuration: Box<dyn Configuration>) -> Self {
         Self {
             configuration: Rc::from(configuration),
         }
     }
 
-    /// Gets the associated [configuration](trait.Configuration.html).
+    /// Gets the associated [`Configuration`](crate::Configuration).
     pub fn configuration(&self) -> &dyn Configuration {
         self.configuration.borrow()
     }
@@ -89,13 +89,13 @@ pub mod ext {
 
     use super::*;
 
-    /// Defines extension methods for the [ConfigurationBuilder](trait.ConfigurationBuilder.html) trait.
+    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
     pub trait ChainedBuilderExtensions {
         /// Adds the existing configuration.
         ///
         /// # Arguments
         ///
-        /// * `configuration` - The existing [configuration](trait.Configuration.html) to add
+        /// * `configuration` - The existing [`Configuration`](crate::Configuration) to add
         fn add_configuration(&mut self, configuration: Box<dyn Configuration>) -> &mut Self;
     }
 

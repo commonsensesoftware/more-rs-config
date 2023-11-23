@@ -2,7 +2,7 @@ use crate::{ext::*, *};
 use serde::de::DeserializeOwned;
 use std::{str::FromStr, ops::Deref};
 
-/// Provides binder extension methods for a [Configuration](trait.Configuration.html).
+/// Provides binder extension methods for a [`Configuration`](crate::Configuration).
 pub trait ConfigurationBinder {
     /// Creates and returns a structure bound to the configuration.
     fn reify<T: DeserializeOwned>(&self) -> T;

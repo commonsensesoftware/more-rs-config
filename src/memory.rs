@@ -3,7 +3,7 @@ use crate::{
 };
 use std::collections::HashMap;
 
-/// Represents a [configuration provider](trait.ConfigurationProvider.html) that
+/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) that
 /// provides in-memory configuration values.
 pub struct MemoryConfigurationProvider {
     data: HashMap<String, (String, Value)>,
@@ -37,7 +37,7 @@ impl ConfigurationProvider for MemoryConfigurationProvider {
     }
 }
 
-/// Represents a [configuration source](trait.ConfigurationSource.html) for in-memory data.
+/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for in-memory data.
 #[derive(Default)]
 pub struct MemoryConfigurationSource {
     /// Gets a list of key/value pairs representing the initial data.
@@ -75,7 +75,7 @@ pub mod ext {
 
     use super::*;
 
-    /// Defines extension methods for the [ConfigurationBuilder](trait.ConfigurationBuilder.html) trait.
+    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
     pub trait MemoryConfigurationBuilderExtensions {
         /// Adds the in-memory configuration source using the specified data.
         ///

@@ -5,7 +5,7 @@ use crate::{
 use std::collections::HashMap;
 use std::env::vars;
 
-/// Represents a [configuration provider](trait.ConfigurationProvider.html) for environment variables.
+/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) for environment variables.
 #[derive(Default)]
 pub struct EnvironmentVariablesConfigurationProvider {
     prefix: String,
@@ -53,7 +53,7 @@ impl ConfigurationProvider for EnvironmentVariablesConfigurationProvider {
     }
 }
 
-/// Represents a [configuration source](trait.ConfigurationSource.html) for environment variables.
+/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for environment variables.
 #[derive(Default)]
 pub struct EnvironmentVariablesConfigurationSource {
     /// A prefix used to filter environment variables.
@@ -85,7 +85,7 @@ pub mod ext {
 
     use super::*;
 
-    /// Defines extension methods for the [ConfigurationBuilder](trait.ConfigurationBuilder.html) trait.
+    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
     pub trait EnvironmentVariablesExtensions {
         /// Adds environment variables as a configuration source.
         fn add_env_vars(&mut self) -> &mut Self;

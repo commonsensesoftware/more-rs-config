@@ -93,18 +93,18 @@ impl InnerProvider {
     }
 }
 
-/// Represents a [configuration provider](trait.ConfigurationProvider.html) for INI files.
+/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) for `*.ini` files.
 pub struct IniConfigurationProvider {
     inner: Arc<InnerProvider>,
     _subscription: Option<Box<dyn Subscription>>,
 }
 
 impl IniConfigurationProvider {
-    /// Initializes a new INI file configuration provider.
+    /// Initializes a new `*.ini` file configuration provider.
     ///
     /// # Arguments
     ///
-    /// * `file` - The [INI file](struct.FileSource.html) information
+    /// * `file` - The `*.ini` [`FileSource`](crate::FileSource) information
     pub fn new(file: FileSource) -> Self {
         let path = file.path.clone();
         let inner = Arc::new(InnerProvider::new(file));
@@ -147,17 +147,17 @@ impl ConfigurationProvider for IniConfigurationProvider {
     }
 }
 
-/// Represents a [configuration source](trait.ConfigurationSource.html) for INI files.
+/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for `*.ini` files.
 pub struct IniConfigurationSource {
     file: FileSource,
 }
 
 impl IniConfigurationSource {
-    /// Initializes a new INI file configuration source.
+    /// Initializes a new `*.ini` file configuration source.
     ///
     /// # Arguments
     ///
-    /// * `file` - The [INI file](struct.FileSource.html) information
+    /// * `file` - The `*.ini` [`FileSource`](crate::FileSource) information
     pub fn new(file: FileSource) -> Self {
         Self { file }
     }
@@ -173,13 +173,13 @@ pub mod ext {
 
     use super::*;
 
-    /// Defines extension methods for the [ConfigurationBuilder](trait.ConfigurationBuilder.html) trait.
+    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
     pub trait IniConfigurationExtensions {
-        /// Adds an INI file as a configuration source.
+        /// Adds an `*.ini` file as a configuration source.
         ///
         /// # Arguments
         ///
-        /// * `file` - The [INI file](struct.FileSource.html) information
+        /// * `file` - The `*.ini` [`FileSource`](crate::FileSource) information
         fn add_ini_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
     }
 
