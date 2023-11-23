@@ -67,8 +67,8 @@ pub trait ConfigurationRoot:
 /// Defines the behavior of an iterator over
 /// [configuration providers](trait.ConfigurationProvider.html).
 pub trait ConfigurationProviderIterator<'a>:
-    Iterator<Item = &'a dyn ConfigurationProvider>
-    + ExactSizeIterator<Item = &'a dyn ConfigurationProvider>
-    + DoubleEndedIterator<Item = &'a dyn ConfigurationProvider>
+    Iterator<Item = Box<dyn ConfigurationProvider + 'a>>
+    + ExactSizeIterator<Item = Box<dyn ConfigurationProvider + 'a>>
+    + DoubleEndedIterator<Item = Box<dyn ConfigurationProvider + 'a>>
 {
 }
