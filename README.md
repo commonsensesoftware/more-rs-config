@@ -44,21 +44,24 @@ Consider the following `demo.json` file:
 }
 ```
 
-The configuration can be loaded and accessed:
+The configuration can be loaded, merged, and accessed from multiple sources:
 
 ```rust
 use config::{*, ext::*};
 
 fn main() {
     let config = DefaultConfigurationBuilder::new()
-        .add_json_file("demo.json")
+        .add_in_memory(&[("Demo", "False")])
+        .add_json_file("demo.json".is().optional())
+        .add_env_vars()
+        .add_command_line()
         .build()
         .unwrap();
     
     if let Some(demo) = config.get("demo") {
-      if *demo == "true" {
-        println!("{}", config.get("text").unwrap());
-        println!("{}", config.get("clients:0:region").unwrap());
+      if demo.as_str() == "true" {
+        println!("{}", config.get("Text").unwrap());
+        println!("{}", config.get("Clients:0:Region").unwrap());
         return;
       }
     }
@@ -98,7 +101,7 @@ fn main() {
     
     if app.demo {
         println!("{}", &config.text);
-        println!("{}", config.clients[0].region);
+        println!("{}", &config.clients[0].region);
         return;
     }
     
