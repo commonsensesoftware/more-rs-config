@@ -1,3 +1,5 @@
+{{#include links.md}}
+
 # Working With Files
 
 A [`ConfigurationProvider`](abstractions.md#configuration-provider) that is based on a file should support a `FileSource`:
@@ -11,9 +13,9 @@ pub struct FileSource {
 }
 ```
 
-An _optional_ file means that the `FileSource::path` does not need to exist. When `FileSource::reload_on_change` is specified, the provider will watch for changes to `FileSource::path` and trigger a notification via `ConfigurationProvider::reload_token`. A file change might trigger before a file has been completely written, which is operating system dependent. `FileSource::reload_delay` indicates how long a provider should wait to reload when a change is detected. The default duration is 250 milliseconds.
+An [`optional`] file means that the [`path`] does not need to exist. When [`reload_on_change`] is specified, the provider will watch for changes to [`path`] and trigger a notification via [`ConfigurationProvider::reload_token`]. A file change might trigger before a file has been completely written, which is operating system dependent. [`reload_delay`] indicates how long a provider should wait to reload when a change is detected. The default duration is 250 milliseconds.
 
-All of the built-in, file-based configuration providers support accepting a `FileSource`. A file source is most commonly just a file path, but it may include additional configuration features. The `FileSourceBuilder` struct and `FileSourceBuilderExtensions` trait provide several methods of specifying a `FileSource` and its options in a fluent manner.
+All of the built-in, file-based configuration providers support accepting a [`FileSource`]. A file source is most commonly just a file path, but it may include additional configuration features. The [`FileSourceBuilder`] struct and [`FileSourceBuilderExtensions`] trait provide several methods of specifying a [`FileSource`] and its options in a fluent manner.
 
 ```rust
 use config::{*, ext::*};

@@ -1,10 +1,12 @@
+{{#include links.md}}
+
 # Data Binding
 
 >Data binding requires the **binder** feature, which will also trigger activation of the optional **serde** dependency and is required for deserialization.
 
 Data binding leverages the [serde](https://crates.io/crates/serde) crate to enable deserializing configurations in part, or in whole, into strongly-typed structures. It is also possible to retrieve strongly-typed scalar values.
 
-A [`Configuration`](abstractions.md#configuration) is deserialized through the `ConfigurationBinder` trait:
+A [`Configuration`](abstractions.md#configuration) is deserialized through the [`ConfigurationBinder`] trait:
 
 ```rust
 pub trait ConfigurationBinder {
@@ -89,11 +91,11 @@ fn main() {
 }
 ```
 
->**Note**: The bound struct must implement `Deserialize::deserialize_in_place` to perform a true, in-place update. The default implementation creates a new struct and binds to it, which is essentially the same as mutating the struct to the result of `reify`.
+>**Note**: The bound struct must implement `Deserialize::deserialize_in_place` to perform a true, in-place update. The default implementation creates a new struct and binds to it, which is essentially the same as mutating the struct to the result of [`reify`].
 
 ## Bind an Array
 
-`ConfigurationBinder::bind` supports binding arrays to objects using array indices in configuration keys.
+[`bind`] supports binding arrays to objects using array indices in configuration keys.
 
 Consider `MyArray.json`:
 

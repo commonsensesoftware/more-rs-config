@@ -1,8 +1,10 @@
+{{#include links.md}}
+
 # INI Configuration Provider
 
 >These features are only available if the **ini** feature is activated
 
-The `IniConfigurationProvider` supports loading configuration from an `*.ini` file.
+The [`IniConfigurationProvider`] supports loading configuration from an `*.ini` file.
 
 The following code adds several configuration providers, including a couple of `*.ini` files:
 

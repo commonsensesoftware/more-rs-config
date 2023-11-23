@@ -1,8 +1,10 @@
+{{#include links.md}}
+
 # XML Configuration Provider
 
 >These features are only available if the **xml** feature is activated
 
-The `XmlConfigurationProvider` supports loading configuration from a `*.xml` file.
+The [`XmlConfigurationProvider`] supports loading configuration from a `*.xml` file.
 
 The following code adds several configuration providers, including a couple of `*.xml` files:
 
