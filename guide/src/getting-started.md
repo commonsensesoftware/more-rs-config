@@ -30,7 +30,7 @@ fn main() {
         .build()
         .unwrap();
 
-    println!("MyKey = {}", config.get("MyKey").unwrap());
+    println!("MyKey = {}", config.get("MyKey").unwrap().as_str());
 }
 ```
 

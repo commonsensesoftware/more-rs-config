@@ -79,8 +79,8 @@ fn main() {
         .build()
         .unwrap();
 
-    for (key, value) in config.iter() {
-        println!("{} = {}", key, value);
+    for (key, value) in config.iter(None) {
+        println!("{} = {}", key, value.as_str());
     }
 }
 ```
@@ -127,8 +127,8 @@ fn main() {
 
     let config = builder.build().unwrap();
 
-    for (key, value) in config.iter() {
-        println!("{} = {}", key, value);
+    for (key, value) in config.iter(None) {
+        println!("{} = {}", key, value.as_str());
     }
 }
 ```
