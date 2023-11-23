@@ -1,5 +1,5 @@
 use crate::{
-    util::*, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, LoadResult,
+    util::*, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, LoadResult, Value,
 };
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -7,7 +7,7 @@ use std::collections::HashMap;
 /// Represents a [configuration provider](trait.ConfigurationProvider.html) that
 /// provides command line configuration values.
 pub struct CommandLineConfigurationProvider {
-    data: HashMap<String, (String, String)>,
+    data: HashMap<String, (String, Value)>,
     args: Vec<String>,
     switch_mappings: HashMap<String, String>,
 }
@@ -34,10 +34,8 @@ impl CommandLineConfigurationProvider {
 }
 
 impl ConfigurationProvider for CommandLineConfigurationProvider {
-    fn get(&self, key: &str) -> Option<String> {
-        self.data
-            .get(&key.to_uppercase())
-            .map(|t| t.1.clone())
+    fn get(&self, key: &str) -> Option<Value> {
+        self.data.get(&key.to_uppercase()).map(|t| t.1.clone())
     }
 
     fn load(&mut self) -> LoadResult {
@@ -59,8 +57,10 @@ impl ConfigurationProvider for CommandLineConfigurationProvider {
             } else {
                 0
             };
+
             let mut key: String;
             let value: String;
+
             if let Some(separator) = current.find('=') {
                 let segment: String = current
                     .chars()
@@ -102,9 +102,10 @@ impl ConfigurationProvider for CommandLineConfigurationProvider {
             }
 
             key = to_pascal_case_parts(key, '-');
-            data.insert(key.to_uppercase(), (key, value));
+            data.insert(key.to_uppercase(), (key, value.into()));
         }
 
+        data.shrink_to_fit();
         self.data = data;
         Ok(())
     }
@@ -276,7 +277,7 @@ mod tests {
 
         // assert
         assert_eq!(child_keys.len(), 1);
-        assert_eq!(&provider.get("bar").unwrap(), "baz");
+        assert_eq!(provider.get("bar").unwrap().as_str(), "baz");
     }
 
     #[test]
@@ -304,11 +305,11 @@ mod tests {
         provider.child_keys(&mut child_keys, None);
 
         // assert
-        assert_eq!(&provider.get("Key1").unwrap(), "Value1");
-        assert_eq!(&provider.get("Key2").unwrap(), "Value2");
-        assert_eq!(&provider.get("Key3").unwrap(), "Value3");
-        assert_eq!(&provider.get("Key4").unwrap(), "Value4");
-        assert_eq!(&provider.get("Key5").unwrap(), "Value5");
+        assert_eq!(provider.get("Key1").unwrap().as_str(), "Value1");
+        assert_eq!(provider.get("Key2").unwrap().as_str(), "Value2");
+        assert_eq!(provider.get("Key3").unwrap().as_str(), "Value3");
+        assert_eq!(provider.get("Key4").unwrap().as_str(), "Value4");
+        assert_eq!(provider.get("Key5").unwrap().as_str(), "Value5");
     }
 
     #[test]
@@ -333,13 +334,13 @@ mod tests {
         provider.load().unwrap();
 
         // assert
-        assert_eq!(&provider.get("Key1").unwrap(), "Value1");
-        assert_eq!(&provider.get("Key2").unwrap(), "Value2");
-        assert_eq!(&provider.get("Key3").unwrap(), "Value3");
-        assert_eq!(&provider.get("Key4").unwrap(), "Value4");
-        assert_eq!(&provider.get("Key5").unwrap(), "Value5");
-        assert_eq!(&provider.get("Single").unwrap(), "1");
-        assert_eq!(&provider.get("TwoPart").unwrap(), "2");
+        assert_eq!(provider.get("Key1").unwrap().as_str(), "Value1");
+        assert_eq!(provider.get("Key2").unwrap().as_str(), "Value2");
+        assert_eq!(provider.get("Key3").unwrap().as_str(), "Value3");
+        assert_eq!(provider.get("Key4").unwrap().as_str(), "Value4");
+        assert_eq!(provider.get("Key5").unwrap().as_str(), "Value5");
+        assert_eq!(provider.get("Single").unwrap().as_str(), "1");
+        assert_eq!(provider.get("TwoPart").unwrap().as_str(), "2");
     }
 
     #[test]
@@ -368,12 +369,12 @@ mod tests {
         provider.load().unwrap();
 
         // assert
-        assert_eq!(&provider.get("LongKey1").unwrap(), "Value1");
-        assert_eq!(&provider.get("SuperLongKey2").unwrap(), "Value2");
-        assert_eq!(&provider.get("Key3").unwrap(), "Value3");
-        assert_eq!(&provider.get("Key4").unwrap(), "Value4");
-        assert_eq!(&provider.get("Key5").unwrap(), "Value5");
-        assert_eq!(&provider.get("SuchALongKey6").unwrap(), "Value6");
+        assert_eq!(provider.get("LongKey1").unwrap().as_str(), "Value1");
+        assert_eq!(provider.get("SuperLongKey2").unwrap().as_str(), "Value2");
+        assert_eq!(provider.get("Key3").unwrap().as_str(), "Value3");
+        assert_eq!(provider.get("Key4").unwrap().as_str(), "Value4");
+        assert_eq!(provider.get("Key5").unwrap().as_str(), "Value5");
+        assert_eq!(provider.get("SuchALongKey6").unwrap().as_str(), "Value6");
     }
 
     #[test]
@@ -387,7 +388,7 @@ mod tests {
         provider.load().unwrap();
 
         // assert
-        assert_eq!(&provider.get("Key1").unwrap(), "Value2");
+        assert_eq!(provider.get("Key1").unwrap().as_str(), "Value2");
     }
 
     #[test]
@@ -404,7 +405,7 @@ mod tests {
 
         // assert
         assert_eq!(child_keys.len(), 1);
-        assert_eq!(&provider.get("Key1").unwrap(), "Value1");
+        assert_eq!(provider.get("Key1").unwrap().as_str(), "Value1");
     }
 
     #[test]

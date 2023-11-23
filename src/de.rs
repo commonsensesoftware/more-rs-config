@@ -10,6 +10,7 @@ use serde::{
 use std::{
     fmt::{self, Display, Formatter},
     iter::IntoIterator,
+    ops::Deref,
     vec::IntoIter,
 };
 
@@ -72,7 +73,7 @@ macro_rules! forward_parsed_values {
 // configuration is a key/value pair mapping of String: String or String: Vec<String>; however,
 // we need a surrogate type to implement forward the deserialization on to underlying primitives
 struct Key(String);
-struct Value(Box<dyn ConfigurationSection>);
+struct Val(Box<dyn ConfigurationSection>);
 
 impl<'de> IntoDeserializer<'de, Error> for Key {
     type Deserializer = Self;
@@ -111,7 +112,7 @@ impl<'de> de::Deserializer<'de> for Key {
     }
 }
 
-impl<'de> IntoDeserializer<'de, Error> for Value {
+impl<'de> IntoDeserializer<'de, Error> for Val {
     type Deserializer = Self;
 
     fn into_deserializer(self) -> Self::Deserializer {
@@ -119,14 +120,19 @@ impl<'de> IntoDeserializer<'de, Error> for Value {
     }
 }
 
-impl<'de> de::Deserializer<'de> for Value {
+impl<'de> de::Deserializer<'de> for Val {
     type Error = Error;
 
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
     {
-        self.0.value().into_deserializer().deserialize_any(visitor)
+        self.0
+            .value()
+            .deref()
+            .clone()
+            .into_deserializer()
+            .deserialize_any(visitor)
     }
 
     fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -138,7 +144,7 @@ impl<'de> de::Deserializer<'de> for Value {
             .children()
             .into_iter()
             .take_while(|c| c.key().parse::<usize>().is_ok())
-            .map(|s| Value(s))
+            .map(|s| Val(s))
             .collect();
 
         // guarantee stable ordering by zero-based ordinal index; for example,
@@ -210,7 +216,7 @@ impl<'de> de::Deserializer<'de> for Value {
     where
         V: de::Visitor<'de>,
     {
-        visitor.visit_enum(self.0.value().into_deserializer())
+        visitor.visit_enum(self.0.value().deref().clone().into_deserializer())
     }
 
     serde::forward_to_deserialize_any! {
@@ -223,12 +229,12 @@ impl<'de> de::Deserializer<'de> for Value {
 struct ConfigValues(IntoIter<Box<dyn ConfigurationSection>>);
 
 impl Iterator for ConfigValues {
-    type Item = (Key, Value);
+    type Item = (Key, Val);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0
             .next()
-            .map(|section| (Key(section.key().to_owned()), Value(section)))
+            .map(|section| (Key(section.key().to_owned()), Val(section)))
     }
 }
 
@@ -290,5 +296,8 @@ pub fn bind_config<'a, T>(configuration: &'a dyn Configuration, data: &mut T) ->
 where
     T: Deserialize<'a>,
 {
-    Ok(T::deserialize_in_place(Deserializer::new(configuration), data)?)
+    Ok(T::deserialize_in_place(
+        Deserializer::new(configuration),
+        data,
+    )?)
 }

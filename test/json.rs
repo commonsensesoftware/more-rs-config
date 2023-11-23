@@ -28,14 +28,14 @@ fn add_json_file_should_load_settings_from_file() {
     let section = config.section("Feature").section("NativeCopy");
 
     // act
-    let result = section.get("Disabled");
+    let value = section.get("Disabled");
 
     // assert
     if path.exists() {
         remove_file(&path).ok();
     }
-    let value = result.unwrap();
-    assert_eq!(&value, "true");
+
+    assert_eq!(value.unwrap().as_str(), "true");
 }
 
 #[test]
@@ -83,14 +83,14 @@ fn add_optional_json_file_should_load_settings_from_file() {
     let section = config.section("Feature").section("NativeCopy");
 
     // act
-    let result = section.get("Disabled");
+    let value = section.get("Disabled");
 
     // assert
     if path.exists() {
         remove_file(&path).ok();
     }
-    let value = result.unwrap();
-    assert_eq!(&value, "true");
+
+    assert_eq!(value.unwrap().as_str(), "true");
 }
 
 #[test]
@@ -127,9 +127,9 @@ fn simple_json_array_should_be_converted_to_key_value_pairs() {
     if path.exists() {
         remove_file(&path).ok();
     }
-    assert_eq!(&config.get("ip:0").unwrap(), "1.2.3.4");
-    assert_eq!(&config.get("ip:1").unwrap(), "7.8.9.10");
-    assert_eq!(&config.get("ip:2").unwrap(), "11.12.13.14");
+    assert_eq!(config.get("ip:0").unwrap().as_str(), "1.2.3.4");
+    assert_eq!(config.get("ip:1").unwrap().as_str(), "7.8.9.10");
+    assert_eq!(config.get("ip:2").unwrap().as_str(), "11.12.13.14");
 }
 
 #[test]
@@ -154,10 +154,10 @@ fn complex_json_array_should_be_converted_to_key_value_pairs() {
     if path.exists() {
         remove_file(&path).ok();
     }
-    assert_eq!(&config.get("ip:0:address").unwrap(), "1.2.3.4");
-    assert_eq!(&config.get("ip:0:hidden").unwrap(), "false");
-    assert_eq!(&config.get("ip:1:address").unwrap(), "5.6.7.8");
-    assert_eq!(&config.get("ip:1:hidden").unwrap(), "true");
+    assert_eq!(config.get("ip:0:address").unwrap().as_str(), "1.2.3.4");
+    assert_eq!(config.get("ip:0:hidden").unwrap().as_str(), "false");
+    assert_eq!(config.get("ip:1:address").unwrap().as_str(), "5.6.7.8");
+    assert_eq!(config.get("ip:1:hidden").unwrap().as_str(), "true");
 }
 
 #[test]
@@ -182,10 +182,10 @@ fn nested_json_array_should_be_converted_to_key_value_pairs() {
     if path.exists() {
         remove_file(&path).ok();
     }
-    assert_eq!(&config.get("ip:0:0").unwrap(), "1.2.3.4");
-    assert_eq!(&config.get("ip:0:1").unwrap(), "5.6.7.8");
-    assert_eq!(&config.get("ip:1:0").unwrap(), "9.10.11.12");
-    assert_eq!(&config.get("ip:1:1").unwrap(), "13.14.15.16");
+    assert_eq!(config.get("ip:0:0").unwrap().as_str(), "1.2.3.4");
+    assert_eq!(config.get("ip:0:1").unwrap().as_str(), "5.6.7.8");
+    assert_eq!(config.get("ip:1:0").unwrap().as_str(), "9.10.11.12");
+    assert_eq!(config.get("ip:1:1").unwrap().as_str(), "13.14.15.16");
 }
 
 #[test]
@@ -216,9 +216,9 @@ fn json_array_item_should_be_implicitly_replaced() {
         remove_file(&path2).ok();
     }
     assert_eq!(config.section("ip").children().len(), 3);
-    assert_eq!(&config.get("ip:0").unwrap(), "15.16.17.18");
-    assert_eq!(&config.get("ip:1").unwrap(), "7.8.9.10");
-    assert_eq!(&config.get("ip:2").unwrap(), "11.12.13.14");
+    assert_eq!(config.get("ip:0").unwrap().as_str(), "15.16.17.18");
+    assert_eq!(config.get("ip:1").unwrap().as_str(), "7.8.9.10");
+    assert_eq!(config.get("ip:2").unwrap().as_str(), "11.12.13.14");
 }
 
 #[test]
@@ -249,9 +249,9 @@ fn json_array_item_should_be_explicitly_replaced() {
         remove_file(&path2).ok();
     }
     assert_eq!(config.section("ip").children().len(), 3);
-    assert_eq!(&config.get("ip:0").unwrap(), "1.2.3.4");
-    assert_eq!(&config.get("ip:1").unwrap(), "15.16.17.18");
-    assert_eq!(&config.get("ip:2").unwrap(), "11.12.13.14");
+    assert_eq!(config.get("ip:0").unwrap().as_str(), "1.2.3.4");
+    assert_eq!(config.get("ip:1").unwrap().as_str(), "15.16.17.18");
+    assert_eq!(config.get("ip:2").unwrap().as_str(), "11.12.13.14");
 }
 
 #[test]
@@ -282,10 +282,10 @@ fn json_arrays_should_be_merged() {
         remove_file(&path2).ok();
     }
     assert_eq!(config.section("ip").children().len(), 4);
-    assert_eq!(&config.get("ip:0").unwrap(), "1.2.3.4");
-    assert_eq!(&config.get("ip:1").unwrap(), "7.8.9.10");
-    assert_eq!(&config.get("ip:2").unwrap(), "11.12.13.14");
-    assert_eq!(&config.get("ip:3").unwrap(), "15.16.17.18");
+    assert_eq!(config.get("ip:0").unwrap().as_str(), "1.2.3.4");
+    assert_eq!(config.get("ip:1").unwrap().as_str(), "7.8.9.10");
+    assert_eq!(config.get("ip:2").unwrap().as_str(), "11.12.13.14");
+    assert_eq!(config.get("ip:3").unwrap().as_str(), "15.16.17.18");
 }
 
 #[test]
@@ -364,6 +364,6 @@ fn json_file_should_reload_when_changed() {
         remove_file(&path).ok();
     }
 
-    assert_eq!(&initial, "true");
-    assert_eq!(&current, "false");
+    assert_eq!(initial.as_str(), "true");
+    assert_eq!(current.as_str(), "false");
 }

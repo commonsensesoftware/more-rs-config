@@ -88,7 +88,7 @@ pub fn cmp_keys(key: &str, other_key: &str) -> Ordering {
 /// * `keys` - The accumulated keys
 /// * `parent_path` - The parent path
 pub fn accumulate_child_keys(
-    data: &HashMap<String, (String, String)>,
+    data: &HashMap<String, (String, Value)>,
     keys: &mut Vec<String>,
     parent_path: Option<&str>,
 ) {
@@ -151,11 +151,11 @@ fn recurse_children<T: ConfigurationRoot>(
 
         for provider in root.providers().rev() {
             if let Some(value) = provider.get(child.path()) {
-            formatter.write_char('=')?;
-            formatter.write_str(&value)?;
-            formatter.write_str(" (")?;
+                formatter.write_char('=')?;
+                formatter.write_str(&value)?;
+                formatter.write_str(" (")?;
                 formatter.write_str(provider.name())?;
-            formatter.write_char(')')?;
+                formatter.write_char(')')?;
                 found = true;
                 break;
             }

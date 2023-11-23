@@ -1,7 +1,7 @@
 use crate::FileSource;
 use crate::{
     util::accumulate_child_keys, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider,
-    ConfigurationSource, LoadError, LoadResult,
+    ConfigurationSource, LoadError, LoadResult, Value
 };
 use configparser::ini::Ini;
 use std::collections::HashMap;
@@ -10,7 +10,7 @@ use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken,
 
 struct InnerProvider {
     file: FileSource,
-    data: RwLock<HashMap<String, (String, String)>>,
+    data: RwLock<HashMap<String, (String, Value)>>,
     token: RwLock<SharedChangeToken<SingleChangeToken>>,
 }
 
@@ -23,7 +23,7 @@ impl InnerProvider {
         }
     }
 
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         self.data
             .read()
             .unwrap()
@@ -67,7 +67,7 @@ impl InnerProvider {
 
                     new_key.push_str(ConfigurationPath::key_delimiter());
                     new_key.push_str(&key);
-                    map.insert(new_key.to_uppercase(), (new_key, new_value));
+                    map.insert(new_key.to_uppercase(), (new_key, new_value.into()));
                 }
             }
 
@@ -130,7 +130,7 @@ impl IniConfigurationProvider {
 }
 
 impl ConfigurationProvider for IniConfigurationProvider {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         self.inner.get(key)
     }
 

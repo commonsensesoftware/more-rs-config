@@ -1,12 +1,12 @@
 use crate::{
-    util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
+    util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, Value,
 };
 use std::collections::HashMap;
 
 /// Represents a [configuration provider](trait.ConfigurationProvider.html) that
 /// provides in-memory configuration values.
 pub struct MemoryConfigurationProvider {
-    data: HashMap<String, (String, String)>,
+    data: HashMap<String, (String, Value)>,
 }
 
 impl MemoryConfigurationProvider {
@@ -20,13 +20,13 @@ impl MemoryConfigurationProvider {
     ///
     /// The data key is normalized to uppercase. The value is a tuple where the
     /// first item is the originally-cased key and the second item is value.
-    pub fn new(data: HashMap<String, (String, String)>) -> Self {
+    pub fn new(data: HashMap<String, (String, Value)>) -> Self {
         Self { data }
     }
 }
 
 impl ConfigurationProvider for MemoryConfigurationProvider {
-    fn get(&self, key: &str) -> Option<String> {
+    fn get(&self, key: &str) -> Option<Value> {
         self.data
             .get(&key.to_uppercase())
             .map(|t| t.1.clone())
@@ -41,7 +41,7 @@ impl ConfigurationProvider for MemoryConfigurationProvider {
 #[derive(Default)]
 pub struct MemoryConfigurationSource {
     /// Gets a list of key/value pairs representing the initial data.
-    pub initial_data: Vec<(String, String)>,
+    pub initial_data: Vec<(String, Value)>,
 }
 
 impl MemoryConfigurationSource {
@@ -54,7 +54,7 @@ impl MemoryConfigurationSource {
         Self {
             initial_data: initial_data
                 .iter()
-                .map(|t| (t.0.as_ref().to_owned(), t.1.as_ref().to_owned()))
+                .map(|t| (t.0.as_ref().to_owned(), t.1.as_ref().to_owned().into()))
                 .collect(),
         }
     }

@@ -1,6 +1,6 @@
 use crate::{
     util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
-    LoadResult,
+    LoadResult, Value,
 };
 use std::collections::HashMap;
 use std::env::vars;
@@ -9,7 +9,7 @@ use std::env::vars;
 #[derive(Default)]
 pub struct EnvironmentVariablesConfigurationProvider {
     prefix: String,
-    data: HashMap<String, (String, String)>,
+    data: HashMap<String, (String, Value)>,
 }
 
 impl EnvironmentVariablesConfigurationProvider {
@@ -27,10 +27,8 @@ impl EnvironmentVariablesConfigurationProvider {
 }
 
 impl ConfigurationProvider for EnvironmentVariablesConfigurationProvider {
-    fn get(&self, key: &str) -> Option<String> {
-        self.data
-            .get(&key.to_uppercase())
-            .map(|t| t.1.clone())
+    fn get(&self, key: &str) -> Option<Value> {
+        self.data.get(&key.to_uppercase()).map(|t| t.1.clone())
     }
 
     fn load(&mut self) -> LoadResult {
@@ -41,10 +39,11 @@ impl ConfigurationProvider for EnvironmentVariablesConfigurationProvider {
         for (key, value) in vars() {
             if key.to_uppercase().starts_with(&prefix) {
                 let new_key = key[prefix_len..].to_string();
-                data.insert(new_key.to_uppercase().replace("__", ":"), (new_key, value));
+                data.insert(new_key.to_uppercase().replace("__", ":"), (new_key, value.into()));
             }
         }
 
+        data.shrink_to_fit();
         self.data = data;
         Ok(())
     }
