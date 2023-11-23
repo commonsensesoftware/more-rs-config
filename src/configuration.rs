@@ -1,4 +1,4 @@
-use crate::{ConfigurationSection, Value};
+use crate::{ConfigurationSection, Value, ConfigurationPath};
 use tokens::ChangeToken;
 
 /// Defines the behavior of a configuration.
@@ -25,19 +25,11 @@ pub trait Configuration {
     }
 
     /// Gets an iterator of the key/value pairs within the [`Configuration`].
-    fn iter(&self) -> Box<dyn Iterator<Item = (String, Value)>> {
-        self.iter_relative(false)
-    }
-
-    /// Gets an iterator of the key/value pairs within the [`Configuration`].
-    ///
+    /// 
     /// # Arguments
-    ///
-    /// * `make_paths_relative` - If true, the child keys returned will have the current configuration's path trimmed from the front
-    fn iter_relative(
-        &self,
-        make_paths_relative: bool,
-    ) -> Box<dyn Iterator<Item = (String, Value)>>;
+    /// 
+    /// * `path` - The type of [`ConfigurationPath`] used when iterating
+    fn iter(&self, path: Option<ConfigurationPath>) -> Box<dyn Iterator<Item = (String, Value)>>;
 }
 
 /// Represents an iterator of key/value pairs for a [`Configuration`].
@@ -53,21 +45,19 @@ impl ConfigurationIterator {
     /// # Arguments
     ///
     /// * `configuration` - The [`Configuration`] to iterate
-    /// * `make_paths_relative` - If true, the child keys returned will have the current configuration's path trimmed from the front
-    pub fn new(configuration: &dyn Configuration, make_paths_relative: bool) -> Self {
+    /// * `path` - The type of [`ConfigurationPath`] used when iterating
+    pub fn new(configuration: &dyn Configuration, path: ConfigurationPath) -> Self {
         let stack = configuration.children();
         let mut first = None;
         let mut prefix_length = 0;
 
         if let Some(root) = configuration.as_section() {
-            if make_paths_relative {
+            if path == ConfigurationPath::Relative {
                 prefix_length = root.path().len() + 1;
-            }
-
-            if !make_paths_relative {
+            } else {
                 let key = root.path()[prefix_length..].to_owned();
                 let value = root.value();
-
+    
                 first = Some((key, value));
             }
         }

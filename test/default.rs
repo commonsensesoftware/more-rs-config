@@ -1,4 +1,4 @@
-use config::{ext::*, *};
+use config::{ext::*, ConfigurationPath::Relative, *};
 use std::collections::HashMap;
 use test_case::test_case;
 
@@ -68,9 +68,9 @@ fn add_configuration_should_chain_configurations() {
     assert!(config.get("Nonexistent").is_none());
 }
 
-#[test_case(false ; "with original path")]
-#[test_case(true ; "with relative path")]
-fn iter_should_flatten_into_hashmap(make_paths_relative: bool) {
+#[test_case(ConfigurationPath::Absolute ; "with original path")]
+#[test_case(ConfigurationPath::Relative ; "with relative path")]
+fn iter_should_flatten_into_hashmap(path: ConfigurationPath) {
     // arrange
     let source1 = MemoryConfigurationSource::new(&[
         ("Mem1", "Value1"),
@@ -98,7 +98,7 @@ fn iter_should_flatten_into_hashmap(make_paths_relative: bool) {
     let root = builder.build().unwrap();
 
     // act
-    let map: HashMap<_, _> = root.iter_relative(make_paths_relative).collect();
+    let map: HashMap<_, _> = root.iter(Some(path)).collect();
 
     // assert
     assert_eq!(map["Mem1"].as_str(), "Value1");
@@ -115,9 +115,9 @@ fn iter_should_flatten_into_hashmap(make_paths_relative: bool) {
     assert_eq!(map["Mem3:KeyInMem3:Deep3"].as_str(), "ValueDeep3");
 }
 
-#[test_case(false ; "with original path")]
-#[test_case(true ; "with relative path")]
-fn chained_iter_should_flatten_into_hashmap(make_paths_relative: bool) {
+#[test_case(ConfigurationPath::Absolute ; "with original path")]
+#[test_case(ConfigurationPath::Relative ; "with relative path")]
+fn chained_iter_should_flatten_into_hashmap(path: ConfigurationPath) {
     // arrange
     let source1 = MemoryConfigurationSource::new(&[
         ("Mem1", "Value1"),
@@ -151,7 +151,7 @@ fn chained_iter_should_flatten_into_hashmap(make_paths_relative: bool) {
     let root = builder2.build().unwrap();
 
     // act
-    let map: HashMap<_, _> = root.iter_relative(make_paths_relative).collect();
+    let map: HashMap<_, _> = root.iter(Some(path)).collect();
 
     // assert
     assert_eq!(map["Mem1"].as_str(), "Value1");
@@ -200,9 +200,9 @@ fn iter_should_strip_key_from_children() {
     let config = builder.build().unwrap();
 
     // act
-    let map1: HashMap<_, _> = config.section("Mem1").iter_relative(true).collect();
-    let map2: HashMap<_, _> = config.section("Mem2").iter_relative(true).collect();
-    let map3: HashMap<_, _> = config.section("Mem3").iter_relative(true).collect();
+    let map1: HashMap<_, _> = config.section("Mem1").iter(Some(Relative)).collect();
+    let map2: HashMap<_, _> = config.section("Mem2").iter(Some(Relative)).collect();
+    let map3: HashMap<_, _> = config.section("Mem3").iter(Some(Relative)).collect();
 
     // assert
     assert_eq!(map1.len(), 3);
@@ -251,7 +251,7 @@ fn new_configuration_root_should_be_built_from_existing_with_duplicate_keys() {
     let root2 = DefaultConfigurationBuilder::new()
         .add_in_memory(
             &root1
-                .iter()
+                .iter(None)
                 .map(|kvp| (kvp.0, kvp.1.as_str().into()))
                 .collect::<Vec<_>>(),
         )

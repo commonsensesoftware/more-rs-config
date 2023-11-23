@@ -192,11 +192,11 @@ impl Configuration for DefaultConfigurationRoot {
         Box::new(self.token.clone())
     }
 
-    fn iter_relative(
-        &self,
-        make_paths_relative: bool,
-    ) -> Box<dyn Iterator<Item = (String, Value)>> {
-        Box::new(ConfigurationIterator::new(self, make_paths_relative))
+    fn iter(&self, path: Option<ConfigurationPath>) -> Box<dyn Iterator<Item = (String, Value)>> {
+        Box::new(ConfigurationIterator::new(
+            self,
+            path.unwrap_or(ConfigurationPath::Absolute),
+        ))
     }
 }
 
@@ -283,11 +283,11 @@ impl Configuration for DefaultConfigurationSection {
         Some(self)
     }
 
-    fn iter_relative(
-        &self,
-        make_paths_relative: bool,
-    ) -> Box<dyn Iterator<Item = (String, Value)>> {
-        Box::new(ConfigurationIterator::new(self, make_paths_relative))
+    fn iter(&self, path: Option<ConfigurationPath>) -> Box<dyn Iterator<Item = (String, Value)>> {
+        Box::new(ConfigurationIterator::new(
+            self,
+            path.unwrap_or(ConfigurationPath::Absolute),
+        ))
     }
 }
 

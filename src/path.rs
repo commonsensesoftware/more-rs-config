@@ -2,7 +2,11 @@ const EMPTY: &str = "";
 const KEY_DELIMITER: &str = ":";
 
 /// Represents a configuration path.
-pub struct ConfigurationPath;
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ConfigurationPath {
+    Absolute,
+    Relative
+}
 
 impl ConfigurationPath {
     /// Gets the key delimiter used in configuration paths.
