@@ -137,7 +137,7 @@ where
     recurse_children(root, &root.children(), formatter, "")
 }
 
-fn recurse_children<'a, T: ConfigurationRoot>(
+fn recurse_children<T: ConfigurationRoot>(
     root: &T,
     children: &[Box<dyn ConfigurationSection>],
     formatter: &mut Formatter<'_>,
@@ -147,13 +147,21 @@ fn recurse_children<'a, T: ConfigurationRoot>(
         formatter.write_str(indent)?;
         formatter.write_str(child.key())?;
 
-        if let Some((value, provider)) = get_value_and_provider(root, child.path()) {
+        let mut found = false;
+
+        for provider in root.providers().rev() {
+            if let Some(value) = provider.get(child.path()) {
             formatter.write_char('=')?;
             formatter.write_str(&value)?;
             formatter.write_str(" (")?;
-            formatter.write_str(provider)?;
+                formatter.write_str(provider.name())?;
             formatter.write_char(')')?;
-        } else {
+                found = true;
+                break;
+            }
+        }
+
+        if !found {
             formatter.write_char(':')?;
         }
 
@@ -168,19 +176,6 @@ fn recurse_children<'a, T: ConfigurationRoot>(
     }
 
     Ok(())
-}
-
-fn get_value_and_provider<'a, T: ConfigurationRoot>(
-    root: &'a T,
-    key: &str,
-) -> Option<(String, &'a str)> {
-    for provider in root.providers().rev() {
-        if let Some(value) = provider.get(key) {
-            return Some((value, provider.name()));
-        }
-    }
-
-    None
 }
 
 #[cfg(test)]

@@ -1,53 +1,87 @@
 use crate::{util::fmt_debug_view, *};
 use std::any::Any;
 use std::borrow::Borrow;
+use std::cell::{Ref, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FormatResult};
-use std::iter::Map;
 use std::ops::Deref;
 use std::rc::Rc;
-use std::slice::Iter;
 use tokens::{ChangeToken, CompositeChangeToken, SharedChangeToken};
 
-struct ProviderIter<'a, F>
-where
-    F: FnMut(&Box<dyn ConfigurationProvider>) -> &dyn ConfigurationProvider,
-{
-    items: &'a Vec<Box<dyn ConfigurationProvider>>,
-    selector: F,
+struct ProviderIter<'a> {
+    head: usize,
+    tail: usize,
+    items: Ref<'a, Vec<Box<dyn ConfigurationProvider>>>,
 }
 
-impl<'a, F> ProviderIter<'a, F>
-where
-    F: FnMut(&Box<dyn ConfigurationProvider>) -> &dyn ConfigurationProvider,
-{
-    pub fn new(items: &'a Vec<Box<dyn ConfigurationProvider>>, selector: F) -> Self {
-        Self { items, selector }
+impl<'a> ProviderIter<'a> {
+    fn new(items: Ref<'a, Vec<Box<dyn ConfigurationProvider>>>) -> Self {
+        Self {
+            head: 0,
+            tail: items.len(),
+            items,
+        }
     }
 }
 
-impl<'a, F> IntoIterator for ProviderIter<'a, F>
-where
-    F: FnMut(&Box<dyn ConfigurationProvider>) -> &dyn ConfigurationProvider,
-{
-    type Item = &'a dyn ConfigurationProvider;
-    type IntoIter = Map<Iter<'a, Box<dyn ConfigurationProvider>>, F>;
+struct Item<'a>(Ref<'a, Vec<Box<dyn ConfigurationProvider + 'a>>>, usize);
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.items.iter().map(self.selector)
+impl ConfigurationProvider for Item<'_> {
+    fn get(&self, key: &str) -> Option<String> {
+        self.0[self.1].get(key)
+    }
+
+    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
+        self.0[self.1].child_keys(earlier_keys, parent_path)
+    }
+
+    fn name(&self) -> &str {
+        std::any::type_name::<Self>()
+    }
+
+    fn reload_token(&self) -> Box<dyn ChangeToken> {
+        self.0[self.1].reload_token()
     }
 }
 
-impl<'a, F> ConfigurationProviderIterator<'a> for Map<Iter<'a, Box<dyn ConfigurationProvider>>, F> where
-    F: FnMut(&Box<dyn ConfigurationProvider>) -> &dyn ConfigurationProvider
-{
+impl<'a> Iterator for ProviderIter<'a> {
+    type Item = Box<dyn ConfigurationProvider + 'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.head < self.items.len() {
+            let i = self.head;
+            self.head += 1;
+            Some(Box::new(Item(Ref::clone(&self.items), i)))
+        } else {
+            None
+        }
+    }
 }
+
+impl ExactSizeIterator for ProviderIter<'_> {
+    fn len(&self) -> usize {
+        self.items.len()
+    }
+}
+
+impl DoubleEndedIterator for ProviderIter<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.tail > 0 {
+            self.tail -= 1;
+            Some(Box::new(Item(Ref::clone(&self.items), self.tail)))
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> ConfigurationProviderIterator<'a> for ProviderIter<'a> {}
 
 /// Represents the root of a configuration.
 #[derive(Clone)]
 pub struct DefaultConfigurationRoot {
     token: SharedChangeToken<CompositeChangeToken>,
-    providers: Rc<Vec<Box<dyn ConfigurationProvider>>>,
+    providers: Rc<RefCell<Vec<Box<dyn ConfigurationProvider>>>>,
 }
 
 impl DefaultConfigurationRoot {
@@ -73,7 +107,7 @@ impl DefaultConfigurationRoot {
         if errors.is_empty() {
             Ok(Self {
                 token: SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter())),
-                providers: Rc::new(providers),
+                providers: Rc::new(providers.into()),
             })
         } else {
             Err(ReloadError::Provider(errors))
@@ -85,11 +119,11 @@ impl ConfigurationRoot for DefaultConfigurationRoot {
     fn reload(&mut self) -> ReloadResult {
         let borrowed = (Rc::strong_count(&self.providers) - 1) + Rc::weak_count(&self.providers);
 
-        if let Some(providers) = Rc::get_mut(&mut self.providers) {
+        if let Ok(mut providers) = self.providers.try_borrow_mut() {
             let mut errors = Vec::new();
             let mut tokens = Vec::with_capacity(providers.len());
 
-            for provider in providers {
+            for provider in providers.iter_mut() {
                 let result = provider.load();
 
                 if let Err(error) = result {
@@ -115,7 +149,7 @@ impl ConfigurationRoot for DefaultConfigurationRoot {
     }
 
     fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_> {
-        Box::new(ProviderIter::new(&self.providers, |p| p.deref()).into_iter())
+        Box::new(ProviderIter::new(self.providers.deref().borrow()))
     }
 
     fn as_config(&self) -> Box<dyn Configuration> {
