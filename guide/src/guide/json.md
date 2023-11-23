@@ -1,8 +1,10 @@
+{{#include links.md}}
+
 # JSON Configuration Provider
 
 >These features are only available if the **json** feature is activated
 
-The JSON configuration provider supports loading configuration from a `*.json` file.
+The [`JsonConfigurationProvider`] supports loading configuration from a `*.json` file.
 
 Consider the following `appsettings.json` file:
 

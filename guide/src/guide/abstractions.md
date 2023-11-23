@@ -8,16 +8,16 @@ The `Configuration` trait is the pinnacle of the entire framework. It defines th
 
 ```rust
 pub trait Configuration {
-    fn get(&self, key: &str) -> Option<Cow<String>>;
+    fn get(&self, key: &str) -> Option<Value>;
     fn section(&self, key: &str) -> Box<dyn ConfigurationSection>;
     fn children(&self) -> Vec<Box<dyn ConfigurationSection>>;
     fn reload_token(&self) -> Box<dyn ChangeToken>;
     fn as_section(&self) -> Option<&dyn ConfigurationSection>;
-    fn iter(&self) -> Box<dyn Iterator<Item = (String, String)>>;
+    fn iter(&self) -> Box<dyn Iterator<Item = (String, Value)>>;
     fn iter_relative(
         &self,
         make_paths_relative: bool,
-    ) -> Box<dyn Iterator<Item = (String, String)>>;
+    ) -> Box<dyn Iterator<Item = (String, Value)>>;
 }
 ```
 
@@ -34,7 +34,7 @@ pub trait ConfigurationSection:
 {
     fn key(&self) -> &str;
     fn path(&self) -> &str;
-    fn value(&self) -> Cow<String>;
+    fn value(&self) -> Value;
 }
 ```
 
@@ -63,7 +63,7 @@ A configuration provider is responsible for loading configuration from a source.
 ```rust
 pub trait ConfigurationProvider {
     fn name(&self) -> &str;
-    fn get(&self, key: &str) -> Option<Cow<String>>;
+    fn get(&self, key: &str) -> Option<Value>;
     fn reload_token(&self) -> Box<dyn ChangeToken>;
     fn load(&mut self) -> LoadResult;
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>);

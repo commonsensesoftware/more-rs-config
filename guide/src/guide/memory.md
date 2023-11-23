@@ -1,8 +1,10 @@
+{{#include links.md}}
+
 # In-Memory Configuration Provider
 
 >These features are only available if the **mem** feature is activated
 
-The `MemoryConfigurationProvider` uses an in-memory collection as configuration key-value pairs. This is most useful as a default configuration or when providing test values.
+The [`MemoryConfigurationProvider`] uses an in-memory collection as configuration key-value pairs. This is most useful as a default configuration or when providing test values.
 
 The following code adds a memory collection to the configuration system and displays the settings:
 

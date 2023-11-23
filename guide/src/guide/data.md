@@ -1,3 +1,5 @@
+{{#include links.md}}
+
 # Working With Configuration Data
 
 There are several different ways to work with configuration data. [Configuration sources](abstractions.md#configuration-source) are normalized to a generic key-value pair format, which can then be merged and consumed universally; regardless of the original format.
@@ -53,7 +55,7 @@ fn main() {
 }
 ```
 
-The preferred way to read hierarchical configuration data is using the _Options_ pattern provided by the [more-options](https://crates.io/crates/more-options) crate. The `section` and `children` methods are available to isolate sections and children of a section in the configuration data.
+The preferred way to read hierarchical configuration data is using the _Options_ pattern provided by the [more-options](https://crates.io/crates/more-options) crate. The [`section`] and [`children`] methods are available to isolate sections and children of a section in the configuration data.
 
 ## Configuration Keys and Values
 
@@ -73,7 +75,7 @@ Configuration values:
 
 ## Get Value
 
-The `ConfigurationBinder::get_value` and `ConfigurationBinder::get_value_or_default` methods extract a single value from configuration with a specified key and converts it to the specified type.
+The [`get_value`] and [`get_value_or_default`] methods extract a single value from configuration with a specified key and converts it to the specified type.
 
 ```rust
 use config::{*, ext::*};
@@ -123,7 +125,7 @@ For the examples that follow, consider the following `MySubsection.json` file:
 
 ### Section
 
-`Configuration::section` returns a configuration subsection with the specified subsection key.
+[`section`] returns a configuration subsection with the specified subsection key.
 
 The following code returns values for `section1`:
 
@@ -147,11 +149,11 @@ println!("section2:subsection0:key0: {}\n\
           section.get("key1").unwrap());
 ```
 
-If a matching section isn't found, an empty `ConfigurationSection` is returned.
+If a matching section isn't found, an empty [`ConfigurationSection`] is returned.
 
 ### Children and Exists
 
-The following code calls `Configuration::children` and returns values for `section2:subsection0`:
+The following code calls [`children`] and returns values for `section2:subsection0`:
 
 ```rust
 let section = config.section("section2");
@@ -178,5 +180,5 @@ println!("section1:key0: {}\n\
           section.get("key1").unwrap());
 ```
 
-The preceding code uses the `ConfigurationSectionExtensions::exists` extension to verify the section exists.
+The preceding code uses the [`exists`] extension to verify the section exists.
 

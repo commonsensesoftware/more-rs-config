@@ -1,8 +1,10 @@
+{{#include links.md}}
+
 # Environment Variable Configuration Provider
 
 >These features are only available if the **env** feature is activated
 
-The `EnvironmentVariablesConfigurationProvider` loads configuration from environment variable key-value pairs.
+The [`EnvironmentVariablesConfigurationProvider`] loads configuration from environment variable key-value pairs.
 
 The `:` separator doesn't work with environment variable hierarchical keys on all platforms. `__`, the double underscore, is:
 
@@ -15,7 +17,7 @@ export Position__Title=Console
 export Position__Name="John Doe"
 ```
 
-Call `add_env_vars` to add environment variables or `add_env_vars_with_prefix` with a string to specify a prefix for environment variables:
+Call [`add_env_vars`] to add environment variables or [`add_env_vars_with_prefix`] with a string to specify a prefix for environment variables:
 
 ```rust
 use config::{*, ext::*};
