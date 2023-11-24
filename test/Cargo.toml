@@ -9,8 +9,7 @@ path = "lib.rs"
 doctest = false
 
 [dependencies]
-#more-changetoken = "1.0"
-more-changetoken = { path = "../../more-rs-changetoken" }
+more-changetoken = "2.0"
 more-config = { path = "../src", features = ["std", "chained", "mem", "env", "ini", "json", "xml", "binder"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
