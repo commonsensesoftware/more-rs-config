@@ -4,7 +4,10 @@ const KEY_DELIMITER: &str = ":";
 /// Represents a configuration path.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ConfigurationPath {
+    /// Indicates a qualified, absolute configuration path.
     Absolute,
+
+    // Indicates a configuration path relative to a parent.
     Relative
 }
 
