@@ -1,35 +1,71 @@
-use crate::{ConfigurationSection, Value, ConfigurationPath};
+use crate::{ConfigurationPath, ConfigurationSection, Value};
+use cfg_if::cfg_if;
 use tokens::ChangeToken;
 
-/// Defines the behavior of a configuration.
-pub trait Configuration {
-    /// Gets the configuration value.
-    ///
-    /// # Arguments
-    ///
-    /// * `key` - The configuration key
-    fn get(&self, key: &str) -> Option<Value>;
+cfg_if! {
+    if #[cfg(feature = "async")] {
+        /// Defines the behavior of a configuration.
+        pub trait Configuration: Send + Sync {
+            /// Gets the configuration value.
+            ///
+            /// # Arguments
+            ///
+            /// * `key` - The configuration key
+            fn get(&self, key: &str) -> Option<Value>;
 
-    /// Gets a [`ConfigurationSection`](crate::ConfigurationSection) with the specified key.
-    fn section(&self, key: &str) -> Box<dyn ConfigurationSection>;
+            /// Gets a [`ConfigurationSection`](crate::ConfigurationSection) with the specified key.
+            fn section(&self, key: &str) -> Box<dyn ConfigurationSection>;
 
-    /// Gets the sequence of [`ConfigurationSection`](crate::ConfigurationSection) children.
-    fn children(&self) -> Vec<Box<dyn ConfigurationSection>>;
+            /// Gets the sequence of [`ConfigurationSection`](crate::ConfigurationSection) children.
+            fn children(&self) -> Vec<Box<dyn ConfigurationSection>>;
 
-    /// Returns a [`ChangeToken`](tokens::ChangeToken) that can be used to observe when this configuration is reloaded.
-    fn reload_token(&self) -> Box<dyn ChangeToken>;
+            /// Returns a [`ChangeToken`](tokens::ChangeToken) that can be used to observe when this configuration is reloaded.
+            fn reload_token(&self) -> Box<dyn ChangeToken>;
 
-    /// Attempts to convert the [`Configuration`] as a [`ConfigurationSection`](crate::ConfigurationSection).
-    fn as_section(&self) -> Option<&dyn ConfigurationSection> {
-        None
+            /// Attempts to convert the [`Configuration`] as a [`ConfigurationSection`](crate::ConfigurationSection).
+            fn as_section(&self) -> Option<&dyn ConfigurationSection> {
+                None
+            }
+
+            /// Gets an iterator of the key/value pairs within the [`Configuration`].
+            ///
+            /// # Arguments
+            ///
+            /// * `path` - The type of [`ConfigurationPath`] used when iterating
+            fn iter(&self, path: Option<ConfigurationPath>) -> Box<dyn Iterator<Item = (String, Value)>>;
+        }
+    } else {
+        /// Defines the behavior of a configuration.
+        pub trait Configuration {
+            /// Gets the configuration value.
+            ///
+            /// # Arguments
+            ///
+            /// * `key` - The configuration key
+            fn get(&self, key: &str) -> Option<Value>;
+
+            /// Gets a [`ConfigurationSection`](crate::ConfigurationSection) with the specified key.
+            fn section(&self, key: &str) -> Box<dyn ConfigurationSection>;
+
+            /// Gets the sequence of [`ConfigurationSection`](crate::ConfigurationSection) children.
+            fn children(&self) -> Vec<Box<dyn ConfigurationSection>>;
+
+            /// Returns a [`ChangeToken`](tokens::ChangeToken) that can be used to observe when this configuration is reloaded.
+            fn reload_token(&self) -> Box<dyn ChangeToken>;
+
+            /// Attempts to convert the [`Configuration`] as a [`ConfigurationSection`](crate::ConfigurationSection).
+            fn as_section(&self) -> Option<&dyn ConfigurationSection> {
+                None
+            }
+
+            /// Gets an iterator of the key/value pairs within the [`Configuration`].
+            ///
+            /// # Arguments
+            ///
+            /// * `path` - The type of [`ConfigurationPath`] used when iterating
+            fn iter(&self, path: Option<ConfigurationPath>) -> Box<dyn Iterator<Item = (String, Value)>>;
+        }
     }
-
-    /// Gets an iterator of the key/value pairs within the [`Configuration`].
-    /// 
-    /// # Arguments
-    /// 
-    /// * `path` - The type of [`ConfigurationPath`] used when iterating
-    fn iter(&self, path: Option<ConfigurationPath>) -> Box<dyn Iterator<Item = (String, Value)>>;
 }
 
 /// Represents an iterator of key/value pairs for a [`Configuration`].
@@ -57,7 +93,7 @@ impl ConfigurationIterator {
             } else {
                 let key = root.path()[prefix_length..].to_owned();
                 let value = root.value();
-    
+
                 first = Some((key, value));
             }
         }
