@@ -20,6 +20,7 @@ This crate provides the following features:
 
 - _default_ - Abstractions for configuration, including the **std** features
 - **std** - Standard configuration implementation
+- **async** - Use configuration in an asynchronous context
 - **mem** - An in-memory configuration source
 - **env** - An environment variables configuration source
 - **cmd** - A command-line argument configuration source

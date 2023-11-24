@@ -1,12 +1,60 @@
 use crate::{util::fmt_debug_view, *};
+use cfg_if::cfg_if;
 use std::any::Any;
 use std::borrow::Borrow;
-use std::cell::{Ref, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter, Result as FormatResult};
 use std::ops::Deref;
-use std::rc::Rc;
 use tokens::{ChangeToken, CompositeChangeToken, SharedChangeToken};
+
+cfg_if! {
+    if #[cfg(feature = "async")] {
+        use std::sync::Arc;
+
+        type Pc<T> = std::sync::Arc<T>;
+        type Mut<T> = std::sync::RwLock<T>;
+        type Ref<'a, T> = Arc<std::sync::RwLockReadGuard<'a, T>>;
+    } else {
+        use std::cell::Ref;
+
+        type Pc<T> = std::rc::Rc<T>;
+        type Mut<T> = std::cell::RefCell<T>;
+    }
+}
+
+struct ProviderItem<'a> {
+    index: usize,
+    name: String,
+    items: Ref<'a, Vec<Box<dyn ConfigurationProvider + 'a>>>,
+}
+
+impl<'a> ProviderItem<'a> {
+    fn new(
+        items: Ref<'a, Vec<Box<dyn ConfigurationProvider + 'a>>>,
+        index: usize,
+        name: String,
+    ) -> Self {
+        Self { index, name, items }
+    }
+}
+
+impl ConfigurationProvider for ProviderItem<'_> {
+    fn get(&self, key: &str) -> Option<Value> {
+        self.items[self.index].get(key)
+    }
+
+    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
+        self.items[self.index].child_keys(earlier_keys, parent_path)
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn reload_token(&self) -> Box<dyn ChangeToken> {
+        self.items[self.index].reload_token()
+    }
+}
 
 struct ProviderIter<'a> {
     head: usize,
@@ -24,34 +72,30 @@ impl<'a> ProviderIter<'a> {
     }
 }
 
-struct Item<'a>(Ref<'a, Vec<Box<dyn ConfigurationProvider + 'a>>>, usize);
-
-impl ConfigurationProvider for Item<'_> {
-    fn get(&self, key: &str) -> Option<Value> {
-        self.0[self.1].get(key)
-    }
-
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
-        self.0[self.1].child_keys(earlier_keys, parent_path)
-    }
-
-    fn name(&self) -> &str {
-        std::any::type_name::<Self>()
-    }
-
-    fn reload_token(&self) -> Box<dyn ChangeToken> {
-        self.0[self.1].reload_token()
-    }
-}
-
 impl<'a> Iterator for ProviderIter<'a> {
     type Item = Box<dyn ConfigurationProvider + 'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.head < self.items.len() {
             let i = self.head;
+            let name = self.items[i].name().to_owned();
             self.head += 1;
-            Some(Box::new(Item(Ref::clone(&self.items), i)))
+
+            cfg_if! {
+                if #[cfg(feature = "async")] {
+                    Some(Box::new(ProviderItem::new(
+                        self.items.clone(),
+                        i,
+                        name,
+                    )))
+                } else {
+                    Some(Box::new(ProviderItem::new(
+                        Ref::clone(&self.items),
+                        i,
+                        name,
+                    )))
+                }
+            }
         } else {
             None
         }
@@ -68,7 +112,23 @@ impl DoubleEndedIterator for ProviderIter<'_> {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.tail > 0 {
             self.tail -= 1;
-            Some(Box::new(Item(Ref::clone(&self.items), self.tail)))
+            let name = self.items[self.tail].name().to_owned();
+
+            cfg_if! {
+                if #[cfg(feature = "async")] {
+                    Some(Box::new(ProviderItem::new(
+                        self.items.clone(),
+                        self.tail,
+                        name,
+                    )))
+                } else {
+                    Some(Box::new(ProviderItem::new(
+                        Ref::clone(&self.items),
+                        self.tail,
+                        name,
+                    )))
+                }
+            }
         } else {
             None
         }
@@ -81,7 +141,7 @@ impl<'a> ConfigurationProviderIterator<'a> for ProviderIter<'a> {}
 #[derive(Clone)]
 pub struct DefaultConfigurationRoot {
     token: SharedChangeToken<CompositeChangeToken>,
-    providers: Rc<RefCell<Vec<Box<dyn ConfigurationProvider>>>>,
+    providers: Pc<Mut<Vec<Box<dyn ConfigurationProvider>>>>,
 }
 
 impl DefaultConfigurationRoot {
@@ -107,7 +167,7 @@ impl DefaultConfigurationRoot {
         if errors.is_empty() {
             Ok(Self {
                 token: SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter())),
-                providers: Rc::new(providers.into()),
+                providers: Pc::new(providers.into()),
             })
         } else {
             Err(ReloadError::Provider(errors))
@@ -117,9 +177,17 @@ impl DefaultConfigurationRoot {
 
 impl ConfigurationRoot for DefaultConfigurationRoot {
     fn reload(&mut self) -> ReloadResult {
-        let borrowed = (Rc::strong_count(&self.providers) - 1) + Rc::weak_count(&self.providers);
+        let borrowed = (Pc::strong_count(&self.providers) - 1) + Pc::weak_count(&self.providers);
 
-        if let Ok(mut providers) = self.providers.try_borrow_mut() {
+        cfg_if! {
+            if #[cfg(feature = "async")] {
+                let result = self.providers.try_write();
+            } else {
+                let result = self.providers.try_borrow_mut();
+            }
+        }
+
+        if let Ok(mut providers) = result {
             let mut errors = Vec::new();
             let mut tokens = Vec::with_capacity(providers.len());
 
@@ -149,7 +217,13 @@ impl ConfigurationRoot for DefaultConfigurationRoot {
     }
 
     fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_> {
-        Box::new(ProviderIter::new(self.providers.deref().borrow()))
+        cfg_if! {
+            if #[cfg(feature = "async")] {
+                Box::new(ProviderIter::new(self.providers.deref().read().unwrap().into()))
+            } else {
+                Box::new(ProviderIter::new(self.providers.deref().borrow()))
+            }
+        }
     }
 
     fn as_config(&self) -> Box<dyn Configuration> {
@@ -223,6 +297,13 @@ impl Deref for DefaultConfigurationRoot {
 
     fn deref(&self) -> &Self::Target {
         self
+    }
+}
+
+cfg_if! {
+    if #[cfg(feature = "async")] {
+        unsafe impl Send for DefaultConfigurationRoot {}
+        unsafe impl Sync for DefaultConfigurationRoot {}
     }
 }
 
