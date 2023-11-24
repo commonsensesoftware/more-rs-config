@@ -128,7 +128,7 @@ fn segment(key: &str, start: usize) -> &str {
 ///
 /// # Arguments
 ///
-/// * `root` - The [`ConfigurationRoot`](crate::ConfigurationRoot) to format
+/// * `root` - The [`ConfigurationRoot`] to format
 /// * `formatter` - The formatter used to output the configuration
 pub fn fmt_debug_view<T>(root: &T, formatter: &mut Formatter<'_>) -> FormatResult
 where
