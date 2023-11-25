@@ -1,11 +1,10 @@
-use tokens::ChangeToken;
-
 use crate::{
     util::cmp_keys, Configuration, ConfigurationBuilder, ConfigurationProvider,
     ConfigurationSource, Value,
 };
 use std::borrow::Borrow;
 use std::rc::Rc;
+use tokens::ChangeToken;
 
 /// Represents a chained [`ConfigurationProvider`](crate::ConfigurationProvider).
 pub struct ChainedConfigurationProvider {
@@ -82,6 +81,20 @@ impl ConfigurationSource for ChainedConfigurationSource {
         Box::new(ChainedConfigurationProvider::new(
             self.configuration.clone(),
         ))
+    }
+}
+
+impl From<Box<dyn Configuration>> for ChainedConfigurationSource {
+    fn from(value: Box<dyn Configuration>) -> Self {
+        Self::new(value)
+    }
+}
+
+impl From<Rc<dyn Configuration>> for ChainedConfigurationSource {
+    fn from(value: Rc<dyn Configuration>) -> Self {
+        Self {
+            configuration: value,
+        }
     }
 }
 
