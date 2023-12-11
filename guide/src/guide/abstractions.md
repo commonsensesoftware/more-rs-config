@@ -36,6 +36,7 @@ pub trait ConfigurationSection:
     fn key(&self) -> &str;
     fn path(&self) -> &str;
     fn value(&self) -> Value;
+    fn as_config(&self) -> Box<dyn Configuration>;
 }
 ```
 
