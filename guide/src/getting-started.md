@@ -3,7 +3,7 @@
 The simplest way to get started is to install the crate using all features.
 
 ```bash
-cargo install more-config --all-features
+cargo add more-config --all-features
 ```
 
 Once you know which configuration sources you want to support, you can limit the features to only the ones you need.
