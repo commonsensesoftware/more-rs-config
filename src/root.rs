@@ -61,7 +61,7 @@ pub trait ConfigurationRoot:
     /// Gets the [`ConfigurationProvider`](crate::ConfigurationProvider) sequence for this configuration.
     fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_>;
 
-    /// Converts the [`ConfigurationRoot``] into a [`Configuration``](crate::Configuration).
+    /// Converts the [`ConfigurationRoot`] into a [`Configuration`](crate::Configuration).
     fn as_config(&self) -> Box<dyn Configuration>;
 }
 
