@@ -16,6 +16,9 @@ pub trait ConfigurationSection:
 
     /// Gets the section value.
     fn value(&self) -> Value;
+
+    /// Converts the [`ConfigurationSection`] into a [`Configuration`](crate::Configuration).
+    fn as_config(&self) -> Box<dyn Configuration>;
 }
 
 pub mod ext {
