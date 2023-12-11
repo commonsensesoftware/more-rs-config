@@ -308,8 +308,9 @@ cfg_if! {
 }
 
 /// Represent a configuration section.
+#[derive(Clone)]
 pub struct DefaultConfigurationSection {
-    root: Box<dyn ConfigurationRoot>,
+    root: Pc<dyn ConfigurationRoot>,
     path: String,
 }
 
@@ -322,7 +323,7 @@ impl DefaultConfigurationSection {
     /// * `path` - The path of the configuration section
     pub fn new(root: Box<dyn ConfigurationRoot>, path: &str) -> Self {
         Self {
-            root,
+            root: root.into(),
             path: path.to_owned(),
         }
     }
@@ -383,6 +384,10 @@ impl ConfigurationSection for DefaultConfigurationSection {
 
     fn value(&self) -> Value {
         self.root.get(&self.path).unwrap_or_default()
+    }
+
+    fn as_config(&self) -> Box<dyn Configuration> {
+        Box::new(self.clone())
     }
 }
 
