@@ -1,5 +1,4 @@
 [workspace]
-members = [
-    "src",
-    "test",
-]
+members = ["src", "test", "examples/*"]
+default-members = ["src", "test"]
+resolver = "2"

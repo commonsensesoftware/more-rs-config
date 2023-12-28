@@ -1,0 +1,8 @@
+{
+    "text": "Hello world!",
+    "demo": true,
+    "clients": [{
+      "region": "us-west",
+      "url": "https://tempuri.org"
+    }]
+  }
