@@ -134,7 +134,7 @@ fn main() {
         .unwrap();
     let array: ArrayExample = config.reify();
 
-    for (i, item) in array.iter().enumerate() {
+    for (i, item) in array.entries.iter().enumerate() {
         println!("Index: {}, Value: {}", i, item );
     }
 }
