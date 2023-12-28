@@ -77,32 +77,40 @@ Raw configuration values can be used, but they are much more interesting when we
 use serde::Deserialize;
 
 #[derive(Default, Deserialize)]
+#[serde(rename_all(deserialize = "PascalCase"))]
 struct Client {
     region: String,
     url: String,
 }
 
 #[derive(Default, Deserialize)]
+#[serde(rename_all(deserialize = "PascalCase"))]
 struct AppOptions {
     text: String,
     demo: bool,
     clients: Vec<Client>,
 }
 ```
+>The first letter of JSON configuration keys are normalized to uppercase.
 
 ```rust
 use config::{*, ext::*};
 
 fn main() {
+    let file = std::env::current_exe()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("../../demo.json");
     let config = DefaultConfigurationBuilder::new()
-        .add_json_file("demo.json")
+        .add_json_file(file)
         .build()
         .unwrap();
     let app: AppOptions = config.reify();
     
     if app.demo {
-        println!("{}", &config.text);
-        println!("{}", &config.clients[0].region);
+        println!("{}", &app.text);
+        println!("{}", &app.clients[0].region);
         return;
     }
     

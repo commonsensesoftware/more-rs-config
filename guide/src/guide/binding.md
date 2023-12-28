@@ -26,12 +26,14 @@ Consider the following struct:
 use serde::Deserialize;
 
 #[derive(Default, Deserialize)]
+#[serde(rename_all(deserialize = "PascalCase"))]
 struct ContactOptions {
     name: String,
     primary: bool,
     phones: Vec<String>,
 }
 ```
+>Configuration keys are normalized or expected to otherwise be Pascal Case for consistency.
 
 The following demonstrates how to load a configuration and then reify the configuration into the struct that was defined above. This example used the [in-memory configuration provider](memory.md), but any configuration provider or multiple configuration providers can be used.
 
@@ -120,6 +122,7 @@ use config::{*, ext::*};
 use serde::Deserialize;
 
 #[derive(Default, Deserialize)]
+#[serde(rename_all(deserialize = "PascalCase"))]
 struct ArrayExample {
     entries: Vec<String>,
 }
