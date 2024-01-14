@@ -51,6 +51,9 @@ mod binder;
 #[cfg(feature = "binder")]
 mod de;
 
+#[cfg(feature = "struct")]
+mod r#struct;
+
 mod file;
 pub use builder::*;
 pub use configuration::*;
@@ -97,6 +100,10 @@ pub use cmd::{CommandLineConfigurationProvider, CommandLineConfigurationSource};
 #[cfg_attr(docsrs, doc(cfg(feature = "xml")))]
 pub use xml::{XmlConfigurationProvider, XmlConfigurationSource};
 
+#[cfg(feature = "struct")]
+#[cfg_attr(docsrs, doc(cfg(feature = "struct")))]
+pub use r#struct::{StructConfigurationProvider, StructConfigurationSource};
+
 /// Contains configuration extension methods.
 pub mod ext {
 
@@ -137,6 +144,10 @@ pub mod ext {
     #[cfg(feature = "binder")]
     #[cfg_attr(docsrs, doc(cfg(feature = "binder")))]
     pub use de::*;
+
+    #[cfg(feature = "struct")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "struct")))]
+    pub use r#struct::ext::*;
 
     pub use section::ext::*;
     pub use file::ext::*;
