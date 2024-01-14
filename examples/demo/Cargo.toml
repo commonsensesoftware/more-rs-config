@@ -5,5 +5,6 @@ edition = "2021"
 publish = false
 
 [dependencies]
-more-config = { path = "../../src", features = ["mem", "env", "cmd", "json", "binder"] }
+more-config = { path = "../../src", features = ["mem", "env", "cmd", "json", "binder", "struct"] }
 serde = { version = "1.0", features = ["derive"] }
+serde-intermediate = "1.6"

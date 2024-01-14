@@ -12,6 +12,7 @@
 - [Working With Data](guide/data.md)
 - [File Sources](guide/files.md)
 - [In-Memory Provider](guide/memory.md)
+- [Data Structure Provider](guide/struct.md)
 - [Environment Variable Provider](guide/env.md)
 - [Command-Line Provider](guide/cmd.md)
 - [JSON Provider](guide/json.md)

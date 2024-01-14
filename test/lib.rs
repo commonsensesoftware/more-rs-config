@@ -8,3 +8,4 @@ mod ini;
 mod json;
 mod reload;
 mod xml;
+mod r#struct;

@@ -27,11 +27,7 @@ impl StructVisitor {
             Intermediate::Unit |
             Intermediate::UnitStruct |
             Intermediate::UnitVariant(_) => {
-                if let Some(key) = self.paths.last() {
-                    self.data
-                        .insert(key.to_uppercase(), (to_pascal_case(key), String::new().into()));
-                }
-                return
+                panic!("Unit and Unit struct are not supported");
             },
             _ => {}
         };
@@ -64,7 +60,7 @@ impl StructVisitor {
                 if map.len() > 0
                 {
                     for (name, element) in map {
-                        self.enter_context(name.to_string());
+                        self.enter_context(to_pascal_case(name.to_string().replace("\"", "")));
                         self.visit_element(element);
                         self.exit_context();
                     }
@@ -96,7 +92,6 @@ impl StructVisitor {
             _ => {}
         };
 
-            //Intermediate::Bytes(v) => { /* vec<u8> */ },
         match element {
             Intermediate::Bool(v) => { self.add_value(v) },
             Intermediate::String(v) => { self.add_value(v) },
