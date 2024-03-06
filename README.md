@@ -121,6 +121,11 @@ fn main() {
 }
 ```
 
+## Minimum Supported Rust Version
+
+When increasing the minimum supported Rust version (MSRV), the new version must have been released
+at least six months ago. The current MSRV is 1.60.
+
 ## License
 
 This project is licensed under the [MIT license].
