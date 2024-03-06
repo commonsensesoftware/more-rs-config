@@ -3,7 +3,13 @@
 The simplest way to get started is to install the crate using all features.
 
 ```bash
-cargo add more-config --all-features
+cargo add more-config --features all
+```
+
+This includes all features _except_ the **async** feature. The **async** feature intersects with all other features. If you would like all features with asynchronous support use:
+
+```bash
+cargo add more-config --features all,async
 ```
 
 Once you know which configuration sources you want to support, you can limit the features to only the ones you need.
