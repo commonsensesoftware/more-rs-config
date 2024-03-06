@@ -1,0 +1,396 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Working With Data - More Configuration Documentation</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/custom.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">User Guide</li><li class="chapter-item expanded "><a href="../getting-started.html"><strong aria-hidden="true">1.</strong> Getting Started</a></li><li class="chapter-item expanded affix "><li class="part-title">Reference Guide</li><li class="chapter-item expanded "><a href="../guide/abstractions.html"><strong aria-hidden="true">2.</strong> Abstractions</a></li><li class="chapter-item expanded "><a href="../guide/data.html" class="active"><strong aria-hidden="true">3.</strong> Working With Data</a></li><li class="chapter-item expanded "><a href="../guide/files.html"><strong aria-hidden="true">4.</strong> File Sources</a></li><li class="chapter-item expanded "><a href="../guide/memory.html"><strong aria-hidden="true">5.</strong> In-Memory Provider</a></li><li class="chapter-item expanded "><a href="../guide/env.html"><strong aria-hidden="true">6.</strong> Environment Variable Provider</a></li><li class="chapter-item expanded "><a href="../guide/cmd.html"><strong aria-hidden="true">7.</strong> Command-Line Provider</a></li><li class="chapter-item expanded "><a href="../guide/json.html"><strong aria-hidden="true">8.</strong> JSON Provider</a></li><li class="chapter-item expanded "><a href="../guide/xml.html"><strong aria-hidden="true">9.</strong> XML Provider</a></li><li class="chapter-item expanded "><a href="../guide/ini.html"><strong aria-hidden="true">10.</strong> INI Provider</a></li><li class="chapter-item expanded "><a href="../guide/chained.html"><strong aria-hidden="true">11.</strong> Chained Provider</a></li><li class="chapter-item expanded "><a href="../guide/binding.html"><strong aria-hidden="true">12.</strong> Data Binding</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">More Configuration Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/commonsensesoftware/more-rs-config/tree/main/guide" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/commonsensesoftware/more-rs-config/edit/main/guide/src/guide/data.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="working-with-configuration-data"><a class="header" href="#working-with-configuration-data">Working With Configuration Data</a></h1>
+<p>There are several different ways to work with configuration data. <a href="abstractions.html#configuration-source">Configuration sources</a> are normalized to a generic key-value pair format, which can then be merged and consumed universally; regardless of the original format.</p>
+<h2 id="hierarchical-configuration-data"><a class="header" href="#hierarchical-configuration-data">Hierarchical Configuration Data</a></h2>
+<p>The Configuration API reads hierarchical configuration data by flattening the hierarchical data with the use of a delimiter in the configuration keys.</p>
+<p>Consider the following <code>appsettings.json</code> file:</p>
+<pre><code class="language-json">{
+  "Position": {
+    "Title": "Editor",
+    "Name": "Joe Smith"
+  },
+  "MyKey": "My appsettings.json Value",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "App": "Warning",
+      "App.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*"
+}
+</code></pre>
+<p>The following code displays several of the configurations settings:</p>
+<pre><code class="language-rust">use config::{*, ext::*};
+
+fn main() {
+    let config = DefaultConfigurationBuilder::new()
+        .add_json_file("appsettings.json")
+        .build()
+        .unwrap();
+
+    let my_key_value = config.get("MyKey").unwrap().as_str();
+    let title = config.get("Position:Title").unwrap().as_str();
+    let name = config.section("Position").get("Name").unwrap().as_str();
+    let default_log_level = config.get("Logging:LogLevel:Default").unwrap().as_str();
+
+    println!("MyKey value: {}\n\
+              Title: {}\n\
+              Name: {}\n\
+              Default Log Level: {}",
+              my_key_value,
+              title,
+              name,
+              default_log_level);
+}</code></pre>
+<p>The preferred way to read hierarchical configuration data is using the <em>Options</em> pattern provided by the <a href="https://crates.io/crates/more-options">more-options</a> crate. The <a href="https://docs.rs/more-config/2.0.0/config/trait.Configuration.html#method.section"><code>section</code></a> and <a href="https://docs.rs/more-config/2.0.0/config/trait.Configuration.html#method.children"><code>children</code></a> methods are available to isolate sections and children of a section in the configuration data.</p>
+<h2 id="configuration-keys-and-values"><a class="header" href="#configuration-keys-and-values">Configuration Keys and Values</a></h2>
+<p>Configuration keys:</p>
+<ul>
+<li>Are case-insensitive; for example, <code>ConnectionString</code> and <code>connectionstring</code> are treated as equivalent keys.</li>
+<li>If a key and value is set in more than one <a href="abstractions.html#configuration-provider">configuration providers</a>, the value from the last provider added is used.</li>
+<li>Hierarchical keys
+<ul>
+<li>Within the Configuration API, a colon separator (<code>:</code>) works on all platforms.</li>
+<li>In environment variables, a colon separator may not work on all platforms. A double underscore, <code>__</code>, is supported by all platforms and is automatically converted into a colon <code>:</code>.</li>
+</ul>
+</li>
+<li>The <a href="binding.html"><code>ConfigurationBinder</code></a> supports binding arrays to objects using array indices in configuration keys.</li>
+</ul>
+<p>Configuration values:</p>
+<ul>
+<li>Are strings</li>
+<li>Null values can't be stored in configuration or bound to objects</li>
+</ul>
+<h2 id="get-value"><a class="header" href="#get-value">Get Value</a></h2>
+<p>The <a href="https://docs.rs/more-config/2.0.0/config/trait.ConfigurationBinder.html#method.get_value"><code>get_value</code></a> and <a href="https://docs.rs/more-config/2.0.0/config/trait.ConfigurationBinder.html#method.get_value_or_default"><code>get_value_or_default</code></a> methods extract a single value from configuration with a specified key and converts it to the specified type.</p>
+<pre><code class="language-rust">use config::{*, ext::*};
+
+fn main() {
+    let config = DefaultConfigurationBuilder::new()
+        .add_json_file("settings.json")
+        .build()
+        .unwrap();
+
+    let number: Option&lt;u8&gt; = config.get_value("NumberKey").unwrap().unwrap_or(99);
+    let flag: bool = config.get_value_or_default("Enabled").unwrap();
+
+    println!("Number = {}", number);
+    println!("Flag = {}", flag);
+}</code></pre>
+<p>In the preceding code, if <code>NumberKey</code> isn't found in the configuration, the default value of <code>99</code> is used. If <code>Enabled</code> isn't found in the configuration, it will default to <code>false</code>, which is the <code>Default::default()</code> for <code>bool</code>.</p>
+<h2 id="section-children-and-exists"><a class="header" href="#section-children-and-exists">Section, Children, and Exists</a></h2>
+<p>For the examples that follow, consider the following <code>MySubsection.json</code> file:</p>
+<pre><code class="language-json">{
+  "section0": {
+    "key0": "value00",
+    "key1": "value01"
+  },
+  "section1": {
+    "key0": "value10",
+    "key1": "value11"
+  },
+  "section2": {
+    "subsection0": {
+      "key0": "value200",
+      "key1": "value201"
+    },
+    "subsection1": {
+      "key0": "value210",
+      "key1": "value211"
+    }
+  }
+}
+</code></pre>
+<h3 id="section"><a class="header" href="#section">Section</a></h3>
+<p><a href="https://docs.rs/more-config/2.0.0/config/trait.Configuration.html#method.section"><code>section</code></a> returns a configuration subsection with the specified subsection key.</p>
+<p>The following code returns values for <code>section1</code>:</p>
+<pre><code class="language-rust">let section = config.section("section1");
+
+println!("section1:key0: {}\n\
+          section1:key1: {}",
+          section.get("key0").unwrap().as_str(),
+          section.get("key1").unwrap().as_str());</code></pre>
+<p>The following code returns values for <code>section2:subsection0</code>:</p>
+<pre><code class="language-rust">let section = config.section("section2:subsection0");
+
+println!("section2:subsection0:key0: {}\n\
+          section2:subsection0:key0: {}",
+          section.get("key0").unwrap().as_str(),
+          section.get("key1").unwrap().as_str());</code></pre>
+<p>If a matching section isn't found, an empty <a href="https://docs.rs/more-config/2.0.0/config/trait.ConfigurationSection.html"><code>ConfigurationSection</code></a> is returned.</p>
+<h3 id="children-and-exists"><a class="header" href="#children-and-exists">Children and Exists</a></h3>
+<p>The following code calls <a href="https://docs.rs/more-config/2.0.0/config/trait.Configuration.html#method.children"><code>children</code></a> and returns values for <code>section2:subsection0</code>:</p>
+<pre><code class="language-rust">let section = config.section("section2");
+
+if section.exists() {
+  for subsection in section.children() {
+    let key1 = format!("{}:key0", section.key());
+    let key2 = format!("{}:key1", section.key());
+    
+    println!("{} value: {}\n\
+              {} value: {}",
+              &amp;key1,
+              &amp;key2,
+              section.get(&amp;key1).unwrap().as_str(),
+              section.get(&amp;key2).unwrap().as_str());
+  }
+} else {
+  println!("section2 does not exist.");
+}
+
+println!("section1:key0: {}\n\
+          section1:key1: {}",
+          section.get("key0").unwrap().as_str(),
+          section.get("key1").unwrap().as_str());</code></pre>
+<p>The preceding code uses the <a href="https://docs.rs/more-config/2.0.0/config/trait.ConfigurationSectionExtensions.html#method.exists"><code>exists</code></a> extension to verify the section exists.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../guide/abstractions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../guide/files.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../guide/abstractions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../guide/files.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+        <script>
+            window.playground_line_numbers = true;
+        </script>
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+        <script src="../ace.js"></script>
+        <script src="../editor.js"></script>
+        <script src="../mode-rust.js"></script>
+        <script src="../theme-dawn.js"></script>
+        <script src="../theme-tomorrow_night.js"></script>
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

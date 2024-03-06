@@ -1,0 +1,369 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Data Binding - More Configuration Documentation</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/custom.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">User Guide</li><li class="chapter-item expanded "><a href="../getting-started.html"><strong aria-hidden="true">1.</strong> Getting Started</a></li><li class="chapter-item expanded affix "><li class="part-title">Reference Guide</li><li class="chapter-item expanded "><a href="../guide/abstractions.html"><strong aria-hidden="true">2.</strong> Abstractions</a></li><li class="chapter-item expanded "><a href="../guide/data.html"><strong aria-hidden="true">3.</strong> Working With Data</a></li><li class="chapter-item expanded "><a href="../guide/files.html"><strong aria-hidden="true">4.</strong> File Sources</a></li><li class="chapter-item expanded "><a href="../guide/memory.html"><strong aria-hidden="true">5.</strong> In-Memory Provider</a></li><li class="chapter-item expanded "><a href="../guide/env.html"><strong aria-hidden="true">6.</strong> Environment Variable Provider</a></li><li class="chapter-item expanded "><a href="../guide/cmd.html"><strong aria-hidden="true">7.</strong> Command-Line Provider</a></li><li class="chapter-item expanded "><a href="../guide/json.html"><strong aria-hidden="true">8.</strong> JSON Provider</a></li><li class="chapter-item expanded "><a href="../guide/xml.html"><strong aria-hidden="true">9.</strong> XML Provider</a></li><li class="chapter-item expanded "><a href="../guide/ini.html"><strong aria-hidden="true">10.</strong> INI Provider</a></li><li class="chapter-item expanded "><a href="../guide/chained.html"><strong aria-hidden="true">11.</strong> Chained Provider</a></li><li class="chapter-item expanded "><a href="../guide/binding.html" class="active"><strong aria-hidden="true">12.</strong> Data Binding</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">More Configuration Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/commonsensesoftware/more-rs-config/tree/main/guide" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/commonsensesoftware/more-rs-config/edit/main/guide/src/guide/binding.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="data-binding"><a class="header" href="#data-binding">Data Binding</a></h1>
+<blockquote>
+<p>Data binding requires the <strong>binder</strong> feature, which will also trigger activation of the optional <strong>serde</strong> dependency and is required for deserialization.</p>
+</blockquote>
+<p>Data binding leverages the <a href="https://crates.io/crates/serde">serde</a> crate to enable deserializing configurations in part, or in whole, into strongly-typed structures. It is also possible to retrieve strongly-typed scalar values.</p>
+<p>A <a href="abstractions.html#configuration"><code>Configuration</code></a> is deserialized through the <a href="https://docs.rs/more-config/2.0.0/config/trait.ConfigurationBinder.html"><code>ConfigurationBinder</code></a> trait:</p>
+<pre><code class="language-rust">pub trait ConfigurationBinder {
+   fn reify&lt;T: DeserializeOwned&gt;(&amp;self) -&gt; T;
+   fn bind&lt;T: DeserializeOwned&gt;(&amp;self, instance: &amp;mut T);
+   fn bind_at&lt;T: DeserializeOwned&gt;(&amp;self, key: impl AsRef&lt;str&gt;, instance: &amp;mut T);
+   fn get_value&lt;T: FromStr&gt;(&amp;self, key: impl AsRef&lt;str&gt;) -&gt; Result&lt;Option&lt;T&gt;, T::Err&gt;;
+   fn get_value_or_default&lt;T&gt;(&amp;self, key: impl AsRef&lt;str&gt;) -&gt; Result&lt;T, T::Err&gt;
+   where
+       T: FromStr + Default;
+}</code></pre>
+<p>Consider the following struct:</p>
+<pre><code class="language-rust">use serde::Deserialize;
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+struct ContactOptions {
+    name: String,
+    primary: bool,
+    phones: Vec&lt;String&gt;,
+}</code></pre>
+<blockquote>
+<p>Configuration keys are normalized or expected to otherwise be Pascal Case for consistency.</p>
+</blockquote>
+<p>The following demonstrates how to load a configuration and then reify the configuration into the struct that was defined above. This example used the <a href="memory.html">in-memory configuration provider</a>, but any configuration provider or multiple configuration providers can be used.</p>
+<pre><code class="language-rust">use config::{*, ext::*};
+
+fn main() {
+    let config = DefaultConfigurationBuilder::new()
+        .add_in_memory(&amp;[
+            ("name", "John Doe"),
+            ("primary", "true"),
+            ("phones:0", "+44 1234567"),
+            ("phones:1", "+44 2345678"),
+        ])
+        .build()
+        .unwrap();
+
+    let primary: bool = config.get_value_or_default("primary").unwrap();
+    let options: ContactOptions = config.reify();
+
+    println!("Is Primary: {}", primary);
+    println!("{}", &amp;options.name);
+    println!("Phones:");
+
+    for phone in &amp;contact.phones {
+        println!("\n  {}", phone);
+    }
+}</code></pre>
+<p>It is also possible to bind an existing structure to an entire <a href="abstractions.html#configuration">configuration</a> or bind at a specific <a href="abstractions.html#configuration-section">configuration section</a>.</p>
+<pre><code class="language-rust">use config::{*, ext::*};
+
+fn main() {
+    let config = DefaultConfigurationBuilder::new()
+        .add_in_memory(&amp;[
+            ("name", "John Doe"),
+            ("primary", "true"),
+            ("phones:0", "+44 1234567"),
+            ("phones:1", "+44 2345678"),
+        ])
+        .build()
+        .unwrap();
+
+    let mut options = ContactOptions::default();
+
+    config.bind(&amp;mut options);
+
+    println!("{}", &amp;options.name);
+    println!("Phones:");
+
+    for phone in &amp;contact.phones {
+        println!("\n  {}", phone);
+    }
+}</code></pre>
+<blockquote>
+<p><strong>Note</strong>: The bound struct must implement <code>Deserialize::deserialize_in_place</code> to perform a true, in-place update. The default implementation creates a new struct and binds to it, which is essentially the same as mutating the struct to the result of <a href="https://docs.rs/more-config/2.0.0/config/trait.ConfigurationBinder.html#method.reify"><code>reify</code></a>.</p>
+</blockquote>
+<h2 id="bind-an-array"><a class="header" href="#bind-an-array">Bind an Array</a></h2>
+<p><a href="https://docs.rs/more-config/2.0.0/config/trait.ConfigurationBinder.html#method.bind"><code>bind</code></a> supports binding arrays to objects using array indices in configuration keys.</p>
+<p>Consider <code>MyArray.json</code>:</p>
+<pre><code class="language-json">{
+  "array": {
+    "entries": {
+      "0": "value00",
+      "1": "value10",
+      "2": "value20",
+      "4": "value40",
+      "5": "value50"
+    }
+  }
+}
+</code></pre>
+<p>The following code reads the configuration and displays the values:</p>
+<pre><code class="language-rust">use config::{*, ext::*};
+use serde::Deserialize;
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+struct ArrayExample {
+    entries: Vec&lt;String&gt;,
+}
+
+fn main() {
+    let config = DefaultConfigurationBuilder::new()
+        .add_json_file("MyArray.json")
+        .build()
+        .unwrap();
+    let array: ArrayExample = config.reify();
+
+    for (i, item) in array.entries.iter().enumerate() {
+        println!("Index: {}, Value: {}", i, item );
+    }
+}</code></pre>
+<p>The preceding code returns the following output. Note that index 3 has the value <code>value40</code>, which corresponds to <code>"4": "value40"</code> in <code>MyArray.json</code>. The bound array indices are continuous and not bound to the configuration key index. The configuration binder isn't capable of binding null values or creating null entries in bound objects; however, a missing value can be mapped to <code>Option</code>.</p>
+<pre><code class="language-text">Index: 0  Value: value00
+Index: 1  Value: value10
+Index: 2  Value: value20
+Index: 3  Value: value40
+Index: 4  Value: value50
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../guide/chained.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../guide/chained.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+
+
+        <script>
+            window.playground_line_numbers = true;
+        </script>
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+        <script src="../ace.js"></script>
+        <script src="../editor.js"></script>
+        <script src="../mode-rust.js"></script>
+        <script src="../theme-dawn.js"></script>
+        <script src="../theme-tomorrow_night.js"></script>
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
