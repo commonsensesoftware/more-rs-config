@@ -8,6 +8,7 @@ This crate provides the following features:
 
 - _default_ - Abstractions for configuration, including the **std** features
 - **std** - Standard configuration implementation
+- **all** - Includes all features, except **async**
 - **async** - Use configuration in an asynchronous context
 - **mem** - An in-memory configuration source
 - **env** - An environment variables configuration source
@@ -17,6 +18,8 @@ This crate provides the following features:
 - **ini** - An \*.ini file configuration source
 - **chained** - Chain multiple configuration sources
 - **binder** - Bind a configuration to strongly-typed values and structs
+
+>Use `--features all,async` for all features with asynchronous support
 
 ## Contributing
 

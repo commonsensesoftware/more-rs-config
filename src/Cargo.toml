@@ -1,6 +1,6 @@
 [package]
 name = "more-config"
-version = "2.1.0"
+version = "2.1.1"
 edition = "2018"
 authors = ["Chris Martinez <chris.s.martinez@hotmail.com>"]
 description = "Provides support for configuration"
@@ -30,10 +30,11 @@ chained = ["util"]
 mem = ["util"]
 env = ["util"]
 cmd = ["util"]
-ini = ["util", "configparser", "more-changetoken/fs"]
-binder = ["serde"]
-json = ["util", "serde_json", "more-changetoken/fs"]
-xml = ["util", "xml_rs", "more-changetoken/fs"]
+ini = ["util", "dep:configparser", "more-changetoken/fs"]
+binder = ["dep:serde"]
+json = ["util", "dep:serde_json", "more-changetoken/fs"]
+xml = ["util", "dep:xml_rs", "more-changetoken/fs"]
+all = ["std", "chained", "mem", "env", "cmd", "ini", "binder", "json", "xml"]
 
 [dependencies]
 more-changetoken = "2.0"
@@ -48,4 +49,4 @@ test-case = "2.2"
 
 [dev-dependencies.more-config]
 path = "."
-features = ["cmd"]
+features = ["cmd", "json"]
