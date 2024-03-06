@@ -2,6 +2,7 @@
 name = "more-config"
 version = "2.1.1"
 edition = "2018"
+rust-version = "1.60"
 authors = ["Chris Martinez <chris.s.martinez@hotmail.com>"]
 description = "Provides support for configuration"
 keywords = ["more", "configuration", "config"]
