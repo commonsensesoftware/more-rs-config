@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use config::{ext::*, ConfigurationBuilder, DefaultConfigurationBuilder};
 use serde::Deserialize;
 
@@ -209,4 +211,60 @@ fn from_config_should_fail_with_invalid_type() {
 
     // assert
     assert_eq!(error, Error::Custom(String::from("provided string was not `true` or `false` while parsing value \'notabool\' provided by Baz")));
+}
+
+#[test]
+fn from_config_should_deserialize_nested_string_map() {
+    // arrange
+    let root = DefaultConfigurationBuilder::new()
+        .add_in_memory(&[
+            ("Dimensions:Foo", "bar"),
+            ("Dimensions:Bar", "foo"),
+            ("Dimensions:Baz", "other"),
+        ])
+        .build()
+        .unwrap();
+
+    // act
+    let result = from_config::<HashMap<String, String>>(root.section("Dimensions").deref());
+
+    // assert
+    match result {
+        Ok(actual) => assert_eq!(
+            actual,
+            [("Foo", "bar"), ("Bar", "foo"), ("Baz", "other")]
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect::<HashMap<_, _>>(),
+        ),
+        Err(e) => panic!("{:#?}", e),
+    }
+}
+
+#[test]
+fn from_config_should_deserialize_nested_typed_map() {
+    // arrange
+    let root = DefaultConfigurationBuilder::new()
+        .add_in_memory(&[
+            ("Limits:Foo", "42"),
+            ("Limits:Bar", "0"),
+            ("Limits:Baz", "420"),
+        ])
+        .build()
+        .unwrap();
+
+    // act
+    let result = from_config::<HashMap<String, usize>>(root.section("Limits").deref());
+
+    // assert
+    match result {
+        Ok(actual) => assert_eq!(
+            actual,
+            [("Foo", 42), ("Bar", 0), ("Baz", 420)]
+                .iter()
+                .map(|(k, v)| (k.to_string(), *v))
+                .collect::<HashMap<_, usize>>(),
+        ),
+        Err(e) => panic!("{:#?}", e),
+    }
 }

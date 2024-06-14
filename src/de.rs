@@ -161,6 +161,20 @@ impl<'de> de::Deserializer<'de> for Val {
         SeqDeserializer::new(values.into_iter()).deserialize_seq(visitor)
     }
 
+    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        use crate::ConfigurationPath::Relative;
+
+        let values = self
+            .0
+            .iter(Some(Relative))
+            .map(|(key, value)| (key, (*value).clone()));
+
+        MapDeserializer::new(values).deserialize_map(visitor)
+    }
+
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
@@ -221,7 +235,7 @@ impl<'de> de::Deserializer<'de> for Val {
 
     serde::forward_to_deserialize_any! {
         char str string unit
-        bytes byte_buf map unit_struct tuple_struct
+        bytes byte_buf unit_struct tuple_struct
         identifier tuple ignored_any
     }
 }
