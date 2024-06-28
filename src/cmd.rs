@@ -189,10 +189,7 @@ pub mod ext {
         /// # Arguments
         ///
         /// * `switch_mappings` - The mapping of switches to configuration values
-        fn add_command_line_map<I, S>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self
-        where
-            I: Iterator<Item = S>,
-            S: AsRef<str>;
+        fn add_command_line_map<S: AsRef<str>>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self;
     }
 
     impl CommandLineConfigurationBuilderExtensions for dyn ConfigurationBuilder {
@@ -203,11 +200,7 @@ pub mod ext {
             self
         }
 
-        fn add_command_line_map<I, S>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self
-        where
-            I: Iterator<Item = S>,
-            S: AsRef<str>,
-        {
+        fn add_command_line_map<S: AsRef<str>>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self {
             self.add(Box::new(CommandLineConfigurationSource::new(
                 std::env::args(),
                 switch_mappings,
@@ -224,11 +217,7 @@ pub mod ext {
             self
         }
 
-        fn add_command_line_map<I, S>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self
-        where
-            I: Iterator<Item = S>,
-            S: AsRef<str>,
-        {
+        fn add_command_line_map<S: AsRef<str>>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self {
             self.add(Box::new(CommandLineConfigurationSource::new(
                 std::env::args(),
                 switch_mappings,
