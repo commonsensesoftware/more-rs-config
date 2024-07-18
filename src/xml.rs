@@ -496,7 +496,7 @@ pub mod ext {
         fn add_xml_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
     }
 
-    impl XmlConfigurationExtensions for dyn ConfigurationBuilder {
+    impl XmlConfigurationExtensions for dyn ConfigurationBuilder + '_ {
         fn add_xml_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self {
             self.add(Box::new(XmlConfigurationSource::new(file.into())));
             self

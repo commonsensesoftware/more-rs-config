@@ -112,7 +112,7 @@ pub mod ext {
         fn add_configuration(&mut self, configuration: Box<dyn Configuration>) -> &mut Self;
     }
 
-    impl ChainedBuilderExtensions for dyn ConfigurationBuilder {
+    impl ChainedBuilderExtensions for dyn ConfigurationBuilder + '_ {
         fn add_configuration(&mut self, configuration: Box<dyn Configuration>) -> &mut Self {
             self.add(Box::new(ChainedConfigurationSource::new(configuration)));
             self

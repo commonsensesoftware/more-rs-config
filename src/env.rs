@@ -99,7 +99,7 @@ pub mod ext {
         fn add_env_vars_with_prefix(&mut self, prefix: &str) -> &mut Self;
     }
 
-    impl EnvironmentVariablesExtensions for dyn ConfigurationBuilder {
+    impl EnvironmentVariablesExtensions for dyn ConfigurationBuilder + '_ {
         fn add_env_vars(&mut self) -> &mut Self {
             self.add_env_vars_with_prefix("")
         }

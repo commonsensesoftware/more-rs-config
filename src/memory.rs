@@ -85,7 +85,7 @@ pub mod ext {
         fn add_in_memory<S: AsRef<str>>(&mut self, data: &[(S, S)]) -> &mut Self;
     }
 
-    impl MemoryConfigurationBuilderExtensions for dyn ConfigurationBuilder {
+    impl MemoryConfigurationBuilderExtensions for dyn ConfigurationBuilder + '_ {
         fn add_in_memory<S: AsRef<str>>(&mut self, data: &[(S, S)]) -> &mut Self {
             self.add(Box::new(MemoryConfigurationSource::new(data)));
             self

@@ -192,7 +192,7 @@ pub mod ext {
         fn add_command_line_map<S: AsRef<str>>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self;
     }
 
-    impl CommandLineConfigurationBuilderExtensions for dyn ConfigurationBuilder {
+    impl CommandLineConfigurationBuilderExtensions for dyn ConfigurationBuilder + '_ {
         fn add_command_line(&mut self) -> &mut Self {
             self.add(Box::new(CommandLineConfigurationSource::from(
                 std::env::args(),
