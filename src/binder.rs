@@ -37,7 +37,7 @@ pub trait ConfigurationBinder {
     fn get_value_or_default<T: FromStr + Default>(&self, key: impl AsRef<str>) -> Result<T, T::Err>;
 }
 
-impl ConfigurationBinder for dyn Configuration {
+impl ConfigurationBinder for dyn Configuration + '_ {
     fn reify<T: DeserializeOwned>(&self) -> T {
         from_config::<T>(self).unwrap()
     }

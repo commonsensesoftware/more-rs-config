@@ -183,7 +183,7 @@ pub mod ext {
         fn add_ini_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
     }
 
-    impl IniConfigurationExtensions for dyn ConfigurationBuilder {
+    impl IniConfigurationExtensions for dyn ConfigurationBuilder + '_ {
         fn add_ini_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self {
             self.add(Box::new(IniConfigurationSource::new(file.into())));
             self

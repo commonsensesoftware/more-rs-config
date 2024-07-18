@@ -253,7 +253,7 @@ pub mod ext {
         fn add_json_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
     }
 
-    impl JsonConfigurationExtensions for dyn ConfigurationBuilder {
+    impl JsonConfigurationExtensions for dyn ConfigurationBuilder + '_ {
         fn add_json_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self {
             self.add(Box::new(JsonConfigurationSource::new(file.into())));
             self

@@ -36,7 +36,7 @@ pub mod ext {
         fn exists(&self) -> bool;
     }
 
-    impl ConfigurationSectionExtensions for dyn ConfigurationSection {
+    impl ConfigurationSectionExtensions for dyn ConfigurationSection + '_ {
         fn exists(&self) -> bool {
             !self.value().is_empty() || !self.children().is_empty()
         }
