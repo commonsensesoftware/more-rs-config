@@ -165,12 +165,11 @@ impl<'de> de::Deserializer<'de> for Val {
     where
         V: Visitor<'de>,
     {
-        use crate::ConfigurationPath::Relative;
-
         let values = self
             .0
-            .iter(Some(Relative))
-            .map(|(key, value)| (key, (*value).clone()));
+            .children()
+            .into_iter()
+            .map(|section| (section.key().to_owned(), Val(section)));
 
         MapDeserializer::new(values).deserialize_map(visitor)
     }
