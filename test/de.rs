@@ -73,6 +73,12 @@ pub struct Parent {
     child: Child,
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub struct UserDefined {
+    settings: HashMap<String, Vec<String>>,
+}
+
 #[test]
 fn from_config_should_deserialize_simple_struct() {
     let root = DefaultConfigurationBuilder::new()
@@ -265,6 +271,147 @@ fn from_config_should_deserialize_nested_typed_map() {
                 .map(|(k, v)| (k.to_string(), *v))
                 .collect::<HashMap<_, usize>>(),
         ),
+        Err(e) => panic!("{:#?}", e),
+    }
+}
+
+#[test]
+fn from_config_should_deserialize_map_with_nested_vec() {
+    // arrange
+    let root = DefaultConfigurationBuilder::new()
+        .add_in_memory(&[
+            ("Settings:Key1:0", "bar"),
+            ("Settings:Key2:0", "foo"),
+            ("Settings:Key3:0", "a"),
+            ("Settings:Key3:1", "b"),
+            ("Settings:Key3:2", "c"),
+        ])
+        .build()
+        .unwrap();
+    let expected = HashMap::from([
+        ("Key1".to_owned(), vec!["bar".to_owned()]),
+        ("Key2".to_owned(), vec!["foo".to_owned()]),
+        (
+            "Key3".to_owned(),
+            vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],
+        ),
+    ]);
+
+    // act
+    let result = from_config::<HashMap<String, Vec<String>>>(root.section("Settings").deref());
+
+    // assert
+    match result {
+        Ok(actual) => assert_eq!(actual, expected),
+        Err(e) => panic!("{:#?}", e),
+    }
+}
+
+#[test]
+fn reify_should_deserialize_map_with_nested_vec() {
+    // arrange
+    let root = DefaultConfigurationBuilder::new()
+        .add_in_memory(&[
+            ("Settings:Key1:0", "bar"),
+            ("Settings:Key2:0", "foo"),
+            ("Settings:Key3:0", "a"),
+            ("Settings:Key3:1", "b"),
+            ("Settings:Key3:2", "c"),
+        ])
+        .build()
+        .unwrap();
+    let expected = UserDefined {
+        settings: HashMap::from([
+            ("Key1".to_owned(), vec!["bar".to_owned()]),
+            ("Key2".to_owned(), vec!["foo".to_owned()]),
+            (
+                "Key3".to_owned(),
+                vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],
+            ),
+        ]),
+    };
+
+    // act
+    let actual: UserDefined = root.reify();
+
+    // assert
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn from_config_should_deserialize_deep_nested_map() {
+    // arrange
+    let root = DefaultConfigurationBuilder::new()
+        .add_in_memory(&[
+            ("Key1:0:Subkey1_0:0", "1"),
+            ("Key1:0:Subkey1_0:1", "2"),
+            ("Key1:0:Subkey1_0:2", "3"),
+            ("Key1:0:Subkey2_0:0", "4"),
+            ("Key1:0:Subkey2_0:1", "5"),
+            ("Key1:0:Subkey2_0:2", "6"),
+            ("Key1:1:Subkey3_0:0", "7"),
+            ("Key1:1:Subkey3_0:1", "8"),
+            ("Key1:1:Subkey3_0:2", "9"),
+            ("Key2:0:Subkey4_0:0", "a"),
+            ("Key2:0:Subkey4_0:1", "b"),
+            ("Key2:0:Subkey4_0:2", "c"),
+            ("Key3:0:Subkey5_0:0", "d"),
+            ("Key3:0:Subkey5_0:1", "e"),
+            ("Key3:0:Subkey5_0:2", "f"),
+            ("Key3:0:Subkey6_0:0", "x"),
+            ("Key3:0:Subkey6_0:1", "y"),
+            ("Key3:0:Subkey6_0:2", "z"),
+        ])
+        .build()
+        .unwrap();
+    let expected = HashMap::from([
+        (
+            "Key1".to_owned(),
+            vec![
+                HashMap::from([
+                    (
+                        "Subkey1_0".to_owned(),
+                        vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                    ),
+                    (
+                        "Subkey2_0".to_owned(),
+                        vec!["4".to_owned(), "5".to_owned(), "6".to_owned()],
+                    ),
+                ]),
+                HashMap::from([(
+                    "Subkey3_0".to_owned(),
+                    vec!["7".to_owned(), "8".to_owned(), "9".to_owned()],
+                )]),
+            ],
+        ),
+        (
+            "Key2".to_owned(),
+            vec![HashMap::from([(
+                "Subkey4_0".to_owned(),
+                vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],
+            )])],
+        ),
+        (
+            "Key3".to_owned(),
+            vec![HashMap::from([
+                (
+                    "Subkey5_0".to_owned(),
+                    vec!["d".to_owned(), "e".to_owned(), "f".to_owned()],
+                ),
+                (
+                    "Subkey6_0".to_owned(),
+                    vec!["x".to_owned(), "y".to_owned(), "z".to_owned()],
+                ),
+            ])],
+        ),
+    ]);
+
+    // act
+    let result = from_config::<HashMap<String, Vec<HashMap<String, Vec<String>>>>>(root.deref());
+
+    // assert
+    match result {
+        Ok(actual) => assert_eq!(actual, expected),
         Err(e) => panic!("{:#?}", e),
     }
 }
