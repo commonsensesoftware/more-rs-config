@@ -46,5 +46,6 @@ REF: https://github.com/tag1consulting/goose/issues/320
 
 [`JsonConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.JsonConfigurationProvider.html
 [`XmlConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.XmlConfigurationProvider.html
+[`YamlConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.YamlConfigurationProvider.html
 [`IniConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.IniConfigurationProvider.html
 [`MemoryConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.MemoryConfigurationProvider.html

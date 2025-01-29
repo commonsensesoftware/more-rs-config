@@ -8,6 +8,7 @@ use std::fs;
 use std::sync::{Arc, RwLock};
 use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken, Subscription};
 
+/// Visits and processes YAML data to extract configuration key-value pairs.
 #[derive(Default)]
 struct YamlVisitor {
     data: HashMap<String, (String, Value)>,
@@ -162,11 +163,17 @@ impl InnerProvider {
     }
 }
 
+/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) for `*.yaml` files.
 pub struct YamlConfigurationProvider {
     inner: Arc<InnerProvider>,
     _subscription: Option<Box<dyn Subscription>>,
 }
 
+/// Initializes a new `*.yaml` file configuration provider.
+///
+/// # Arguments
+///
+/// * `file` - The `*.yaml` [`FileSource`](crate::FileSource) information
 impl YamlConfigurationProvider {
     pub fn new(file: FileSource) -> Self {
         let path = file.path.clone();
@@ -210,11 +217,17 @@ impl ConfigurationProvider for YamlConfigurationProvider {
     }
 }
 
+/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for `*.yaml` files.
 pub struct YamlConfigurationSource {
     file: FileSource,
 }
 
 impl YamlConfigurationSource {
+    /// Initializes a new `*.yaml` file configuration source.
+    ///
+    /// # Arguments
+    ///
+    /// * `file` - The `*.yaml` [`FileSource`](crate::FileSource) information
     pub fn new(file: FileSource) -> Self {
         Self { file }
     }
@@ -230,6 +243,11 @@ pub mod ext {
     use super::*;
 
     pub trait YamlConfigurationExtensions {
+        /// Adds a `*.yaml` file as a configuration source.
+        ///
+        /// # Arguments
+        ///
+        /// * `file` - The `*.yaml` [`FileSource`](crate::FileSource) information
         fn add_yaml_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
     }
 

@@ -1,29 +1,29 @@
 use config::{ext::*, *};
-use serde_json::json;
 use std::env::{set_var, temp_dir};
 use std::fs::{remove_file, File};
 use std::io::Write;
 
 #[test]
-fn should_load_chained_settings_from_json_file_and_env() {
+fn should_load_chained_settings_from_yaml_file_and_env() {
     // arrange
-    let json = json!({"service": {
-       "enabled": false},
-     "feature": {
-         "nativeCopy": {
-             "disabled": true}}
-    });
-    let path = temp_dir().join("test_settings_1.json");
+    let yaml = r#"
+service:
+  enabled: false
+feature:
+  nativeCopy:
+    disabled: true
+"#;
+    let path = temp_dir().join("test_settings_1.yaml");
     let mut file = File::create(&path).unwrap();
 
-    file.write_all(json.to_string().as_bytes()).unwrap();
+    file.write_all(yaml.as_bytes()).unwrap();
 
     let expected = "true";
 
     set_var("Feature__NativeCopy__Disabled", expected);
 
     let config = DefaultConfigurationBuilder::new()
-        .add_json_file(&path)
+        .add_yaml_file(&path)
         .add_env_vars()
         .build()
         .unwrap();
