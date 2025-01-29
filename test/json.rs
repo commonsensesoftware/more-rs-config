@@ -21,7 +21,10 @@ fn add_json_file_should_load_settings_from_file() {
 
     file.write_all(json.to_string().as_bytes()).unwrap();
 
-    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build().unwrap();
+    let config = DefaultConfigurationBuilder::new()
+        .add_json_file(&path)
+        .build()
+        .unwrap();
     let section = config.section("Feature").section("NativeCopy");
 
     // act
@@ -41,7 +44,9 @@ fn add_json_file_should_fail_if_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.json");
 
     // act
-    let result = DefaultConfigurationBuilder::new().add_json_file(&path).build();
+    let result = DefaultConfigurationBuilder::new()
+        .add_json_file(&path)
+        .build();
 
     // assert
     if let Err(error) = result {
@@ -113,7 +118,10 @@ fn simple_json_array_should_be_converted_to_key_value_pairs() {
     file.write_all(json.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build().unwrap();
+    let config = DefaultConfigurationBuilder::new()
+        .add_json_file(&path)
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -137,7 +145,10 @@ fn complex_json_array_should_be_converted_to_key_value_pairs() {
     file.write_all(json.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build().unwrap();
+    let config = DefaultConfigurationBuilder::new()
+        .add_json_file(&path)
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -162,7 +173,10 @@ fn nested_json_array_should_be_converted_to_key_value_pairs() {
     file.write_all(json.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build().unwrap();
+    let config = DefaultConfigurationBuilder::new()
+        .add_json_file(&path)
+        .build()
+        .unwrap();
 
     // assert
     if path.exists() {
@@ -335,7 +349,10 @@ fn json_file_should_reload_when_changed() {
     let mut reloaded = mutex.lock().unwrap();
 
     while !*reloaded {
-        reloaded = event.wait_timeout(reloaded, Duration::from_secs(1)).unwrap().0;
+        reloaded = event
+            .wait_timeout(reloaded, Duration::from_secs(1))
+            .unwrap()
+            .0;
     }
 
     // act

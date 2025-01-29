@@ -1,6 +1,6 @@
 use crate::{
-    util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource, FileSource,
-    LoadError, LoadResult, Value,
+    util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
+    FileSource, LoadError, LoadResult, Value,
 };
 use serde_json::{map::Map, Value as JsonValue};
 use std::collections::HashMap;
@@ -55,7 +55,8 @@ impl JsonVisitor {
 
     fn add_value<T: ToString>(&mut self, value: T) {
         let key = self.paths.last().unwrap().to_string();
-        self.data.insert(key.to_uppercase(), (key, value.to_string().into()));
+        self.data
+            .insert(key.to_uppercase(), (key, value.to_string().into()));
     }
 
     fn enter_context(&mut self, context: String) {
@@ -135,14 +136,21 @@ impl InnerProvider {
             });
         }
 
-        let previous = std::mem::replace(&mut *self.token.write().unwrap(), SharedChangeToken::default());
+        let previous = std::mem::replace(
+            &mut *self.token.write().unwrap(),
+            SharedChangeToken::default(),
+        );
 
         previous.notify();
         Ok(())
     }
 
     fn get(&self, key: &str) -> Option<Value> {
-        self.data.read().unwrap().get(&key.to_uppercase()).map(|t| t.1.clone())
+        self.data
+            .read()
+            .unwrap()
+            .get(&key.to_uppercase())
+            .map(|t| t.1.clone())
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
@@ -178,7 +186,7 @@ impl JsonConfigurationProvider {
                     std::thread::sleep(provider.file.reload_delay);
                     provider.load(true).ok();
                 },
-                Some(inner.clone()),
+                Some(inner.clone())
             )))
         } else {
             None
