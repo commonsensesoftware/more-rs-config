@@ -1,5 +1,4 @@
 use config::{ext::*, *};
-use serde_json::json;
 use std::env::temp_dir;
 use std::fs::{remove_file, File};
 use std::io::Write;
@@ -8,20 +7,20 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
 #[test]
-fn add_json_file_should_load_settings_from_file() {
+fn add_yaml_file_should_load_settings_from_file() {
     // arrange
-    let json = json!({"service": {
-       "enabled": false},
-     "feature": {
-         "nativeCopy": {
-             "disabled": true}}
-    });
-    let path = temp_dir().join("test_settings_1.json");
+    let yaml = r#"
+service:
+  enabled: false
+feature:
+  nativeCopy:
+    disabled: true
+"#;
+    let path = temp_dir().join("test_settings_1.yaml");
     let mut file = File::create(&path).unwrap();
+    file.write_all(yaml.as_bytes()).unwrap();
 
-    file.write_all(json.to_string().as_bytes()).unwrap();
-
-    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build().unwrap();
+    let config = DefaultConfigurationBuilder::new().add_yaml_file(&path).build().unwrap();
     let section = config.section("Feature").section("NativeCopy");
 
     // act
@@ -36,19 +35,19 @@ fn add_json_file_should_load_settings_from_file() {
 }
 
 #[test]
-fn add_json_file_should_fail_if_file_does_not_exist() {
+fn add_yaml_file_should_fail_if_file_does_not_exist() {
     // arrange
-    let path = PathBuf::from(r"C:\fake\settings.json");
+    let path = PathBuf::from(r"C:\fake\settings.yaml");
 
     // act
-    let result = DefaultConfigurationBuilder::new().add_json_file(&path).build();
+    let result = DefaultConfigurationBuilder::new().add_yaml_file(&path).build();
 
     // assert
     if let Err(error) = result {
         if let ReloadError::Provider(errors) = error {
             assert_eq!(
                 errors[0].1.message(),
-                r"The configuration file 'C:\fake\settings.json' was not found and is not optional."
+                r"The configuration file 'C:\fake\settings.yaml' was not found and is not optional."
             )
         } else {
             panic!("{:#?}", error)
@@ -59,20 +58,21 @@ fn add_json_file_should_fail_if_file_does_not_exist() {
 }
 
 #[test]
-fn add_optional_json_file_should_load_settings_from_file() {
-    let json = json!({"service": {
-       "enabled": false},
-     "feature": {
-       "nativeCopy": {
-           "disabled": true}}
-    });
-    let path = temp_dir().join("test_settings_2.json");
+fn add_optional_yaml_file_should_load_settings_from_file() {
+    let yaml = r#"
+service:
+  enabled: false
+feature:
+  nativeCopy:
+    disabled: true
+"#;
+    let path = temp_dir().join("test_settings_2.yaml");
     let mut file = File::create(&path).unwrap();
 
-    file.write_all(json.to_string().as_bytes()).unwrap();
+    file.write_all(yaml.as_bytes()).unwrap();
 
     let config = DefaultConfigurationBuilder::new()
-        .add_json_file(FileSource::optional(&path))
+        .add_yaml_file(FileSource::optional(&path))
         .build()
         .unwrap();
     let section = config.section("Feature").section("NativeCopy");
@@ -89,13 +89,13 @@ fn add_optional_json_file_should_load_settings_from_file() {
 }
 
 #[test]
-fn add_json_file_should_succeed_if_optional_file_does_not_exist() {
+fn add_yaml_file_should_succeed_if_optional_file_does_not_exist() {
     // arrange
-    let path = PathBuf::from(r"C:\fake\settings.json");
+    let path = PathBuf::from(r"C:\fake\settings.yaml");
 
     // act
     let config = DefaultConfigurationBuilder::new()
-        .add_json_file(FileSource::optional(&path))
+        .add_yaml_file(FileSource::optional(&path))
         .build()
         .unwrap();
 
@@ -104,16 +104,20 @@ fn add_json_file_should_succeed_if_optional_file_does_not_exist() {
 }
 
 #[test]
-fn simple_json_array_should_be_converted_to_key_value_pairs() {
+fn simple_yaml_array_should_be_converted_to_key_value_pairs() {
     // arrange
-    let json = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
-    let path = temp_dir().join("array_settings_1.json");
+    let yaml = r#"
+ip:
+  - 1.2.3.4
+  - 7.8.9.10
+  - 11.12.13.14
+"#;
+    let path = temp_dir().join("array_settings_1.yaml");
     let mut file = File::create(&path).unwrap();
-
-    file.write_all(json.to_string().as_bytes()).unwrap();
+    file.write_all(yaml.as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build().unwrap();
+    let config = DefaultConfigurationBuilder::new().add_yaml_file(&path).build().unwrap();
 
     // assert
     if path.exists() {
@@ -125,19 +129,22 @@ fn simple_json_array_should_be_converted_to_key_value_pairs() {
 }
 
 #[test]
-fn complex_json_array_should_be_converted_to_key_value_pairs() {
+fn complex_yaml_array_should_be_converted_to_key_value_pairs() {
     // arrange
-    let json = json!({"ip": [
-        {"address": "1.2.3.4", "hidden": false},
-        {"address": "5.6.7.8", "hidden": true}
-    ]});
-    let path = temp_dir().join("array_settings_2.json");
+    let yaml = r#"
+ip:
+  - address: 1.2.3.4
+    hidden: false
+  - address: 5.6.7.8
+    hidden: true
+"#;
+    let path = temp_dir().join("array_settings_2.yaml");
     let mut file = File::create(&path).unwrap();
 
-    file.write_all(json.to_string().as_bytes()).unwrap();
+    file.write_all(yaml.as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build().unwrap();
+    let config = DefaultConfigurationBuilder::new().add_yaml_file(&path).build().unwrap();
 
     // assert
     if path.exists() {
@@ -150,19 +157,24 @@ fn complex_json_array_should_be_converted_to_key_value_pairs() {
 }
 
 #[test]
-fn nested_json_array_should_be_converted_to_key_value_pairs() {
+fn nested_yaml_array_should_be_converted_to_key_value_pairs() {
     // arrange
-    let json = json!({"ip": [
-        ["1.2.3.4", "5.6.7.8"],
-        ["9.10.11.12", "13.14.15.16"]
-    ]});
-    let path = temp_dir().join("array_settings_3.json");
+    let yaml = r#"
+ip:
+  - 
+    - 1.2.3.4
+    - 5.6.7.8
+  - 
+    - 9.10.11.12
+    - 13.14.15.16
+"#;
+    let path = temp_dir().join("array_settings_3.yaml");
     let mut file = File::create(&path).unwrap();
 
-    file.write_all(json.to_string().as_bytes()).unwrap();
+    file.write_all(yaml.as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_json_file(&path).build().unwrap();
+    let config = DefaultConfigurationBuilder::new().add_yaml_file(&path).build().unwrap();
 
     // assert
     if path.exists() {
@@ -175,22 +187,30 @@ fn nested_json_array_should_be_converted_to_key_value_pairs() {
 }
 
 #[test]
-fn json_array_item_should_be_implicitly_replaced() {
+fn yaml_array_item_should_be_implicitly_replaced() {
     // arrange
-    let json1 = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
-    let json2 = json!({"ip": ["15.16.17.18"]});
-    let path1 = temp_dir().join("array_settings_4.json");
-    let path2 = temp_dir().join("array_settings_5.json");
+    let yaml1 = r#"
+ip:
+  - 1.2.3.4
+  - 7.8.9.10
+  - 11.12.13.14
+"#;
+    let yaml2 = r#"
+ip:
+  - 15.16.17.18
+"#;
+    let path1 = temp_dir().join("array_settings_4.yaml");
+    let path2 = temp_dir().join("array_settings_5.yaml");
     let mut file = File::create(&path1).unwrap();
 
-    file.write_all(json1.to_string().as_bytes()).unwrap();
+    file.write_all(yaml1.as_bytes()).unwrap();
     file = File::create(&path2).unwrap();
-    file.write_all(json2.to_string().as_bytes()).unwrap();
+    file.write_all(yaml2.as_bytes()).unwrap();
 
     // act
     let config = DefaultConfigurationBuilder::new()
-        .add_json_file(&path1)
-        .add_json_file(&path2)
+        .add_yaml_file(&path1)
+        .add_yaml_file(&path2)
         .build()
         .unwrap();
 
@@ -208,22 +228,30 @@ fn json_array_item_should_be_implicitly_replaced() {
 }
 
 #[test]
-fn json_array_item_should_be_explicitly_replaced() {
+fn yaml_array_item_should_be_explicitly_replaced() {
     // arrange
-    let json1 = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
-    let json2 = json!({"ip": {"1": "15.16.17.18"}});
-    let path1 = temp_dir().join("array_settings_6.json");
-    let path2 = temp_dir().join("array_settings_7.json");
+    let yaml1 = r#"
+ip:
+  - "1.2.3.4"
+  - "7.8.9.10"
+  - "11.12.13.14"
+"#;
+    let yaml2 = r#"
+ip:
+  "1": "15.16.17.18"
+"#;
+    let path1 = temp_dir().join("array_settings_6.yaml");
+    let path2 = temp_dir().join("array_settings_7.yaml");
     let mut file = File::create(&path1).unwrap();
 
-    file.write_all(json1.to_string().as_bytes()).unwrap();
+    file.write_all(yaml1.as_bytes()).unwrap();
     file = File::create(&path2).unwrap();
-    file.write_all(json2.to_string().as_bytes()).unwrap();
+    file.write_all(yaml2.as_bytes()).unwrap();
 
     // act
     let config = DefaultConfigurationBuilder::new()
-        .add_json_file(&path1)
-        .add_json_file(&path2)
+        .add_yaml_file(&path1)
+        .add_yaml_file(&path2)
         .build()
         .unwrap();
 
@@ -236,27 +264,35 @@ fn json_array_item_should_be_explicitly_replaced() {
     }
     assert_eq!(config.section("ip").children().len(), 3);
     assert_eq!(config.get("ip:0").unwrap().as_str(), "1.2.3.4");
-    assert_eq!(config.get("ip:1").unwrap().as_str(), "15.16.17.18");
+    assert_eq!(config.get("ip:1").unwrap().as_str(), "15.16.17.18"); // This is the replaced value
     assert_eq!(config.get("ip:2").unwrap().as_str(), "11.12.13.14");
 }
 
 #[test]
-fn json_arrays_should_be_merged() {
+fn yaml_arrays_should_be_merged() {
     // arrange
-    let json1 = json!({"ip": ["1.2.3.4", "7.8.9.10", "11.12.13.14"]});
-    let json2 = json!({"ip": {"3": "15.16.17.18"}});
-    let path1 = temp_dir().join("array_settings_8.json");
-    let path2 = temp_dir().join("array_settings_9.json");
+    let yaml1 = r#"
+ip:
+  - "1.2.3.4"
+  - "7.8.9.10"
+  - "11.12.13.14"
+"#;
+    let yaml2 = r#"
+ip:
+  "3": "15.16.17.18"
+"#;
+    let path1 = temp_dir().join("array_settings_8.yaml");
+    let path2 = temp_dir().join("array_settings_9.yaml");
     let mut file = File::create(&path1).unwrap();
 
-    file.write_all(json1.to_string().as_bytes()).unwrap();
+    file.write_all(yaml1.as_bytes()).unwrap();
     file = File::create(&path2).unwrap();
-    file.write_all(json2.to_string().as_bytes()).unwrap();
+    file.write_all(yaml2.as_bytes()).unwrap();
 
     // act
     let config = DefaultConfigurationBuilder::new()
-        .add_json_file(&path1)
-        .add_json_file(&path2)
+        .add_yaml_file(&path1)
+        .add_yaml_file(&path2)
         .build()
         .unwrap();
 
@@ -275,27 +311,23 @@ fn json_arrays_should_be_merged() {
 }
 
 #[test]
-fn json_file_should_reload_when_changed() {
+fn yaml_file_should_reload_when_changed() {
     // arrange
-    let path = temp_dir().join("reload_settings_1.json");
-    let mut json = json!(
-    {
-        "service": {
-            "enabled": false
-        },
-        "feature": {
-            "nativeCopy": {
-                "disabled": true
-            }
-        }
-    });
+    let path = temp_dir().join("reload_settings_1.yaml");
+    let initial_yaml = r#"
+service:
+  enabled: false
+feature:
+  nativeCopy:
+    disabled: true
+"#;
 
     let mut file = File::create(&path).unwrap();
-    file.write_all(json.to_string().as_bytes()).unwrap();
+    file.write_all(initial_yaml.as_bytes()).unwrap();
     drop(file);
 
     let config = DefaultConfigurationBuilder::new()
-        .add_json_file(&path.is().reloadable())
+        .add_yaml_file(path.is().reloadable())
         .build()
         .unwrap();
     let section = config.section("Feature").section("NativeCopy");
@@ -308,27 +340,23 @@ fn json_file_should_reload_when_changed() {
     let _unused = token.register(
         Box::new(|s| {
             let data = s.unwrap();
-            let (reloaded, event) = &*(data.downcast_ref::<(Mutex<bool>, Condvar)>().unwrap());
+            let (reloaded, event) = data.downcast_ref::<(Mutex<bool>, Condvar)>().unwrap();
             *reloaded.lock().unwrap() = true;
             event.notify_one();
         }),
         Some(state.clone()),
     );
 
-    json = json!(
-    {
-        "service": {
-            "enabled": false
-        },
-        "feature": {
-            "nativeCopy": {
-                "disabled": false
-            }
-        }
-    });
+    let updated_yaml = r#"
+service:
+  enabled: false
+feature:
+  nativeCopy:
+    disabled: false
+"#;
 
     file = File::create(&path).unwrap();
-    file.write_all(json.to_string().as_bytes()).unwrap();
+    file.write_all(updated_yaml.as_bytes()).unwrap();
     drop(file);
 
     let (mutex, event) = &*state;

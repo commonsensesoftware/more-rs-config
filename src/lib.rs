@@ -45,6 +45,9 @@ mod cmd;
 #[cfg(feature = "xml")]
 mod xml;
 
+#[cfg(feature = "yaml")]
+mod yaml;
+
 #[cfg(feature = "binder")]
 mod binder;
 
@@ -97,6 +100,10 @@ pub use cmd::{CommandLineConfigurationProvider, CommandLineConfigurationSource};
 #[cfg_attr(docsrs, doc(cfg(feature = "xml")))]
 pub use xml::{XmlConfigurationProvider, XmlConfigurationSource};
 
+#[cfg(feature = "yaml")]
+#[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
+pub use yaml::{YamlConfigurationProvider, YamlConfigurationSource};
+
 /// Contains configuration extension methods.
 pub mod ext {
 
@@ -130,6 +137,10 @@ pub mod ext {
     #[cfg_attr(docsrs, doc(cfg(feature = "xml")))]
     pub use super::xml::ext::*;
 
+    #[cfg(feature = "yaml")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
+    pub use yaml::ext::*;
+
     #[cfg(feature = "binder")]
     #[cfg_attr(docsrs, doc(cfg(feature = "binder")))]
     pub use binder::*;
@@ -138,6 +149,6 @@ pub mod ext {
     #[cfg_attr(docsrs, doc(cfg(feature = "binder")))]
     pub use de::*;
 
-    pub use section::ext::*;
     pub use file::ext::*;
+    pub use section::ext::*;
 }

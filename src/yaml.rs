@@ -2,26 +2,26 @@ use crate::{
     util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource, FileSource,
     LoadError, LoadResult, Value,
 };
-use serde_json::{map::Map, Value as JsonValue};
+use serde_yaml::{Mapping, Value as YamlValue};
 use std::collections::HashMap;
 use std::fs;
 use std::sync::{Arc, RwLock};
 use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken, Subscription};
 
 #[derive(Default)]
-struct JsonVisitor {
+struct YamlVisitor {
     data: HashMap<String, (String, Value)>,
     paths: Vec<String>,
 }
 
-impl JsonVisitor {
-    fn visit(mut self, root: &Map<String, JsonValue>) -> HashMap<String, (String, Value)> {
+impl YamlVisitor {
+    fn visit(mut self, root: &Mapping) -> HashMap<String, (String, Value)> {
         self.visit_element(root);
         self.data.shrink_to_fit();
         self.data
     }
 
-    fn visit_element(&mut self, element: &Map<String, JsonValue>) {
+    fn visit_element(&mut self, element: &Mapping) {
         if element.is_empty() {
             if let Some(key) = self.paths.last() {
                 self.data
@@ -29,27 +29,30 @@ impl JsonVisitor {
             }
         } else {
             for (name, value) in element {
-                self.enter_context(to_pascal_case(name));
-                self.visit_value(value);
-                self.exit_context();
+                if let YamlValue::String(key) = name {
+                    self.enter_context(to_pascal_case(key));
+                    self.visit_value(value);
+                    self.exit_context();
+                }
             }
         }
     }
 
-    fn visit_value(&mut self, value: &JsonValue) {
+    fn visit_value(&mut self, value: &YamlValue) {
         match value {
-            JsonValue::Object(ref element) => self.visit_element(element),
-            JsonValue::Array(array) => {
+            YamlValue::Mapping(element) => self.visit_element(element),
+            YamlValue::Sequence(array) => {
                 for (index, element) in array.iter().enumerate() {
                     self.enter_context(index.to_string());
                     self.visit_value(element);
                     self.exit_context();
                 }
             }
-            JsonValue::Bool(value) => self.add_value(value),
-            JsonValue::Null => self.add_value(String::new()),
-            JsonValue::Number(value) => self.add_value(value),
-            JsonValue::String(value) => self.add_value(value),
+            YamlValue::Bool(value) => self.add_value(value),
+            YamlValue::Null => self.add_value(String::new()),
+            YamlValue::Number(value) => self.add_value(value),
+            YamlValue::String(value) => self.add_value(value),
+            YamlValue::Tagged(tagged) => self.visit_value(&tagged.value),
         }
     }
 
@@ -95,7 +98,6 @@ impl InnerProvider {
                 if !data.is_empty() {
                     *data = HashMap::with_capacity(0);
                 }
-
                 return Ok(());
             } else {
                 return Err(LoadError::File {
@@ -108,26 +110,31 @@ impl InnerProvider {
             }
         }
 
-        // REF: https://docs.serde.rs/serde_json/de/fn.from_reader.html
-        let content = fs::read(&self.file.path).unwrap();
-        let json: JsonValue = serde_json::from_slice(&content).unwrap();
+        let content = fs::read_to_string(&self.file.path).map_err(|e| LoadError::File {
+            message: format!("Failed to read file: {}", e),
+            path: self.file.path.clone(),
+        })?;
+        let yaml: YamlValue = serde_yaml::from_str(&content).map_err(|e| LoadError::File {
+            message: format!("Failed to parse YAML: {}", e),
+            path: self.file.path.clone(),
+        })?;
 
-        if let Some(root) = json.as_object() {
-            let visitor = JsonVisitor::default();
-            let data = visitor.visit(root);
+        if let YamlValue::Mapping(root) = yaml {
+            let visitor = YamlVisitor::default();
+            let data = visitor.visit(&root);
             *self.data.write().unwrap() = data;
         } else if reload {
             *self.data.write().unwrap() = HashMap::with_capacity(0);
         } else {
             return Err(LoadError::File {
                 message: format!(
-                    "Top-level JSON element must be an object. Instead, '{}' was found.",
-                    match json {
-                        JsonValue::Array(_) => "array",
-                        JsonValue::Bool(_) => "Boolean",
-                        JsonValue::Null => "null",
-                        JsonValue::Number(_) => "number",
-                        JsonValue::String(_) => "string",
+                    "Top-level YAML element must be a mapping. Instead, '{}' was found.",
+                    match yaml {
+                        YamlValue::Sequence(_) => "sequence",
+                        YamlValue::Bool(_) => "Boolean",
+                        YamlValue::Null => "null",
+                        YamlValue::Number(_) => "number",
+                        YamlValue::String(_) => "string",
                         _ => unreachable!(),
                     }
                 ),
@@ -135,7 +142,7 @@ impl InnerProvider {
             });
         }
 
-        let previous = std::mem::replace(&mut *self.token.write().unwrap(), SharedChangeToken::default());
+        let previous = std::mem::take(&mut *self.token.write().unwrap());
 
         previous.notify();
         Ok(())
@@ -155,18 +162,12 @@ impl InnerProvider {
     }
 }
 
-/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) for `*.json` files.
-pub struct JsonConfigurationProvider {
+pub struct YamlConfigurationProvider {
     inner: Arc<InnerProvider>,
     _subscription: Option<Box<dyn Subscription>>,
 }
 
-impl JsonConfigurationProvider {
-    /// Initializes a new `*.json` file configuration provider.
-    ///
-    /// # Arguments
-    ///
-    /// * `file` - The `*.json` [`FileSource`](crate::FileSource) information
+impl YamlConfigurationProvider {
     pub fn new(file: FileSource) -> Self {
         let path = file.path.clone();
         let inner = Arc::new(InnerProvider::new(file));
@@ -191,7 +192,7 @@ impl JsonConfigurationProvider {
     }
 }
 
-impl ConfigurationProvider for JsonConfigurationProvider {
+impl ConfigurationProvider for YamlConfigurationProvider {
     fn get(&self, key: &str) -> Option<Value> {
         self.inner.get(key)
     }
@@ -209,52 +210,39 @@ impl ConfigurationProvider for JsonConfigurationProvider {
     }
 }
 
-/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for `*.json` files.
-pub struct JsonConfigurationSource {
+pub struct YamlConfigurationSource {
     file: FileSource,
 }
 
-impl JsonConfigurationSource {
-    /// Initializes a new `*.json` file configuration source.
-    ///
-    /// # Arguments
-    ///
-    /// * `file` - The `*.json` [`FileSource`](crate::FileSource) information
+impl YamlConfigurationSource {
     pub fn new(file: FileSource) -> Self {
         Self { file }
     }
 }
 
-impl ConfigurationSource for JsonConfigurationSource {
+impl ConfigurationSource for YamlConfigurationSource {
     fn build(&self, _builder: &dyn ConfigurationBuilder) -> Box<dyn ConfigurationProvider> {
-        Box::new(JsonConfigurationProvider::new(self.file.clone()))
+        Box::new(YamlConfigurationProvider::new(self.file.clone()))
     }
 }
 
 pub mod ext {
-
     use super::*;
 
-    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
-    pub trait JsonConfigurationExtensions {
-        /// Adds a `*.json` file as a configuration source.
-        ///
-        /// # Arguments
-        ///
-        /// * `file` - The `*.json` [`FileSource`](crate::FileSource) information
-        fn add_json_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
+    pub trait YamlConfigurationExtensions {
+        fn add_yaml_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
     }
 
-    impl JsonConfigurationExtensions for dyn ConfigurationBuilder + '_ {
-        fn add_json_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self {
-            self.add(Box::new(JsonConfigurationSource::new(file.into())));
+    impl YamlConfigurationExtensions for dyn ConfigurationBuilder + '_ {
+        fn add_yaml_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self {
+            self.add(Box::new(YamlConfigurationSource::new(file.into())));
             self
         }
     }
 
-    impl<T: ConfigurationBuilder> JsonConfigurationExtensions for T {
-        fn add_json_file<F: Into<FileSource>>(&mut self, file: F) -> &mut Self {
-            self.add(Box::new(JsonConfigurationSource::new(file.into())));
+    impl<T: ConfigurationBuilder> YamlConfigurationExtensions for T {
+        fn add_yaml_file<F: Into<FileSource>>(&mut self, file: F) -> &mut Self {
+            self.add(Box::new(YamlConfigurationSource::new(file.into())));
             self
         }
     }

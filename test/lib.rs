@@ -9,3 +9,4 @@ mod ini;
 mod json;
 mod reload;
 mod xml;
+mod yaml;
