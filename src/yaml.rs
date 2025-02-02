@@ -26,12 +26,12 @@ impl YamlVisitor {
         if element.is_empty() {
             if let Some(key) = self.paths.last() {
                 self.data
-                    .insert(key.to_uppercase(), (to_pascal_case(key), String::new().into()));
+                    .insert(key.to_uppercase(), (key.to_string(), String::new().into()));
             }
         } else {
             for (name, value) in element {
                 if let YamlValue::String(key) = name {
-                    self.enter_context(to_pascal_case(key));
+                    self.enter_context(key.to_string());
                     self.visit_value(value);
                     self.exit_context();
                 }
