@@ -15,6 +15,7 @@ This crate provides the following features:
 - **cmd** - A command-line argument configuration source
 - **json** - A \*.json file configuration source
 - **xml** - A \*.xml file configuration source
+- **yaml** - A \*.yaml file configuration source
 - **ini** - An \*.ini file configuration source
 - **chained** - Chain multiple configuration sources
 - **binder** - Bind a configuration to strongly-typed values and structs

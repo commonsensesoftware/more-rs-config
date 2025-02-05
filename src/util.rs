@@ -3,7 +3,7 @@ use std::cmp::{min, Ordering};
 use std::collections::HashMap;
 use std::fmt::{Formatter, Result as FormatResult, Write};
 
-#[cfg(feature = "json")]
+#[cfg(any(feature = "json", feature = "yaml"))]
 pub(crate) fn to_pascal_case<T: AsRef<str>>(text: T) -> String {
     let mut chars = text.as_ref().chars();
 
@@ -167,12 +167,7 @@ fn recurse_children<T: ConfigurationRoot>(
 
         formatter.write_char('\n')?;
 
-        recurse_children(
-            root,
-            &child.children(),
-            formatter,
-            &(indent.to_owned() + "  "),
-        )?;
+        recurse_children(root, &child.children(), formatter, &(indent.to_owned() + "  "))?;
     }
 
     Ok(())
