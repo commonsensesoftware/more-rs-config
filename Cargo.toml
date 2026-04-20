@@ -2,3 +2,11 @@
 members = ["src", "test", "examples/*"]
 default-members = ["src", "test"]
 resolver = "2"
+
+[workspace.dependencies]
+cfg-if = "1.0"
+maybe-impl = "0.1"
+more-changetoken = "2.1"
+serde = "1.0"
+serde_json = "1.0"
+test-case = "2.2"

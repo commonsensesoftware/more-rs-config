@@ -216,7 +216,12 @@ fn from_config_should_fail_with_invalid_type() {
     let error = from_config::<Foo>(root.deref()).err().unwrap();
 
     // assert
-    assert_eq!(error, Error::Custom(String::from("provided string was not `true` or `false` while parsing value \'notabool\' provided by Baz")));
+    assert_eq!(
+        error,
+        Error::Custom(String::from(
+            "provided string was not `true` or `false` while parsing value \'notabool\' provided by Baz"
+        ))
+    );
 }
 
 #[test]
@@ -251,11 +256,7 @@ fn from_config_should_deserialize_nested_string_map() {
 fn from_config_should_deserialize_nested_typed_map() {
     // arrange
     let root = DefaultConfigurationBuilder::new()
-        .add_in_memory(&[
-            ("Limits:Foo", "42"),
-            ("Limits:Bar", "0"),
-            ("Limits:Baz", "420"),
-        ])
+        .add_in_memory(&[("Limits:Foo", "42"), ("Limits:Bar", "0"), ("Limits:Baz", "420")])
         .build()
         .unwrap();
 
@@ -291,10 +292,7 @@ fn from_config_should_deserialize_map_with_nested_vec() {
     let expected = HashMap::from([
         ("Key1".to_owned(), vec!["bar".to_owned()]),
         ("Key2".to_owned(), vec!["foo".to_owned()]),
-        (
-            "Key3".to_owned(),
-            vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],
-        ),
+        ("Key3".to_owned(), vec!["a".to_owned(), "b".to_owned(), "c".to_owned()]),
     ]);
 
     // act
@@ -324,10 +322,7 @@ fn reify_should_deserialize_map_with_nested_vec() {
         settings: HashMap::from([
             ("Key1".to_owned(), vec!["bar".to_owned()]),
             ("Key2".to_owned(), vec!["foo".to_owned()]),
-            (
-                "Key3".to_owned(),
-                vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],
-            ),
+            ("Key3".to_owned(), vec!["a".to_owned(), "b".to_owned(), "c".to_owned()]),
         ]),
     };
 

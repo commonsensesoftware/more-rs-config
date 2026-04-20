@@ -1,9 +1,10 @@
 use crate::{
-    util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
-    FileSource, LoadError, LoadResult, Value,
+    util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource, FileSource,
+    LoadError, LoadResult, Value,
 };
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt::{self, Display, Formatter};
 use std::fs::File;
 use std::io::BufReader;
 use std::ops::Deref;
@@ -37,10 +38,7 @@ trait VecExtensions<TKey: PartialEq, TValue> {
 
 impl VecExtensions<String, Vec<Rc<RefCell<Element>>>> for Vec<(String, Vec<Rc<RefCell<Element>>>)> {
     fn get_or_add(&mut self, key: String) -> &mut Vec<Rc<RefCell<Element>>> {
-        let index = self
-            .iter_mut()
-            .position(|i| &i.0 == &key)
-            .unwrap_or(self.len());
+        let index = self.iter_mut().position(|i| i.0 == key).unwrap_or(self.len());
 
         if index == self.len() {
             self.push((key, Vec::new()));
@@ -63,21 +61,12 @@ struct Element {
 }
 
 impl Element {
-    fn new(
-        element_name: OwnedName,
-        attributes: Vec<OwnedAttribute>,
-        line: usize,
-    ) -> Result<Self, String> {
+    fn new(element_name: OwnedName, attributes: Vec<OwnedAttribute>, line: usize) -> Result<Self, String> {
         let name = get_name(&element_name, &attributes, line)?;
         let local_name = element_name.local_name_or_error(&element_name, line)?;
         let sibling_name = name
             .as_ref()
-            .and_then(|n| {
-                Some(ConfigurationPath::combine(&[
-                    &local_name.to_uppercase(),
-                    &n.to_uppercase(),
-                ]))
-            })
+            .map(|n| ConfigurationPath::combine(&[&local_name.to_uppercase(), &n.to_uppercase()]))
             .unwrap_or(local_name.to_uppercase());
 
         Ok(Self {
@@ -89,12 +78,7 @@ impl Element {
             text: None,
             attributes: attributes
                 .into_iter()
-                .map(|a| {
-                    Ok(Attribute(
-                        a.name.local_name_or_error(&element_name, line)?,
-                        a.value,
-                    ))
-                })
+                .map(|a| Ok(Attribute(a.name.local_name_or_error(&element_name, line)?, a.value)))
                 .collect::<Result<Vec<Attribute>, String>>()?,
         })
     }
@@ -109,11 +93,11 @@ struct Prefix {
 impl Prefix {
     fn push<S: AsRef<str>>(&mut self, value: S) {
         if self.text.is_empty() {
-            self.text.push_str(&value.as_ref());
+            self.text.push_str(value.as_ref());
             self.lengths.push(value.as_ref().len());
         } else {
             self.text.push_str(ConfigurationPath::key_delimiter());
-            self.text.push_str(&value.as_ref());
+            self.text.push_str(value.as_ref());
             self.lengths
                 .push(value.as_ref().len() + ConfigurationPath::key_delimiter().len());
         }
@@ -129,17 +113,13 @@ impl Prefix {
     }
 }
 
-impl ToString for Prefix {
-    fn to_string(&self) -> String {
-        self.text.clone()
+impl Display for Prefix {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.text)
     }
 }
 
-fn get_name(
-    element: &OwnedName,
-    attributes: &Vec<OwnedAttribute>,
-    line: usize,
-) -> Result<Option<String>, String> {
+fn get_name(element: &OwnedName, attributes: &Vec<OwnedAttribute>, line: usize) -> Result<Option<String>, String> {
     for attribute in attributes {
         let local_name = attribute.name.local_name_or_error(element, line)?;
 
@@ -157,7 +137,7 @@ fn get_name(
 fn process_element(
     prefix: &mut Prefix,
     element: &Element,
-    config: &mut HashMap<String, (String, Value)>,
+    config: &mut HashMap<String, (String, String)>,
 ) -> Result<(), String> {
     process_attributes(prefix, element, config)?;
     process_element_content(prefix, element, config)?;
@@ -167,7 +147,7 @@ fn process_element(
 fn process_element_content(
     prefix: &mut Prefix,
     element: &Element,
-    config: &mut HashMap<String, (String, Value)>,
+    config: &mut HashMap<String, (String, String)>,
 ) -> Result<(), String> {
     if let Some(ref value) = element.text {
         add_to_config(prefix.to_string(), value.clone(), element, config)
@@ -180,7 +160,7 @@ fn process_element_child(
     prefix: &mut Prefix,
     child: &Element,
     index: Option<usize>,
-    config: &mut HashMap<String, (String, Value)>,
+    config: &mut HashMap<String, (String, String)>,
 ) -> Result<(), String> {
     prefix.push(&child.element_name);
 
@@ -209,7 +189,7 @@ fn process_element_child(
 fn process_attributes(
     prefix: &mut Prefix,
     element: &Element,
-    config: &mut HashMap<String, (String, Value)>,
+    config: &mut HashMap<String, (String, String)>,
 ) -> Result<(), String> {
     for attribute in &element.attributes {
         prefix.push(&attribute.0);
@@ -223,7 +203,7 @@ fn process_attributes(
 fn process_children(
     prefix: &mut Prefix,
     element: &Element,
-    config: &mut HashMap<String, (String, Value)>,
+    config: &mut HashMap<String, (String, String)>,
 ) -> Result<(), String> {
     for children in element.children.iter().map(|i| &i.1) {
         if children.len() == 1 {
@@ -242,9 +222,9 @@ fn add_to_config(
     key: String,
     value: String,
     element: &Element,
-    config: &mut HashMap<String, (String, Value)>,
+    config: &mut HashMap<String, (String, String)>,
 ) -> Result<(), String> {
-    if let Some((dup_key, _)) = config.insert(key.to_uppercase(), (key, value.into())) {
+    if let Some((dup_key, _)) = config.insert(key.to_uppercase(), (key, value)) {
         Err(format!(
             "A duplicate key '{}' was found. ({}, Line: {})",
             &dup_key, &element.element_name, element.line
@@ -254,9 +234,7 @@ fn add_to_config(
     }
 }
 
-fn to_config(
-    mut root: Option<Rc<RefCell<Element>>>,
-) -> Result<HashMap<String, (String, Value)>, String> {
+fn to_config(mut root: Option<Rc<RefCell<Element>>>) -> Result<HashMap<String, (String, String)>, String> {
     if let Some(cell) = root.take() {
         let element = &cell.deref().borrow();
         let mut data = HashMap::new();
@@ -266,7 +244,7 @@ fn to_config(
             prefix.push(name);
         }
 
-        process_element(&mut prefix, &element, &mut data)?;
+        process_element(&mut prefix, element, &mut data)?;
         data.shrink_to_fit();
         Ok(data)
     } else {
@@ -274,7 +252,7 @@ fn to_config(
     }
 }
 
-fn visit(file: File) -> Result<HashMap<String, (String, Value)>, String> {
+fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
     let content = BufReader::new(file);
     let events = EventReader::new(content);
     let mut has_content = false;
@@ -285,9 +263,7 @@ fn visit(file: File) -> Result<HashMap<String, (String, Value)>, String> {
 
     for event in events.into_iter() {
         match event {
-            Ok(XmlEvent::StartElement {
-                name, attributes, ..
-            }) => {
+            Ok(XmlEvent::StartElement { name, attributes, .. }) => {
                 line += 1;
                 has_content = false;
                 last_name = Some(name.clone());
@@ -296,12 +272,7 @@ fn visit(file: File) -> Result<HashMap<String, (String, Value)>, String> {
                 let child = Rc::new(RefCell::new(element));
 
                 if let Some(parent) = current.last() {
-                    parent
-                        .1
-                        .borrow_mut()
-                        .children
-                        .get_or_add(key)
-                        .push(child.clone());
+                    parent.1.borrow_mut().children.get_or_add(key).push(child.clone());
                 } else {
                     root = Some(child.clone());
                 }
@@ -336,7 +307,7 @@ fn visit(file: File) -> Result<HashMap<String, (String, Value)>, String> {
 
 struct InnerProvider {
     file: FileSource,
-    data: RwLock<HashMap<String, (String, Value)>>,
+    data: RwLock<HashMap<String, (String, String)>>,
     token: RwLock<SharedChangeToken<SingleChangeToken>>,
 }
 
@@ -379,10 +350,7 @@ impl InnerProvider {
             *self.data.write().unwrap() = HashMap::with_capacity(0);
         }
 
-        let previous = std::mem::replace(
-            &mut *self.token.write().unwrap(),
-            SharedChangeToken::default(),
-        );
+        let previous = std::mem::take(&mut *self.token.write().unwrap());
 
         previous.notify();
         Ok(())
@@ -393,7 +361,7 @@ impl InnerProvider {
             .read()
             .unwrap()
             .get(&key.to_uppercase())
-            .map(|t| t.1.clone())
+            .map(|t| t.1.clone().into())
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {

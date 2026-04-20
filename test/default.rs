@@ -18,18 +18,9 @@ fn build_should_load_and_combine_different_configuration_sources() {
     let config = builder.build().unwrap();
 
     // assert
-    assert_eq!(
-        config.get("mem1:keyinmem1").unwrap().as_str(),
-        "ValueInMem1"
-    );
-    assert_eq!(
-        config.get("Mem2:KeyInMem2").unwrap().as_str(),
-        "ValueInMem2"
-    );
-    assert_eq!(
-        config.get("MEM3:KEYINMEM3").unwrap().as_str(),
-        "ValueInMem3"
-    );
+    assert_eq!(config.get("mem1:keyinmem1").unwrap().as_str(), "ValueInMem1");
+    assert_eq!(config.get("Mem2:KeyInMem2").unwrap().as_str(), "ValueInMem2");
+    assert_eq!(config.get("MEM3:KEYINMEM3").unwrap().as_str(), "ValueInMem3");
 }
 
 #[test]
@@ -53,18 +44,9 @@ fn add_configuration_should_chain_configurations() {
     let config = builder2.build().unwrap();
 
     // assert
-    assert_eq!(
-        config.get("mem1:keyinmem1").unwrap().as_str(),
-        "ValueInMem1"
-    );
-    assert_eq!(
-        config.get("Mem2:KeyInMem2").unwrap().as_str(),
-        "ValueInMem2"
-    );
-    assert_eq!(
-        config.get("MEM3:KEYINMEM3").unwrap().as_str(),
-        "ValueInMem3"
-    );
+    assert_eq!(config.get("mem1:keyinmem1").unwrap().as_str(), "ValueInMem1");
+    assert_eq!(config.get("Mem2:KeyInMem2").unwrap().as_str(), "ValueInMem2");
+    assert_eq!(config.get("MEM3:KEYINMEM3").unwrap().as_str(), "ValueInMem3");
     assert!(config.get("Nonexistent").is_none());
 }
 
@@ -145,9 +127,7 @@ fn chained_iter_should_flatten_into_hashmap(path: ConfigurationPath) {
     let other = builder.build().unwrap();
     let mut builder2 = DefaultConfigurationBuilder::new();
 
-    builder2
-        .add_configuration(other.as_config())
-        .add(Box::new(source3));
+    builder2.add_configuration(other.as_config()).add(Box::new(source3));
     let root = builder2.build().unwrap();
 
     // act
@@ -265,10 +245,8 @@ fn new_configuration_root_should_be_built_from_existing_with_duplicate_keys() {
 #[test]
 fn section_should_return_parts_from_root_configuration() {
     // arrange
-    let source1 = MemoryConfigurationSource::new(&[
-        ("Data:DB1:Connection1", "MemVal1"),
-        ("Data:DB1:Connection2", "MemVal2"),
-    ]);
+    let source1 =
+        MemoryConfigurationSource::new(&[("Data:DB1:Connection1", "MemVal1"), ("Data:DB1:Connection2", "MemVal2")]);
     let source2 = MemoryConfigurationSource::new(&[("DataSource:DB2:Connection", "MemVal3")]);
     let source3 = MemoryConfigurationSource::new(&[("Data", "MemVal4")]);
     let mut builder = DefaultConfigurationBuilder::new();
@@ -293,10 +271,8 @@ fn section_should_return_parts_from_root_configuration() {
 #[test]
 fn section_should_return_children() {
     // arrange
-    let source1 = MemoryConfigurationSource::new(&[
-        ("Data:DB1:Connection1", "MemVal1"),
-        ("Data:DB1:Connection2", "MemVal2"),
-    ]);
+    let source1 =
+        MemoryConfigurationSource::new(&[("Data:DB1:Connection1", "MemVal1"), ("Data:DB1:Connection2", "MemVal2")]);
     let source2 = MemoryConfigurationSource::new(&[("Data:DB2Connection", "MemVal3")]);
     let source3 = MemoryConfigurationSource::new(&[("DataSource:DB3:Connection", "MemVal4")]);
     let mut builder = DefaultConfigurationBuilder::new();

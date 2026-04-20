@@ -1,7 +1,7 @@
 use crate::FileSource;
 use crate::{
-    util::accumulate_child_keys, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider,
-    ConfigurationSource, LoadError, LoadResult, Value
+    util::accumulate_child_keys, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
+    LoadError, LoadResult, Value,
 };
 use configparser::ini::Ini;
 use std::collections::HashMap;
@@ -10,7 +10,7 @@ use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken,
 
 struct InnerProvider {
     file: FileSource,
-    data: RwLock<HashMap<String, (String, Value)>>,
+    data: RwLock<HashMap<String, (String, String)>>,
     token: RwLock<SharedChangeToken<SingleChangeToken>>,
 }
 
@@ -28,7 +28,7 @@ impl InnerProvider {
             .read()
             .unwrap()
             .get(&key.to_uppercase())
-            .map(|t| t.1.clone())
+            .map(|t| t.1.clone().into())
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
@@ -67,7 +67,7 @@ impl InnerProvider {
 
                     new_key.push_str(ConfigurationPath::key_delimiter());
                     new_key.push_str(&key);
-                    map.insert(new_key.to_uppercase(), (new_key, new_value.into()));
+                    map.insert(new_key.to_uppercase(), (new_key, new_value));
                 }
             }
 
@@ -78,10 +78,7 @@ impl InnerProvider {
 
         *self.data.write().unwrap() = data;
 
-        let previous = std::mem::replace(
-            &mut *self.token.write().unwrap(),
-            SharedChangeToken::default(),
-        );
+        let previous = std::mem::take(&mut *self.token.write().unwrap());
 
         previous.notify();
         Ok(())

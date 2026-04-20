@@ -1,6 +1,6 @@
 use crate::{
-    util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
-    FileSource, LoadError, LoadResult, Value,
+    util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource, FileSource,
+    LoadError, LoadResult, Value,
 };
 use serde_json::{map::Map, Value as JsonValue};
 use std::collections::HashMap;
@@ -10,12 +10,12 @@ use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken,
 
 #[derive(Default)]
 struct JsonVisitor {
-    data: HashMap<String, (String, Value)>,
+    data: HashMap<String, (String, String)>,
     paths: Vec<String>,
 }
 
 impl JsonVisitor {
-    fn visit(mut self, root: &Map<String, JsonValue>) -> HashMap<String, (String, Value)> {
+    fn visit(mut self, root: &Map<String, JsonValue>) -> HashMap<String, (String, String)> {
         self.visit_element(root);
         self.data.shrink_to_fit();
         self.data
@@ -25,7 +25,7 @@ impl JsonVisitor {
         if element.is_empty() {
             if let Some(key) = self.paths.last() {
                 self.data
-                    .insert(key.to_uppercase(), (to_pascal_case(key), String::new().into()));
+                    .insert(key.to_uppercase(), (to_pascal_case(key), String::new()));
             }
         } else {
             for (name, value) in element {
@@ -55,8 +55,7 @@ impl JsonVisitor {
 
     fn add_value<T: ToString>(&mut self, value: T) {
         let key = self.paths.last().unwrap().to_string();
-        self.data
-            .insert(key.to_uppercase(), (key, value.to_string().into()));
+        self.data.insert(key.to_uppercase(), (key, value.to_string()));
     }
 
     fn enter_context(&mut self, context: String) {
@@ -76,7 +75,7 @@ impl JsonVisitor {
 
 struct InnerProvider {
     file: FileSource,
-    data: RwLock<HashMap<String, (String, Value)>>,
+    data: RwLock<HashMap<String, (String, String)>>,
     token: RwLock<SharedChangeToken<SingleChangeToken>>,
 }
 
@@ -136,10 +135,7 @@ impl InnerProvider {
             });
         }
 
-        let previous = std::mem::replace(
-            &mut *self.token.write().unwrap(),
-            SharedChangeToken::default(),
-        );
+        let previous = std::mem::take(&mut *self.token.write().unwrap());
 
         previous.notify();
         Ok(())
@@ -150,7 +146,7 @@ impl InnerProvider {
             .read()
             .unwrap()
             .get(&key.to_uppercase())
-            .map(|t| t.1.clone())
+            .map(|t| t.1.clone().into())
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
@@ -186,7 +182,7 @@ impl JsonConfigurationProvider {
                     std::thread::sleep(provider.file.reload_delay);
                     provider.load(true).ok();
                 },
-                Some(inner.clone())
+                Some(inner.clone()),
             )))
         } else {
             None

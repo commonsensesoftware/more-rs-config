@@ -1,6 +1,6 @@
 [package]
 name = "more-config"
-version = "2.1.5"
+version = "2.2.0"
 edition = "2018"
 rust-version = "1.60"
 authors = ["Chris Martinez <chris.s.martinez@hotmail.com>"]
@@ -10,7 +10,7 @@ license = "MIT"
 readme = "README.md"
 homepage = "https://commonsensesoftware.github.io/more-rs-config/"
 repository = "https://github.com/commonsensesoftware/more-rs-config"
-include = ["*.rs", "!build.rs", "README.md"]
+exclude = ["build.rs"]
 
 # RUSTDOCFLAGS="--cfg docsrs"; cargo +nightly doc
 [package.metadata.docs.rs]
@@ -24,7 +24,7 @@ doctest = false
 
 [features]
 default = ["std"]
-async = []
+async = ["dep:maybe-impl"]
 util = []
 std = ["util"]
 chained = ["util"]
@@ -38,16 +38,14 @@ xml = ["util", "dep:xml_rs", "more-changetoken/fs"]
 all = ["std", "chained", "mem", "env", "cmd", "ini", "binder", "json", "xml"]
 
 [dependencies]
-more-changetoken = "2.0"
+cfg-if.workspace = true
+maybe-impl = { version = "0.1.0", optional = true }
+more-changetoken.workspace = true
 configparser = { version = "3.0", optional = true }
-serde = { version = "1.0", optional = true }
-serde_json = { version = "1.0", optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 xml_rs = { version = "0.8", package = "xml", optional = true }
-cfg-if = "1.0"
 
 [dev-dependencies]
-test-case = "2.2"
-
-[dev-dependencies.more-config]
-path = "."
-features = ["cmd", "json"]
+more-config = { path = ".", features = ["cmd", "json"] }
+test-case.workspace = true

@@ -1,4 +1,4 @@
-use config::{*, ext::*};
+use config::{ext::*, *};
 use serde::Deserialize;
 
 #[allow(dead_code)]
@@ -32,12 +32,12 @@ fn main() {
         .build()
         .unwrap();
     let app: AppOptions = config.reify();
-    
+
     if app.demo {
         println!("{}", &app.text);
         println!("{}", &app.clients[0].region);
         return;
     }
-    
+
     println!("Not a demo!");
 }

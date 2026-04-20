@@ -60,9 +60,7 @@ fn reify_should_deserialize_section_to_options() {
         .build()
         .unwrap();
     let section = config.section("array");
-    let expected = vec![
-        "value00", "value10", "value20", "value30", "value40", "value50",
-    ];
+    let expected = vec!["value00", "value10", "value20", "value30", "value40", "value50"];
 
     // act
     let options: ArrayExample = section.reify();
@@ -183,8 +181,7 @@ fn deserialization_should_preserve_case_in_ini_file() {
 
     file.write_all(b"[Service]\n").unwrap();
     file.write_all(b"Disabled=true\n").unwrap();
-    file.write_all(b"AzureClusterClass:Compute$Disabled=false\n\n")
-        .unwrap();
+    file.write_all(b"AzureClusterClass:Compute$Disabled=false\n\n").unwrap();
     file.write_all(b"[FileCopySettings]\n").unwrap();
     file.write_all(b"UseNativeCopy = true\n").unwrap();
     file.write_all(b"AzureSDPRolloutPhase:Stage$UseNativeCopy=false\n")
@@ -194,10 +191,7 @@ fn deserialization_should_preserve_case_in_ini_file() {
     file.write_all(b"[RequiredFiles]\n").unwrap();
     file.write_all(b"start.bat=1").unwrap();
 
-    let config = DefaultConfigurationBuilder::new()
-        .add_ini_file(&path)
-        .build()
-        .unwrap();
+    let config = DefaultConfigurationBuilder::new().add_ini_file(&path).build().unwrap();
 
     // act
     let mut settings = FileCopySettings::default();

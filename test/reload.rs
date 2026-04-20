@@ -1,22 +1,36 @@
+use cfg_if::cfg_if;
 use config::*;
-use std::{
-    cell::RefCell,
-    rc::Rc,
-    sync::{
-        atomic::{AtomicU8, Ordering},
-        Arc,
-    },
+use std::sync::{
+    atomic::{AtomicU8, Ordering},
+    Arc,
 };
 use tokens::{ChangeToken, SharedChangeToken, SingleChangeToken};
 
+cfg_if! {
+    if #[cfg(feature = "async")] {
+        type Rc<T> = std::sync::Arc<T>;
+        type Mut<T> = std::sync::Mutex<T>;
+    } else {
+        type Rc<T> = std::rc::Rc<T>;
+        type Mut<T> = std::cell::RefCell<T>;
+    }
+}
+
 #[derive(Default)]
 struct Trigger {
-    token: RefCell<SharedChangeToken<SingleChangeToken>>,
+    token: Mut<SharedChangeToken<SingleChangeToken>>,
 }
 
 impl Trigger {
     fn fire(&self) {
-        let token = self.token.replace(SharedChangeToken::default());
+        cfg_if! {
+            if #[cfg(feature = "async")] {
+                let token = std::mem::take(&mut *self.token.lock().unwrap());
+            } else {
+                let token = self.token.replace(SharedChangeToken::default());
+            }
+        }
+
         token.notify();
     }
 }
@@ -47,7 +61,13 @@ impl ConfigurationProvider for ReloadableConfigProvider {
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
-        Box::new(self.trigger.token.borrow().clone())
+        cfg_if! {
+            if #[cfg(feature = "async")] {
+                Box::new((*self.trigger.token.lock().unwrap()).clone())
+            } else {
+                Box::new(self.trigger.token.borrow().clone())
+            }
+        }
     }
 
     fn load(&mut self) -> LoadResult {

@@ -1,8 +1,7 @@
+use crate::Value;
 use std::fmt::{Debug, Formatter, Result as FormatResult};
 use std::{any::type_name, path::PathBuf};
 use tokens::{ChangeToken, NeverChangeToken};
-
-use crate::Value;
 
 /// Defines the possible load errors.
 #[derive(PartialEq, Clone)]
@@ -43,6 +42,7 @@ impl Debug for LoadError {
 pub type LoadResult = std::result::Result<(), LoadError>;
 
 /// Defines the behavior of an object that provides configuration key/values for an application.
+#[cfg_attr(feature = "async", maybe_impl::traits(Send, Sync))]
 pub trait ConfigurationProvider {
     /// Gets the name of the provider.
     fn name(&self) -> &str {

@@ -1,10 +1,12 @@
-use crate::{
-    util::cmp_keys, Configuration, ConfigurationBuilder, ConfigurationProvider,
-    ConfigurationSource, Value,
-};
+use crate::{util::cmp_keys, Configuration, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, Value};
 use std::borrow::Borrow;
-use std::rc::Rc;
 use tokens::ChangeToken;
+
+#[cfg(not(feature = "async"))]
+type Rc<T> = std::rc::Rc<T>;
+
+#[cfg(feature = "async")]
+type Rc<T> = std::sync::Arc<T>;
 
 /// Represents a chained [`ConfigurationProvider`](crate::ConfigurationProvider).
 pub struct ChainedConfigurationProvider {
@@ -41,12 +43,7 @@ impl ConfigurationProvider for ChainedConfigurationProvider {
                     .map(|c| c.key().to_owned()),
             );
         } else {
-            earlier_keys.extend(
-                self.configuration
-                    .children()
-                    .iter()
-                    .map(|c| c.key().to_owned()),
-            );
+            earlier_keys.extend(self.configuration.children().iter().map(|c| c.key().to_owned()));
         }
 
         earlier_keys.sort_by(|k1, k2| cmp_keys(k1, k2));
@@ -78,9 +75,7 @@ impl ChainedConfigurationSource {
 
 impl ConfigurationSource for ChainedConfigurationSource {
     fn build(&self, _builder: &dyn ConfigurationBuilder) -> Box<dyn ConfigurationProvider> {
-        Box::new(ChainedConfigurationProvider::new(
-            self.configuration.clone(),
-        ))
+        Box::new(ChainedConfigurationProvider::new(self.configuration.clone()))
     }
 }
 
@@ -92,9 +87,7 @@ impl From<Box<dyn Configuration>> for ChainedConfigurationSource {
 
 impl From<Rc<dyn Configuration>> for ChainedConfigurationSource {
     fn from(value: Rc<dyn Configuration>) -> Self {
-        Self {
-            configuration: value,
-        }
+        Self { configuration: value }
     }
 }
 

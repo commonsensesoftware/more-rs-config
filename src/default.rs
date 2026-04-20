@@ -13,7 +13,7 @@ cfg_if! {
 
         type Pc<T> = std::sync::Arc<T>;
         type Mut<T> = std::sync::RwLock<T>;
-        type Ref<'a, T> = Arc<std::sync::RwLockReadGuard<'a, T>>;
+        type Shared<T> = Arc<T>;
     } else {
         use std::cell::Ref;
 
@@ -22,125 +22,208 @@ cfg_if! {
     }
 }
 
-struct ProviderItem<'a> {
-    index: usize,
-    name: String,
-    items: Ref<'a, Vec<Box<dyn ConfigurationProvider + 'a>>>,
-}
-
-impl<'a> ProviderItem<'a> {
-    fn new(
-        items: Ref<'a, Vec<Box<dyn ConfigurationProvider + 'a>>>,
-        index: usize,
-        name: String,
-    ) -> Self {
-        Self { index, name, items }
-    }
-}
-
-impl ConfigurationProvider for ProviderItem<'_> {
-    fn get(&self, key: &str) -> Option<Value> {
-        self.items[self.index].get(key)
-    }
-
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
-        self.items[self.index].child_keys(earlier_keys, parent_path)
-    }
-
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn reload_token(&self) -> Box<dyn ChangeToken> {
-        self.items[self.index].reload_token()
-    }
-}
-
-struct ProviderIter<'a> {
-    head: usize,
-    tail: usize,
-    items: Ref<'a, Vec<Box<dyn ConfigurationProvider>>>,
-}
-
-impl<'a> ProviderIter<'a> {
-    fn new(items: Ref<'a, Vec<Box<dyn ConfigurationProvider>>>) -> Self {
-        Self {
-            head: 0,
-            tail: items.len(),
-            items,
+cfg_if! {
+    if #[cfg(feature = "async")] {
+        struct ProviderItem {
+            index: usize,
+            name: String,
+            items: Shared<Vec<Box<dyn ConfigurationProvider>>>,
         }
-    }
-}
 
-impl<'a> Iterator for ProviderIter<'a> {
-    type Item = Box<dyn ConfigurationProvider + 'a>;
+        impl ProviderItem {
+            fn new(
+                items: Shared<Vec<Box<dyn ConfigurationProvider>>>,
+                index: usize,
+                name: String,
+            ) -> Self {
+                Self { index, name, items }
+            }
+        }
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.head < self.items.len() {
-            let i = self.head;
-            let name = self.items[i].name().to_owned();
-            self.head += 1;
+        impl ConfigurationProvider for ProviderItem {
+            fn get(&self, key: &str) -> Option<Value> {
+                self.items[self.index].get(key)
+            }
 
-            cfg_if! {
-                if #[cfg(feature = "async")] {
+            fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
+                self.items[self.index].child_keys(earlier_keys, parent_path)
+            }
+
+            fn name(&self) -> &str {
+                &self.name
+            }
+
+            fn reload_token(&self) -> Box<dyn ChangeToken> {
+                self.items[self.index].reload_token()
+            }
+        }
+
+        struct ProviderIter<'a> {
+            head: usize,
+            tail: usize,
+            items: Shared<Vec<Box<dyn ConfigurationProvider>>>,
+            _marker: std::marker::PhantomData<&'a ()>,
+        }
+
+        impl<'a> ProviderIter<'a> {
+            fn new(items: Shared<Vec<Box<dyn ConfigurationProvider>>>) -> Self {
+                Self {
+                    head: 0,
+                    tail: items.len(),
+                    items,
+                    _marker: std::marker::PhantomData,
+                }
+            }
+        }
+
+        impl<'a> Iterator for ProviderIter<'a> {
+            type Item = Box<dyn ConfigurationProvider + 'a>;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                if self.head < self.items.len() {
+                    let i = self.head;
+                    let name = self.items[i].name().to_owned();
+                    self.head += 1;
                     Some(Box::new(ProviderItem::new(
                         self.items.clone(),
                         i,
                         name,
                     )))
                 } else {
-                    Some(Box::new(ProviderItem::new(
-                        Ref::clone(&self.items),
-                        i,
-                        name,
-                    )))
+                    None
                 }
             }
-        } else {
-            None
         }
-    }
-}
 
-impl ExactSizeIterator for ProviderIter<'_> {
-    fn len(&self) -> usize {
-        self.items.len()
-    }
-}
+        impl ExactSizeIterator for ProviderIter<'_> {
+            fn len(&self) -> usize {
+                self.items.len()
+            }
+        }
 
-impl DoubleEndedIterator for ProviderIter<'_> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        if self.tail > 0 {
-            self.tail -= 1;
-            let name = self.items[self.tail].name().to_owned();
-
-            cfg_if! {
-                if #[cfg(feature = "async")] {
+        impl DoubleEndedIterator for ProviderIter<'_> {
+            fn next_back(&mut self) -> Option<Self::Item> {
+                if self.tail > 0 {
+                    self.tail -= 1;
+                    let name = self.items[self.tail].name().to_owned();
                     Some(Box::new(ProviderItem::new(
                         self.items.clone(),
                         self.tail,
                         name,
                     )))
                 } else {
+                    None
+                }
+            }
+        }
+
+        impl<'a> ConfigurationProviderIterator<'a> for ProviderIter<'a> {}
+    } else {
+        struct ProviderItem<'a> {
+            index: usize,
+            name: String,
+            items: Ref<'a, Vec<Box<dyn ConfigurationProvider + 'a>>>,
+        }
+
+        impl<'a> ProviderItem<'a> {
+            fn new(
+                items: Ref<'a, Vec<Box<dyn ConfigurationProvider + 'a>>>,
+                index: usize,
+                name: String,
+            ) -> Self {
+                Self { index, name, items }
+            }
+        }
+
+        impl ConfigurationProvider for ProviderItem<'_> {
+            fn get(&self, key: &str) -> Option<Value> {
+                self.items[self.index].get(key)
+            }
+
+            fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
+                self.items[self.index].child_keys(earlier_keys, parent_path)
+            }
+
+            fn name(&self) -> &str {
+                &self.name
+            }
+
+            fn reload_token(&self) -> Box<dyn ChangeToken> {
+                self.items[self.index].reload_token()
+            }
+        }
+
+        struct ProviderIter<'a> {
+            head: usize,
+            tail: usize,
+            items: Ref<'a, Vec<Box<dyn ConfigurationProvider>>>,
+        }
+
+        impl<'a> ProviderIter<'a> {
+            fn new(items: Ref<'a, Vec<Box<dyn ConfigurationProvider>>>) -> Self {
+                Self {
+                    head: 0,
+                    tail: items.len(),
+                    items,
+                }
+            }
+        }
+
+        impl<'a> Iterator for ProviderIter<'a> {
+            type Item = Box<dyn ConfigurationProvider + 'a>;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                if self.head < self.items.len() {
+                    let i = self.head;
+                    let name = self.items[i].name().to_owned();
+                    self.head += 1;
+                    Some(Box::new(ProviderItem::new(
+                        Ref::clone(&self.items),
+                        i,
+                        name,
+                    )))
+                } else {
+                    None
+                }
+            }
+        }
+
+        impl ExactSizeIterator for ProviderIter<'_> {
+            fn len(&self) -> usize {
+                self.items.len()
+            }
+        }
+
+        impl DoubleEndedIterator for ProviderIter<'_> {
+            fn next_back(&mut self) -> Option<Self::Item> {
+                if self.tail > 0 {
+                    self.tail -= 1;
+                    let name = self.items[self.tail].name().to_owned();
                     Some(Box::new(ProviderItem::new(
                         Ref::clone(&self.items),
                         self.tail,
                         name,
                     )))
+                } else {
+                    None
                 }
             }
-        } else {
-            None
         }
+
+        impl<'a> ConfigurationProviderIterator<'a> for ProviderIter<'a> {}
     }
 }
-
-impl<'a> ConfigurationProviderIterator<'a> for ProviderIter<'a> {}
 
 /// Represents the root of a configuration.
 #[derive(Clone)]
 pub struct DefaultConfigurationRoot {
     token: SharedChangeToken<CompositeChangeToken>,
+
+    #[cfg(feature = "async")]
+    #[allow(clippy::type_complexity)]
+    providers: Pc<Mut<Shared<Vec<Box<dyn ConfigurationProvider>>>>>,
+
+    #[cfg(not(feature = "async"))]
     providers: Pc<Mut<Vec<Box<dyn ConfigurationProvider>>>>,
 }
 
@@ -165,10 +248,19 @@ impl DefaultConfigurationRoot {
         }
 
         if errors.is_empty() {
-            Ok(Self {
-                token: SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter())),
-                providers: Pc::new(providers.into()),
-            })
+            cfg_if! {
+                if #[cfg(feature = "async")] {
+                    Ok(Self {
+                        token: SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter())),
+                        providers: Pc::new(Mut::new(Shared::new(providers))),
+                    })
+                } else {
+                    Ok(Self {
+                        token: SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter())),
+                        providers: Pc::new(Mut::new(providers)),
+                    })
+                }
+            }
         } else {
             Err(ReloadError::Provider(errors))
         }
@@ -177,17 +269,27 @@ impl DefaultConfigurationRoot {
 
 impl ConfigurationRoot for DefaultConfigurationRoot {
     fn reload(&mut self) -> ReloadResult {
-        let borrowed = (Pc::strong_count(&self.providers) - 1) + Pc::weak_count(&self.providers);
-
         cfg_if! {
             if #[cfg(feature = "async")] {
                 let result = self.providers.try_write();
             } else {
+                let borrowed = (Pc::strong_count(&self.providers) - 1) + Pc::weak_count(&self.providers);
                 let result = self.providers.try_borrow_mut();
             }
         }
 
-        if let Ok(mut providers) = result {
+        if let Ok(mut guard) = result {
+            cfg_if! {
+                if #[cfg(feature = "async")] {
+                    let Some(providers) = Shared::get_mut(&mut guard) else {
+                        let borrowed = Shared::strong_count(&guard) - 1;
+                        return Err(ReloadError::Borrowed(Some(borrowed)));
+                    };
+                } else {
+                    let providers = &mut *guard;
+                }
+            }
+
             let mut errors = Vec::new();
             let mut tokens = Vec::with_capacity(providers.len());
 
@@ -212,14 +314,21 @@ impl ConfigurationRoot for DefaultConfigurationRoot {
                 Err(ReloadError::Provider(errors))
             }
         } else {
-            Err(ReloadError::Borrowed(Some(borrowed)))
+            cfg_if! {
+                if #[cfg(feature = "async")] {
+                    Err(ReloadError::Borrowed(None))
+                } else {
+                    Err(ReloadError::Borrowed(Some(borrowed)))
+                }
+            }
         }
     }
 
-    fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_> {
+    fn providers(&self) -> Box<dyn ConfigurationProviderIterator<'_> + '_> {
         cfg_if! {
             if #[cfg(feature = "async")] {
-                Box::new(ProviderIter::new(self.providers.deref().read().unwrap().into()))
+                let snapshot = self.providers.deref().read().unwrap().clone();
+                Box::new(ProviderIter::new(snapshot))
             } else {
                 Box::new(ProviderIter::new(self.providers.deref().borrow()))
             }
@@ -243,10 +352,7 @@ impl Configuration for DefaultConfigurationRoot {
     }
 
     fn section(&self, key: &str) -> Box<dyn ConfigurationSection> {
-        Box::new(DefaultConfigurationSection::new(
-            Box::new(self.clone()),
-            key,
-        ))
+        Box::new(DefaultConfigurationSection::new(Box::new(self.clone()), key))
     }
 
     fn children(&self) -> Vec<Box<dyn ConfigurationSection>> {
@@ -297,13 +403,6 @@ impl Deref for DefaultConfigurationRoot {
 
     fn deref(&self) -> &Self::Target {
         self
-    }
-}
-
-cfg_if! {
-    if #[cfg(feature = "async")] {
-        unsafe impl Send for DefaultConfigurationRoot {}
-        unsafe impl Sync for DefaultConfigurationRoot {}
     }
 }
 
