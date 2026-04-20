@@ -33,12 +33,7 @@ impl FileSource {
     /// * `optional` - Indicates whether the source file must exist
     /// * `reload_on_change` - Indicates if a reload should occur if the source file changes
     /// * `reload_delay` - The amount of delay before reload after the source file changes
-    pub fn new(
-        path: PathBuf,
-        optional: bool,
-        reload_on_change: bool,
-        reload_delay: Option<Duration>,
-    ) -> Self {
+    pub fn new(path: PathBuf, optional: bool, reload_on_change: bool, reload_delay: Option<Duration>) -> Self {
         Self {
             path,
             optional,

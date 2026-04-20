@@ -93,11 +93,7 @@ impl<'de> de::Deserializer<'de> for Key {
         self.0.into_deserializer().deserialize_any(visitor)
     }
 
-    fn deserialize_newtype_struct<V>(
-        self,
-        _name: &'static str,
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
+    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
@@ -144,7 +140,7 @@ impl<'de> de::Deserializer<'de> for Val {
             .children()
             .into_iter()
             .take_while(|c| c.key().parse::<usize>().is_ok())
-            .map(|s| Val(s))
+            .map(Val)
             .collect();
 
         // guarantee stable ordering by zero-based ordinal index; for example,
@@ -195,11 +191,7 @@ impl<'de> de::Deserializer<'de> for Val {
         f64 => deserialize_f64,
     }
 
-    fn deserialize_newtype_struct<V>(
-        self,
-        _name: &'static str,
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
+    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
@@ -297,7 +289,7 @@ pub fn from_config<'a, T>(configuration: &'a dyn Configuration) -> Result<T, Err
 where
     T: Deserialize<'a>,
 {
-    Ok(T::deserialize(Deserializer::new(configuration))?)
+    T::deserialize(Deserializer::new(configuration))
 }
 
 /// Deserializes the specified configuration to an existing data structure.
@@ -309,8 +301,5 @@ pub fn bind_config<'a, T>(configuration: &'a dyn Configuration, data: &mut T) ->
 where
     T: Deserialize<'a>,
 {
-    Ok(T::deserialize_in_place(
-        Deserializer::new(configuration),
-        data,
-    )?)
+    T::deserialize_in_place(Deserializer::new(configuration), data)
 }

@@ -8,7 +8,7 @@ pub enum ConfigurationPath {
     Absolute,
 
     // Indicates a configuration path relative to a parent.
-    Relative
+    Relative,
 }
 
 impl ConfigurationPath {

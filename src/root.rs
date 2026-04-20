@@ -24,7 +24,7 @@ impl Debug for ReloadError {
                     f.write_str("One or more load errors occurred:")?;
 
                     for (i, (provider, error)) in errors.iter().enumerate() {
-                        write!(f, "\n  [{}]: {} ({})", (i+1), error.message(), provider)?;
+                        write!(f, "\n  [{}]: {} ({})", (i + 1), error.message(), provider)?;
                     }
                 }
             }
@@ -48,18 +48,14 @@ pub type ReloadResult = std::result::Result<(), ReloadError>;
 
 /// Represents the root of a [`Configuration`](crate::Configuration) hierarchy.
 pub trait ConfigurationRoot:
-    Configuration
-    + AsRef<dyn Configuration>
-    + Borrow<dyn Configuration>
-    + Deref<Target = dyn Configuration>
-    + Debug
+    Configuration + AsRef<dyn Configuration> + Borrow<dyn Configuration> + Deref<Target = dyn Configuration> + Debug
 {
     /// Force the configuration values to be reloaded from the underlying
     /// [`ConfigurationProvider`](crate::ConfigurationProvider) collection.
     fn reload(&mut self) -> ReloadResult;
 
     /// Gets the [`ConfigurationProvider`](crate::ConfigurationProvider) sequence for this configuration.
-    fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_>;
+    fn providers(&self) -> Box<dyn ConfigurationProviderIterator<'_> + '_>;
 
     /// Converts the [`ConfigurationRoot`] into a [`Configuration`](crate::Configuration).
     fn as_config(&self) -> Box<dyn Configuration>;

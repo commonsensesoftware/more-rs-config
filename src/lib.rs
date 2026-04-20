@@ -138,6 +138,6 @@ pub mod ext {
     #[cfg_attr(docsrs, doc(cfg(feature = "binder")))]
     pub use de::*;
 
-    pub use section::ext::*;
     pub use file::ext::*;
+    pub use section::ext::*;
 }

@@ -1,6 +1,4 @@
-use crate::{
-    util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, Value,
-};
+use crate::{util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, Value};
 use std::collections::HashMap;
 
 /// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) that
@@ -27,9 +25,7 @@ impl MemoryConfigurationProvider {
 
 impl ConfigurationProvider for MemoryConfigurationProvider {
     fn get(&self, key: &str) -> Option<Value> {
-        self.data
-            .get(&key.to_uppercase())
-            .map(|t| t.1.clone())
+        self.data.get(&key.to_uppercase()).map(|t| t.1.clone())
     }
 
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {

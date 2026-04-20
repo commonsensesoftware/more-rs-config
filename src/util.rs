@@ -83,12 +83,12 @@ pub fn cmp_keys(key: &str, other_key: &str) -> Ordering {
 ///
 /// # Arguments
 ///
-/// * `data` - The source hash map to accumulate keys from where the key is normalized to uppercase
-///            and the value is a tuple containing the originally cased key and value
+/// * `data` - The source hash map to accumulate keys from where the key is normalized to uppercase and the value is a
+///   tuple containing the originally cased key and string value
 /// * `keys` - The accumulated keys
 /// * `parent_path` - The parent path
-pub fn accumulate_child_keys(
-    data: &HashMap<String, (String, Value)>,
+pub fn accumulate_child_keys<V>(
+    data: &HashMap<String, (String, V)>,
     keys: &mut Vec<String>,
     parent_path: Option<&str>,
 ) {
@@ -167,12 +167,7 @@ fn recurse_children<T: ConfigurationRoot>(
 
         formatter.write_char('\n')?;
 
-        recurse_children(
-            root,
-            &child.children(),
-            formatter,
-            &(indent.to_owned() + "  "),
-        )?;
+        recurse_children(root, &child.children(), formatter, &(indent.to_owned() + "  "))?;
     }
 
     Ok(())

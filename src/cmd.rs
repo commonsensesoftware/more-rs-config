@@ -1,6 +1,4 @@
-use crate::{
-    util::*, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, LoadResult, Value,
-};
+use crate::{util::*, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, LoadResult, Value};
 use std::borrow::Cow;
 use std::collections::HashMap;
 
@@ -73,11 +71,7 @@ impl ConfigurationProvider for CommandLineConfigurationProvider {
                 } else if start == 1 {
                     continue;
                 } else {
-                    current
-                        .chars()
-                        .skip(start)
-                        .take(separator - start)
-                        .collect()
+                    current.chars().skip(start).take(separator - start).collect()
                 };
 
                 value = current.chars().skip(separator + 1).collect();
@@ -194,9 +188,7 @@ pub mod ext {
 
     impl CommandLineConfigurationBuilderExtensions for dyn ConfigurationBuilder + '_ {
         fn add_command_line(&mut self) -> &mut Self {
-            self.add(Box::new(CommandLineConfigurationSource::from(
-                std::env::args(),
-            )));
+            self.add(Box::new(CommandLineConfigurationSource::from(std::env::args())));
             self
         }
 
@@ -211,9 +203,7 @@ pub mod ext {
 
     impl<T: ConfigurationBuilder> CommandLineConfigurationBuilderExtensions for T {
         fn add_command_line(&mut self) -> &mut Self {
-            self.add(Box::new(CommandLineConfigurationSource::from(
-                std::env::args(),
-            )));
+            self.add(Box::new(CommandLineConfigurationSource::from(std::env::args())));
             self
         }
 

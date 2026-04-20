@@ -1,6 +1,6 @@
 use crate::{ext::*, *};
 use serde::de::DeserializeOwned;
-use std::{str::FromStr, ops::Deref};
+use std::{ops::Deref, str::FromStr};
 
 /// Provides binder extension methods for a [`Configuration`](crate::Configuration).
 pub trait ConfigurationBinder {

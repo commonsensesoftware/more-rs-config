@@ -1,6 +1,5 @@
 use crate::{
-    util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource,
-    LoadResult, Value,
+    util::accumulate_child_keys, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, LoadResult, Value,
 };
 use std::collections::HashMap;
 use std::env::vars;
@@ -75,9 +74,7 @@ impl EnvironmentVariablesConfigurationSource {
 
 impl ConfigurationSource for EnvironmentVariablesConfigurationSource {
     fn build(&self, _builder: &dyn ConfigurationBuilder) -> Box<dyn ConfigurationProvider> {
-        Box::new(EnvironmentVariablesConfigurationProvider::new(
-            self.prefix.clone(),
-        ))
+        Box::new(EnvironmentVariablesConfigurationProvider::new(self.prefix.clone()))
     }
 }
 
@@ -94,8 +91,8 @@ pub mod ext {
         ///
         /// # Arguments
         ///
-        /// * `prefix` - The prefix that environment variable names must start with.
-        ///              The prefix will be removed from the environment variable names.
+        /// * `prefix` - The prefix that environment variable names must start with. The prefix will be removed from
+        ///   the environment variable names.
         fn add_env_vars_with_prefix(&mut self, prefix: &str) -> &mut Self;
     }
 
@@ -105,9 +102,7 @@ pub mod ext {
         }
 
         fn add_env_vars_with_prefix(&mut self, prefix: &str) -> &mut Self {
-            self.add(Box::new(EnvironmentVariablesConfigurationSource::new(
-                prefix,
-            )));
+            self.add(Box::new(EnvironmentVariablesConfigurationSource::new(prefix)));
             self
         }
     }
@@ -118,9 +113,7 @@ pub mod ext {
         }
 
         fn add_env_vars_with_prefix(&mut self, prefix: &str) -> &mut Self {
-            self.add(Box::new(EnvironmentVariablesConfigurationSource::new(
-                prefix,
-            )));
+            self.add(Box::new(EnvironmentVariablesConfigurationSource::new(prefix)));
             self
         }
     }

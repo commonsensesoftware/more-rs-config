@@ -17,10 +17,7 @@ fn add_ini_file_should_load_settings_from_file() {
     file.write_all(b"[Feature.Magic]\n").unwrap();
     file.write_all(b"Disabled=true").unwrap();
 
-    let config = DefaultConfigurationBuilder::new()
-        .add_ini_file(&path)
-        .build()
-        .unwrap();
+    let config = DefaultConfigurationBuilder::new().add_ini_file(&path).build().unwrap();
     let section = config.section("Feature.Magic");
 
     // act
@@ -40,9 +37,7 @@ fn add_ini_file_should_fail_if_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.ini");
 
     // act
-    let result = DefaultConfigurationBuilder::new()
-        .add_ini_file(&path)
-        .build();
+    let result = DefaultConfigurationBuilder::new().add_ini_file(&path).build();
 
     // assert
     if let Err(error) = result {
@@ -146,10 +141,7 @@ fn init_file_should_reload_when_changed() {
     let mut reloaded = mutex.lock().unwrap();
 
     while !*reloaded {
-        reloaded = event
-            .wait_timeout(reloaded, Duration::from_secs(1))
-            .unwrap()
-            .0;
+        reloaded = event.wait_timeout(reloaded, Duration::from_secs(1)).unwrap().0;
     }
 
     // act
