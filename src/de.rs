@@ -234,7 +234,11 @@ impl<'de> de::VariantAccess<'de> for EnumDeserializer<'de> {
     }
 
     #[inline]
-    fn struct_variant<V: Visitor<'de>>(self, _fields: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error> {
+    fn struct_variant<V: Visitor<'de>>(
+        self,
+        _fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Self::Error> {
         de::Deserializer::deserialize_map(Val(Rc::new(self.0)), visitor)
     }
 }

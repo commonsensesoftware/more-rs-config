@@ -88,7 +88,10 @@ pub enum Enum {
     Second(String),
 
     #[serde(rename_all(deserialize = "PascalCase"))]
-    Third { id: usize, kind: String },
+    Third {
+        id: usize,
+        kind: String,
+    },
 }
 
 #[test]
