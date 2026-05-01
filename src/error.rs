@@ -34,9 +34,9 @@ pub enum Error {
 
 impl Error {
     /// Creates a new [custom](Self::Custom) error.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `message` - The error message
     #[inline]
     pub fn custom(message: impl Into<String>) -> Self {

@@ -262,7 +262,6 @@ fn section_should_return_parts_from_root_configuration() {
     assert_eq!(section.get("Source:DB2:Connection"), None);
 }
 
-#[ignore]
 #[test]
 fn section_should_return_children() {
     // arrange
@@ -334,7 +333,6 @@ fn section_with_children_should_exist() {
     assert!(!config.section("Mem3").exists());
 }
 
-#[ignore]
 #[test]
 fn key_starting_with_colon_means_first_section_has_empty_name() {
     // arrange
@@ -354,7 +352,6 @@ fn key_starting_with_colon_means_first_section_has_empty_name() {
     assert_eq!(sections[0].sections()[0].key(), "Key2");
 }
 
-#[ignore]
 #[test]
 fn key_ending_with_colon_means_last_section_has_empty_name() {
     // arrange
@@ -374,7 +371,6 @@ fn key_ending_with_colon_means_last_section_has_empty_name() {
     assert_eq!(sections[0].sections()[0].key(), "");
 }
 
-#[ignore]
 #[test]
 fn key_ending_with_double_colon_has_section_with_empty_name() {
     // arrange
