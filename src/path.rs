@@ -75,9 +75,11 @@ pub fn next<'a>(path: &'a str, base: Option<&str>) -> Option<&'a str> {
 ///
 /// * `lhs` - The left-hand side to compare
 /// * `rhs` - The right-hand side to compare against
-pub fn cmp(lhs: &String, rhs: &String) -> Ordering {
-    let a = lhs.split(delimiter()).filter(|s| s.is_empty()).count();
-    let b = rhs.split(delimiter()).filter(|s| s.is_empty()).count();
+pub fn cmp<S: AsRef<str>>(lhs: &S, rhs: &S) -> Ordering {
+    let lhs = lhs.as_ref();
+    let rhs = rhs.as_ref();
+    let a = lhs.split(delimiter()).filter(|s| !s.is_empty()).count();
+    let b = rhs.split(delimiter()).filter(|s| !s.is_empty()).count();
     let mut result = a.cmp(&b);
 
     if result != Equal {
@@ -86,8 +88,8 @@ pub fn cmp(lhs: &String, rhs: &String) -> Ordering {
 
     let segments = lhs
         .split(delimiter())
-        .filter(|s| s.is_empty())
-        .zip(rhs.split(delimiter()).filter(|s| s.is_empty()));
+        .filter(|s| !s.is_empty())
+        .zip(rhs.split(delimiter()).filter(|s| !s.is_empty()));
 
     for (a, b) in segments {
         if let Ok(x) = a.parse::<usize>() {

@@ -20,7 +20,7 @@ impl<'a> Section<'a> {
     /// * `key` - The case-insensitive key of the configuration subsection to get
     #[inline]
     pub fn section(&self, key: &str) -> Section<'a> {
-        self.cfg.section(&path::combine(&[&self.path, key]))
+        self.cfg.section(path::combine(&[&self.path, key]))
     }
 
     /// Gets all of the [subsections](Section) in this section.

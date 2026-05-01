@@ -36,7 +36,7 @@ impl Source {
         Self {
             data: data
                 .iter()
-                .map(|t| (t.0.as_ref().to_owned(), t.1.as_ref().to_owned().into()))
+                .map(|t| (t.0.as_ref().to_owned(), t.1.as_ref().to_owned()))
                 .collect(),
         }
     }

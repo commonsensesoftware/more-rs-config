@@ -115,7 +115,8 @@ impl crate::Provider for Provider {
         let json: JsonValue = serde_json::from_slice(&content).map_err(Error::unknown)?;
 
         if let Some(root) = json.as_object() {
-            Ok(JsonVisitor::new(settings).visit(root))
+            JsonVisitor::new(settings).visit(root);
+            Ok(())
         } else {
             Err(Error::InvalidFile {
                 message: format!(
