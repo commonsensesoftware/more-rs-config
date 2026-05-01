@@ -1,143 +1,81 @@
-#![doc = include_str!("README.md")]
+#![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-
-/// Represents the type alias for a configuration value.
-#[cfg(not(feature = "async"))]
-pub type Value = std::rc::Rc<String>;
-
-/// Represents the type alias for a configuration value.
-#[cfg(feature = "async")]
-pub type Value = std::sync::Arc<String>;
 
 mod builder;
 mod configuration;
-mod path;
+mod error;
+mod file;
+mod merge;
+mod properties;
 mod provider;
 mod root;
 mod section;
+mod settings;
 mod source;
 
-/// Contains configuration utility functions.
-#[cfg(feature = "util")]
-pub mod util;
+/// Provides configuration path utilities.
+pub mod path;
 
+/// Contains library prelude.
+pub mod prelude;
+
+/// Contains chained configuration support.
 #[cfg(feature = "chained")]
-mod chained;
+pub mod chained;
 
-#[cfg(feature = "std")]
-mod default;
-
+/// Contains in-memory configuration support.
 #[cfg(feature = "mem")]
-mod memory;
+pub mod mem;
 
+/// Contains environment variable configuration support.
 #[cfg(feature = "env")]
-mod env;
+pub mod env;
 
+/// Contains `*.ini` file configuration support.
 #[cfg(feature = "ini")]
-mod ini;
+pub mod ini;
 
+/// Contains `*.json` file configuration support.
 #[cfg(feature = "json")]
-mod json;
+pub mod json;
 
+/// Contains command line configuration support.
 #[cfg(feature = "cmd")]
-mod cmd;
+pub mod cmd;
 
+/// Contains `*.xml` file configuration support.
 #[cfg(feature = "xml")]
-mod xml;
+pub mod xml;
 
+/// Contains strongly-typed configuration deserialization support.
 #[cfg(feature = "binder")]
-mod binder;
+pub mod de;
 
-#[cfg(feature = "binder")]
-mod de;
+pub use builder::Builder;
+pub use configuration::Configuration;
+pub use error::Error;
+pub use file::{FileSource, FileSourceBuilder};
+pub use merge::Merge;
+pub use properties::Properties;
+pub use provider::Provider;
+pub use root::Root;
+pub use section::Section;
+pub use settings::Settings;
+pub use source::Source;
 
-mod file;
-pub use builder::*;
-pub use configuration::*;
-pub use file::*;
-pub use path::*;
-pub use provider::*;
-pub use root::*;
-pub use section::ConfigurationSection;
-pub use source::*;
+/// Represents the type alias for a configuration reference.
+#[cfg(not(feature = "async"))]
+pub type Ref<T> = std::rc::Rc<T>;
 
-#[cfg(feature = "util")]
-#[cfg_attr(docsrs, doc(cfg(feature = "util")))]
-pub use util::*;
+/// Represents the type alias for a configuration reference.
+#[cfg(feature = "async")]
+pub type Ref<T> = std::sync::Arc<T>;
 
-#[cfg(feature = "chained")]
-#[cfg_attr(docsrs, doc(cfg(feature = "chained")))]
-pub use chained::{ChainedConfigurationProvider, ChainedConfigurationSource};
+/// Represents a configuration result.
+pub type Result<T = ()> = std::result::Result<T, Error>;
 
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-pub use default::*;
-
-#[cfg(feature = "mem")]
-#[cfg_attr(docsrs, doc(cfg(feature = "mem")))]
-pub use memory::{MemoryConfigurationProvider, MemoryConfigurationSource};
-
-#[cfg(feature = "env")]
-#[cfg_attr(docsrs, doc(cfg(feature = "env")))]
-pub use env::{EnvironmentVariablesConfigurationProvider, EnvironmentVariablesConfigurationSource};
-
-#[cfg(feature = "ini")]
-#[cfg_attr(docsrs, doc(cfg(feature = "ini")))]
-pub use ini::{IniConfigurationProvider, IniConfigurationSource};
-
-#[cfg(feature = "json")]
-#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-pub use json::{JsonConfigurationProvider, JsonConfigurationSource};
-
-#[cfg(feature = "cmd")]
-#[cfg_attr(docsrs, doc(cfg(feature = "cmd")))]
-pub use cmd::{CommandLineConfigurationProvider, CommandLineConfigurationSource};
-
-#[cfg(feature = "xml")]
-#[cfg_attr(docsrs, doc(cfg(feature = "xml")))]
-pub use xml::{XmlConfigurationProvider, XmlConfigurationSource};
-
-/// Contains configuration extension methods.
-pub mod ext {
-
-    use super::*;
-
-    #[cfg(feature = "chained")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "chained")))]
-    pub use chained::ext::*;
-
-    #[cfg(feature = "env")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "env")))]
-    pub use env::ext::*;
-
-    #[cfg(feature = "ini")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "ini")))]
-    pub use ini::ext::*;
-
-    #[cfg(feature = "json")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-    pub use json::ext::*;
-
-    #[cfg(feature = "mem")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "mem")))]
-    pub use memory::ext::*;
-
-    #[cfg(feature = "cmd")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "cmd")))]
-    pub use cmd::ext::*;
-
-    #[cfg(feature = "xml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "xml")))]
-    pub use super::xml::ext::*;
-
-    #[cfg(feature = "binder")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "binder")))]
-    pub use binder::*;
-
-    #[cfg(feature = "binder")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "binder")))]
-    pub use de::*;
-
-    pub use file::ext::*;
-    pub use section::ext::*;
+/// Creates and returns a new [configuration builder](Builder)
+#[inline]
+pub fn builder() -> Builder {
+    Builder::default()
 }

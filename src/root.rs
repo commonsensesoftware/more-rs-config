@@ -1,71 +1,35 @@
-use crate::{Configuration, ConfigurationProvider, LoadError};
-use std::fmt::{Debug, Formatter, Result as FormatResult};
-use std::{borrow::Borrow, ops::Deref};
+use crate::{Configuration, Provider, Result, Settings};
 
-/// Defines the possible reload errors.
-#[derive(PartialEq, Clone)]
-pub enum ReloadError {
-    /// Indicates one or more provider load errors occurred.
-    Provider(Vec<(String, LoadError)>),
+/// Represents the root of a configuration hierarchy.
+pub struct Root(Vec<Box<dyn Provider>>);
 
-    /// Indicates reload cannot be performed because there
-    /// are borrowed references. The number of references
-    /// may be reported if known.
-    Borrowed(Option<usize>),
-}
+impl Root {
+    /// Initializes a new [Root] configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `providers` - The [sequence](IntoIterator) of [providers](Provider)
+    #[inline]
+    pub fn new(providers: impl IntoIterator<Item = Box<dyn Provider>>) -> Self {
+        Self(providers.into_iter().collect())
+    }
 
-impl Debug for ReloadError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FormatResult {
-        match self {
-            Self::Provider(errors) => {
-                if errors.len() == 1 {
-                    write!(f, "{} ({})", errors[0].1.message(), &errors[0].0)?;
-                } else {
-                    f.write_str("One or more load errors occurred:")?;
+    /// Gets the [configuration providers](Provider).
+    #[inline]
+    pub fn providers(&self) -> impl Iterator<Item = &dyn Provider> {
+        self.0.iter().map(AsRef::as_ref)
+    }
 
-                    for (i, (provider, error)) in errors.iter().enumerate() {
-                        write!(f, "\n  [{}]: {} ({})", (i + 1), error.message(), provider)?;
-                    }
-                }
-            }
-            Self::Borrowed(count) => {
-                write!(f, "Reload failed because the are")?;
+    /// Load the values from the underlying [providers](Provider) into a [configuration](Configuration).
+    pub fn load(&self) -> Result<Configuration> {
+        let mut settings = Settings::new();
+        let mut tokens = Vec::with_capacity(self.0.len());
 
-                if let Some(value) = count {
-                    write!(f, "{} ", value)?;
-                }
-
-                write!(f, " outstanding borrow references.")?;
-            }
+        for provider in &self.0 {
+            provider.load(&mut settings)?;
+            tokens.push(provider.reload_token());
         }
 
-        Ok(())
+        Ok(Configuration::new(settings, tokens))
     }
-}
-
-/// Represents a configuration reload result.
-pub type ReloadResult = std::result::Result<(), ReloadError>;
-
-/// Represents the root of a [`Configuration`](crate::Configuration) hierarchy.
-pub trait ConfigurationRoot:
-    Configuration + AsRef<dyn Configuration> + Borrow<dyn Configuration> + Deref<Target = dyn Configuration> + Debug
-{
-    /// Force the configuration values to be reloaded from the underlying
-    /// [`ConfigurationProvider`](crate::ConfigurationProvider) collection.
-    fn reload(&mut self) -> ReloadResult;
-
-    /// Gets the [`ConfigurationProvider`](crate::ConfigurationProvider) sequence for this configuration.
-    fn providers(&self) -> Box<dyn ConfigurationProviderIterator<'_> + '_>;
-
-    /// Converts the [`ConfigurationRoot`] into a [`Configuration`](crate::Configuration).
-    fn as_config(&self) -> Box<dyn Configuration>;
-}
-
-/// Defines the behavior of an iterator over a
-/// [`ConfigurationProvider`](crate::ConfigurationProvider) set.
-pub trait ConfigurationProviderIterator<'a>:
-    Iterator<Item = Box<dyn ConfigurationProvider + 'a>>
-    + ExactSizeIterator<Item = Box<dyn ConfigurationProvider + 'a>>
-    + DoubleEndedIterator<Item = Box<dyn ConfigurationProvider + 'a>>
-{
 }

@@ -1,34 +1,35 @@
-use config::{ext::*, *};
+use config::prelude::*;
 use std::env::{set_var, var};
 
 #[test]
 fn add_env_vars_should_load_environment_variables() {
     // arrange
-    let config = DefaultConfigurationBuilder::new().add_env_vars().build().unwrap();
+    let config = config::builder().add_env_vars().build().load().unwrap();
     let expected = var("CARGO_PKG_NAME").unwrap();
 
     // act
-    let value = config.get("CARGO_PKG_NAME").unwrap();
+    let actual = config.get("CARGO_PKG_NAME");
 
     // assert
-    assert_eq!(value.as_str(), expected);
+    assert_eq!(actual, Some(&*expected));
 }
 
 #[test]
 fn add_env_vars_should_load_filtered_environment_variables() {
     // arrange
-    let config = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_env_vars_with_prefix("CARGO_PKG_")
         .build()
+        .load()
         .unwrap();
     let expected = var("CARGO_PKG_NAME").unwrap();
 
     // act
-    let value = config.get("NAME").unwrap();
+    let actual = config.get("NAME");
 
     // assert
-    assert_eq!(value.as_str(), expected);
-    assert!(config.get("PATH").is_none())
+    assert_eq!(actual, Some(&*expected));
+    assert_eq!(config.get("PATH"), None);
 }
 
 #[test]
@@ -38,11 +39,11 @@ fn add_env_vars_should_translate_double_underscore_to_colon() {
 
     set_var("Foo__Bar__Baz", expected);
 
-    let config = DefaultConfigurationBuilder::new().add_env_vars().build().unwrap();
+    let config = config::builder().add_env_vars().build().load().unwrap();
 
     // act
-    let value = config.get("Foo:Bar:Baz").unwrap();
+    let actual = config.get("Foo:Bar:Baz");
 
     // assert
-    assert_eq!(value.as_str(), expected);
+    assert_eq!(actual, Some(expected));
 }

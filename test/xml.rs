@@ -1,21 +1,12 @@
-use config::{ext::*, *};
-use std::env::temp_dir;
-use std::fs::{remove_file, File};
+use config::{prelude::*, Error};
+use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
+use tempfile::{tempdir, NamedTempFile};
 use test_case::test_case;
-
-struct TempFile(PathBuf);
-
-impl Drop for TempFile {
-    fn drop(&mut self) {
-        if self.0.exists() {
-            remove_file(&self.0).ok();
-        }
-    }
-}
+use tokens::ChangeToken;
 
 #[test]
 fn add_xml_file_should_load_settings_from_file() {
@@ -34,23 +25,18 @@ fn add_xml_file_should_load_settings_from_file() {
         " </Data.Setting>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_1.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
     let section = config.section("Data.Setting").section("DefaultConnection");
 
     // act
-    let value = section.get("Provider");
+    let actual = section.get("Provider");
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-
-    assert_eq!(value.unwrap().as_str(), "SqlClient");
+    assert_eq!(actual, Some("SqlClient"));
 }
 
 #[test]
@@ -59,17 +45,17 @@ fn add_xml_file_should_fail_if_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.xml");
 
     // act
-    let result = DefaultConfigurationBuilder::new().add_xml_file(&path).build();
+    let result = config::builder().add_xml_file(&path).build().load();
 
     // assert
     if let Err(error) = result {
-        if let ReloadError::Provider(errors) = error {
+        if matches!(error, Error::MissingFile(_)) {
             assert_eq!(
-                errors[0].1.message(),
-                r"The configuration file 'C:\fake\settings.xml' was not found and is not optional."
+                &error.to_string(),
+                r"The configuration file 'C:\fake\settings.xml' was not found, but is required."
             )
         } else {
-            panic!("{:#?}", error)
+            panic!("{:?}", error)
         }
     } else {
         panic!("No error occurred.")
@@ -93,26 +79,22 @@ fn add_optional_xml_file_should_load_settings_from_file() {
         " </Data.Setting>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_2.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
-    let config = DefaultConfigurationBuilder::new()
-        .add_xml_file(&path.is().optional())
+    let config = config::builder()
+        .add_xml_file(file.path().is().optional())
         .build()
+        .load()
         .unwrap();
     let section = config.section("Data.Setting").section("Inventory");
 
     // act
-    let value = section.get("Provider");
+    let actual = section.get("Provider");
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-
-    assert_eq!(value.unwrap().as_str(), "MySql");
+    assert_eq!(actual, Some("MySql"));
 }
 
 #[test]
@@ -121,13 +103,14 @@ fn add_xml_file_should_succeed_if_optional_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.xml");
 
     // act
-    let config = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_xml_file(&path.is().optional())
         .build()
+        .load()
         .unwrap();
 
     // assert
-    assert_eq!(config.children().len(), 0);
+    assert_eq!(config.sections().len(), 0);
 }
 
 #[test]
@@ -145,24 +128,17 @@ fn add_xml_file_should_process_attributes() {
         "  </Data>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_3.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-    assert_eq!(config.get("Port").unwrap().as_str(), "8008");
-    assert_eq!(
-        config.get("Data:DefaultConnection:Provider").unwrap().as_str(),
-        "SqlClient"
-    );
-    assert_eq!(config.get("Data:Inventory:Provider").unwrap().as_str(), "MySql");
+    assert_eq!(config.get("Port"), Some("8008"));
+    assert_eq!(config.get("Data:DefaultConnection:Provider"), Some("SqlClient"));
+    assert_eq!(config.get("Data:Inventory:Provider"), Some("MySql"));
 }
 
 #[test]
@@ -180,30 +156,23 @@ fn add_xml_file_should_mix_elements_and_attributes() {
         " </Data>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_4.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-    assert_eq!(config.get("Port").unwrap().as_str(), "8008");
-    assert_eq!(
-        config.get("Data:DefaultConnection:Provider").unwrap().as_str(),
-        "SqlClient"
-    );
-    assert_eq!(config.get("Data:Inventory:Provider").unwrap().as_str(), "MySql");
+    assert_eq!(config.get("Port"), Some("8008"));
+    assert_eq!(config.get("Data:DefaultConnection:Provider"), Some("SqlClient"));
+    assert_eq!(config.get("Data:Inventory:Provider"), Some("MySql"));
 }
 
-#[test_case("test_settings_5.1.xml", "Name" ; "with titlecase")]
-#[test_case("test_settings_5.2.xml", "name" ; "with lowercase")]
-#[test_case("test_settings_5.3.xml", "NAME" ; "with uppercase")]
-fn name_attribute_should_contribute_to_prefix(filename: &str, attribute: &str) {
+#[test_case("Name" ; "with titlecase")]
+#[test_case("name" ; "with lowercase")]
+#[test_case("NAME" ; "with uppercase")]
+fn name_attribute_should_contribute_to_prefix(attribute: &str) {
     // arrange
     let xml = &[
         "<settings>\n",
@@ -218,32 +187,22 @@ fn name_attribute_should_contribute_to_prefix(filename: &str, attribute: &str) {
         "</settings>",
     ]
     .join("");
-    let path = temp_dir().join(filename);
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
+    assert_eq!(config.get("Data:DefaultConnection:Name"), Some("DefaultConnection"));
     assert_eq!(
-        config.get("Data:DefaultConnection:Name").unwrap().as_str(),
-        "DefaultConnection"
+        config.get("Data:DefaultConnection:ConnectionString"),
+        Some("TestConnectionString")
     );
-    assert_eq!(
-        config.get("Data:DefaultConnection:ConnectionString").unwrap().as_str(),
-        "TestConnectionString"
-    );
-    assert_eq!(
-        config.get("Data:DefaultConnection:Provider").unwrap().as_str(),
-        "SqlClient"
-    );
-    assert_eq!(config.get("Data:Inventory:Name").unwrap().as_str(), "Inventory");
-    assert_eq!(config.get("Data:Inventory:Provider").unwrap().as_str(), "MySql");
+    assert_eq!(config.get("Data:DefaultConnection:Provider"), Some("SqlClient"));
+    assert_eq!(config.get("Data:Inventory:Name"), Some("Inventory"));
+    assert_eq!(config.get("Data:Inventory:Provider"), Some("MySql"));
 }
 
 #[test]
@@ -261,24 +220,17 @@ fn root_element_name_attribute_should_contribute_to_prefix() {
         " </Inventory>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_6.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-    assert_eq!(config.get("Data:Name").unwrap().as_str(), "Data");
-    assert_eq!(
-        config.get("Data:DefaultConnection:Provider").unwrap().as_str(),
-        "SqlClient"
-    );
-    assert_eq!(config.get("Data:Inventory:Provider").unwrap().as_str(), "MySql");
+    assert_eq!(config.get("Data:Name"), Some("Data"));
+    assert_eq!(config.get("Data:DefaultConnection:Provider"), Some("SqlClient"));
+    assert_eq!(config.get("Data:Inventory:Provider"), Some("MySql"));
 }
 
 #[test]
@@ -296,32 +248,22 @@ fn numeric_name_attribute_should_be_array_like() {
         " </DefaultConnection>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_7.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-    assert_eq!(
-        config.get("DefaultConnection:0:Provider").unwrap().as_str(),
-        "SqlClient1"
-    );
-    assert_eq!(
-        config.get("DefaultConnection:1:Provider").unwrap().as_str(),
-        "SqlClient2"
-    );
+    assert_eq!(config.get("DefaultConnection:0:Provider"), Some("SqlClient1"));
+    assert_eq!(config.get("DefaultConnection:1:Provider"), Some("SqlClient2"));
 }
 
-#[test_case("test_settings_8.1.xml", "DefaultConnection" ; "with titlecase")]
-#[test_case("test_settings_8.2.xml", "defaultconnection" ; "with lowercase")]
-#[test_case("test_settings_8.3.xml", "DEFAULTCONNECTION" ; "with uppercase")]
-fn repeated_element_should_be_array_like(filename: &str, element: &str) {
+#[test_case("DefaultConnection" ; "with titlecase")]
+#[test_case("defaultconnection" ; "with lowercase")]
+#[test_case("DEFAULTCONNECTION" ; "with uppercase")]
+fn repeated_element_should_be_array_like(element: &str) {
     // arrange
     let xml = &[
         "<settings>\n",
@@ -336,26 +278,16 @@ fn repeated_element_should_be_array_like(filename: &str, element: &str) {
         "</settings>",
     ]
     .join("");
-    let path = temp_dir().join(filename);
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-    assert_eq!(
-        config.get("DefaultConnection:0:Provider").unwrap().as_str(),
-        "SqlClient1"
-    );
-    assert_eq!(
-        config.get("DefaultConnection:1:Provider").unwrap().as_str(),
-        "SqlClient2"
-    );
+    assert_eq!(config.get("DefaultConnection:0:Provider"), Some("SqlClient1"));
+    assert_eq!(config.get("DefaultConnection:1:Provider"), Some("SqlClient2"));
 }
 
 #[test]
@@ -373,26 +305,16 @@ fn repeated_element_with_different_name_attribute_should_have_different_prefix()
         " </DefaultConnection>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_9.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-    assert_eq!(
-        config.get("DefaultConnection:Data1:Provider").unwrap().as_str(),
-        "SqlClient1"
-    );
-    assert_eq!(
-        config.get("DefaultConnection:Data2:Provider").unwrap().as_str(),
-        "SqlClient2"
-    );
+    assert_eq!(config.get("DefaultConnection:Data1:Provider"), Some("SqlClient1"));
+    assert_eq!(config.get("DefaultConnection:Data2:Provider"), Some("SqlClient2"));
 }
 
 #[test]
@@ -410,33 +332,29 @@ fn nested_repeated_element_should_be_array_like() {
         " </DefaultConnection>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_10.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
     assert_eq!(
-        config.get("DefaultConnection:0:ConnectionString:0").unwrap().as_str(),
-        "TestConnectionString1"
+        config.get("DefaultConnection:0:ConnectionString:0"),
+        Some("TestConnectionString1")
     );
     assert_eq!(
-        config.get("DefaultConnection:0:ConnectionString:1").unwrap().as_str(),
-        "TestConnectionString2"
+        config.get("DefaultConnection:0:ConnectionString:1"),
+        Some("TestConnectionString2")
     );
     assert_eq!(
-        config.get("DefaultConnection:1:ConnectionString:0").unwrap().as_str(),
-        "TestConnectionString3"
+        config.get("DefaultConnection:1:ConnectionString:0"),
+        Some("TestConnectionString3")
     );
     assert_eq!(
-        config.get("DefaultConnection:1:ConnectionString:1").unwrap().as_str(),
-        "TestConnectionString4"
+        config.get("DefaultConnection:1:ConnectionString:1"),
+        Some("TestConnectionString4")
     );
 }
 
@@ -462,43 +380,30 @@ fn mixed_repeated_element_should_be_array_like() {
         " </DefaultConnection>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_11.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
     assert_eq!(
-        config.get("DefaultConnection:0:ConnectionString").unwrap().as_str(),
-        "TestConnectionString1"
+        config.get("DefaultConnection:0:ConnectionString"),
+        Some("TestConnectionString1")
     );
     assert_eq!(
-        config.get("DefaultConnection:1:ConnectionString").unwrap().as_str(),
-        "TestConnectionString2"
+        config.get("DefaultConnection:1:ConnectionString"),
+        Some("TestConnectionString2")
     );
     assert_eq!(
-        config.get("DefaultConnection:2:ConnectionString").unwrap().as_str(),
-        "TestConnectionString3"
+        config.get("DefaultConnection:2:ConnectionString"),
+        Some("TestConnectionString3")
     );
-    assert_eq!(
-        config.get("DefaultConnection:0:Provider").unwrap().as_str(),
-        "SqlClient1"
-    );
-    assert_eq!(
-        config.get("DefaultConnection:1:Provider").unwrap().as_str(),
-        "SqlClient2"
-    );
-    assert_eq!(
-        config.get("DefaultConnection:2:Provider").unwrap().as_str(),
-        "SqlClient3"
-    );
-    assert_eq!(config.get("OtherValue:Value").unwrap().as_str(), "MyValue");
+    assert_eq!(config.get("DefaultConnection:0:Provider"), Some("SqlClient1"));
+    assert_eq!(config.get("DefaultConnection:1:Provider"), Some("SqlClient2"));
+    assert_eq!(config.get("DefaultConnection:2:Provider"), Some("SqlClient3"));
+    assert_eq!(config.get("OtherValue:Value"), Some("MyValue"));
 }
 
 #[test]
@@ -513,21 +418,17 @@ fn config_values_should_process_cdata() {
         " </Data>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_12.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // act
-    let value = config.get("Data:Inventory:Provider");
+    let actual = config.get("Data:Inventory:Provider");
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-    assert_eq!(value.unwrap().as_str(), "SpecialStringWith<>");
+    assert_eq!(actual, Some("SpecialStringWith<>"));
 }
 
 #[test]
@@ -550,21 +451,17 @@ fn xml_declaration_and_processing_instructions_should_be_ignored() {
         " </Data>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_13.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
-    let config = DefaultConfigurationBuilder::new().add_xml_file(&path).build().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
 
     // act
-    let value = config.get("Data:DefaultConnection:Provider");
+    let actual = config.get("Data:DefaultConnection:Provider");
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-    assert_eq!(value.unwrap().as_str(), "SqlClient");
+    assert_eq!(actual, Some("SqlClient"));
 }
 
 #[test]
@@ -584,23 +481,17 @@ fn load_should_fail_when_xml_namespace_is_encountered() {
         " </MyNamespace:Data>\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_14.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
-    let _file = TempFile(path.clone());
-
     // act
-    let result = DefaultConfigurationBuilder::new().add_xml_file(&path).build();
+    let result = config::builder().add_xml_file(file.path()).build().load();
 
     // assert
     if let Err(error) = result {
-        if let ReloadError::Provider(errors) = error {
-            assert_eq!(
-                errors[0].1.message(),
-                "XML namespaces are not supported. (Data, Line: 2)"
-            )
+        if matches!(error, Error::InvalidFile { .. }) {
+            assert_eq!(&error.to_string(), "XML namespaces are not supported. (Data, Line: 2)")
         } else {
             panic!("{:#?}", error)
         }
@@ -622,21 +513,18 @@ fn load_should_fail_when_key_is_duplicated() {
         " <Data Name='DefaultConnection' ConnectionString='NewConnectionString' />\n",
         "</settings>"
     );
-    let path = temp_dir().join("test_settings_15.xml");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
-    let _file = TempFile(path.clone());
-
     // act
-    let result = DefaultConfigurationBuilder::new().add_xml_file(&path).build();
+    let result = config::builder().add_xml_file(file.path()).build().load();
 
     // assert
     if let Err(error) = result {
-        if let ReloadError::Provider(errors) = error {
+        if matches!(error, Error::InvalidFile { .. }) {
             assert_eq!(
-                errors[0].1.message(),
+                &error.to_string(),
                 "A duplicate key 'Data:DefaultConnection:ConnectionString' was found. (Data, Line: 7)"
             )
         } else {
@@ -650,7 +538,9 @@ fn load_should_fail_when_key_is_duplicated() {
 #[test]
 fn xml_file_should_reload_when_changed() {
     // arrange
-    let path = temp_dir().join("reload_settings_1.xml");
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("settings.xml");
+    let mut file = File::create(&path).unwrap();
     let mut xml = concat!(
         "<Settings>\n",
         " <Connections>\n",
@@ -661,16 +551,13 @@ fn xml_file_should_reload_when_changed() {
         "</Settings>"
     );
 
-    let mut file = File::create(&path).unwrap();
     file.write_all(xml.to_string().as_bytes()).unwrap();
     drop(file);
 
-    let config = DefaultConfigurationBuilder::new()
-        .add_xml_file(&path.is().reloadable())
-        .build()
-        .unwrap();
+    let root = config::builder().add_xml_file(&path.is().reloadable()).build();
+    let mut config = root.load().unwrap();
     let section = config.section("Connections").section("Connection");
-    let initial = section.get("Retries").unwrap_or_default();
+    let initial = section.get("Retries").unwrap_or_default().to_owned();
 
     drop(section);
 
@@ -707,15 +594,13 @@ fn xml_file_should_reload_when_changed() {
         reloaded = event.wait_timeout(reloaded, Duration::from_secs(1)).unwrap().0;
     }
 
+    config = root.load().unwrap();
+
     // act
     let section = config.section("Connections").section("Connection");
     let current = section.get("Retries").unwrap_or_default();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-
-    assert_eq!(initial.as_str(), "3");
-    assert_eq!(current.as_str(), "5");
+    assert_eq!(initial, "3");
+    assert_eq!(current, "5");
 }

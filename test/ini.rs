@@ -1,34 +1,30 @@
-use config::{ext::*, *};
-use std::env::temp_dir;
-use std::fs::{remove_file, File};
+use config::{prelude::*, Error};
+use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
+use tempfile::{tempdir, NamedTempFile};
+use tokens::ChangeToken;
 
 #[test]
 fn add_ini_file_should_load_settings_from_file() {
     // arrange
-    let path = temp_dir().join("test_settings_1.ini");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(b"[Service]\n").unwrap();
     file.write_all(b"Enabled=false\n\n").unwrap();
     file.write_all(b"[Feature.Magic]\n").unwrap();
     file.write_all(b"Disabled=true").unwrap();
 
-    let config = DefaultConfigurationBuilder::new().add_ini_file(&path).build().unwrap();
+    let config = config::builder().add_ini_file(file.path()).build().load().unwrap();
     let section = config.section("Feature.Magic");
 
     // act
-    let value = section.get("Disabled");
+    let actual = section.get("Disabled");
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-
-    assert_eq!(value.unwrap().as_str(), "true");
+    assert_eq!(actual, Some("true"));
 }
 
 #[test]
@@ -37,17 +33,17 @@ fn add_ini_file_should_fail_if_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.ini");
 
     // act
-    let result = DefaultConfigurationBuilder::new().add_ini_file(&path).build();
+    let result = config::builder().add_ini_file(&path).build().load();
 
     // assert
     if let Err(error) = result {
-        if let ReloadError::Provider(errors) = error {
+        if matches!(error, Error::MissingFile(_)) {
             assert_eq!(
-                errors[0].1.message(),
-                r"The configuration file 'C:\fake\settings.ini' was not found and is not optional."
+                &error.to_string(),
+                r"The configuration file 'C:\fake\settings.ini' was not found, but is required."
             )
         } else {
-            panic!("{:#?}", error)
+            panic!("{:?}", error)
         }
     } else {
         panic!("No error occurred.")
@@ -57,29 +53,25 @@ fn add_ini_file_should_fail_if_file_does_not_exist() {
 #[test]
 fn add_optional_ini_file_should_load_settings_from_file() {
     // arrange
-    let path = temp_dir().join("test_settings_2.ini");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(b"[Service]\n").unwrap();
     file.write_all(b"Enabled=false\n\n").unwrap();
     file.write_all(b"[Feature.Magic]\n").unwrap();
     file.write_all(b"Disabled=true").unwrap();
 
-    let config = DefaultConfigurationBuilder::new()
-        .add_ini_file(&path.is().optional())
+    let config = config::builder()
+        .add_ini_file(file.path().is().optional())
         .build()
+        .load()
         .unwrap();
     let section = config.section("Feature.Magic");
 
     // act
-    let value = section.get("Disabled");
+    let actual = section.get("Disabled");
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-
-    assert_eq!(value.unwrap().as_str(), "true");
+    assert_eq!(actual, Some("true"));
 }
 
 #[test]
@@ -88,19 +80,21 @@ fn add_ini_file_should_succeed_if_optional_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.ini");
 
     // act
-    let config = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_ini_file(&path.is().optional())
         .build()
+        .load()
         .unwrap();
 
     // assert
-    assert_eq!(config.children().len(), 0);
+    assert_eq!(config.sections().len(), 0);
 }
 
 #[test]
 fn init_file_should_reload_when_changed() {
     // arrange
-    let path = temp_dir().join("test_settings_3.ini");
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("settings.ini");
     let mut file = File::create(&path).unwrap();
 
     file.write_all(b"[Service]\n").unwrap();
@@ -109,12 +103,10 @@ fn init_file_should_reload_when_changed() {
     file.write_all(b"Disabled=true").unwrap();
     drop(file);
 
-    let config = DefaultConfigurationBuilder::new()
-        .add_ini_file(&path.is().reloadable())
-        .build()
-        .unwrap();
+    let root = config::builder().add_ini_file(&path.is().reloadable()).build();
+    let mut config = root.load().unwrap();
     let section = config.section("Feature.Magic");
-    let initial = section.get("Disabled").unwrap_or_default();
+    let initial = section.get("Disabled").unwrap_or_default().to_owned();
 
     drop(section);
 
@@ -144,15 +136,13 @@ fn init_file_should_reload_when_changed() {
         reloaded = event.wait_timeout(reloaded, Duration::from_secs(1)).unwrap().0;
     }
 
+    config = root.load().unwrap();
+
     // act
     let section = config.section("Feature.Magic");
     let current = section.get("Disabled").unwrap_or_default();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-
-    assert_eq!(initial.as_str(), "true");
-    assert_eq!(current.as_str(), "false");
+    assert_eq!(initial, "true");
+    assert_eq!(current, "false");
 }

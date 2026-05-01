@@ -1,11 +1,11 @@
-use crate::{ConfigurationBuilder, ConfigurationProvider};
+use crate::{Properties, Provider};
 
-/// Represents a source of configuration key/value pairs for an application.
-pub trait ConfigurationSource {
-    /// Builds the [`ConfigurationProvider`](crate::ConfigurationProvider) for this source.
+/// Represents a source for provided configuration settings.
+pub trait Source {
+    /// Builds the [configuration provider](Provider) for this source.
     ///
     /// # Arguments
     ///
-    /// * `builder` - The [`ConfigurationBuilder`](crate::ConfigurationBuilder) used to build the provider
-    fn build(&self, builder: &dyn ConfigurationBuilder) -> Box<dyn ConfigurationProvider>;
+    /// * `properties` - The [properties](Properties) used to build the provider
+    fn build(&mut self, properties: &mut Properties) -> Box<dyn Provider>;
 }

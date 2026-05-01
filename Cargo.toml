@@ -1,12 +1,67 @@
-[workspace]
-members = ["src", "test", "examples/*"]
-default-members = ["src", "test"]
-resolver = "2"
+[package]
+name = "more-config"
+version = "3.0.0"
+edition = "2018"
+rust-version = "1.60"
+authors = ["Chris Martinez <chris.s.martinez@hotmail.com>"]
+description = "Provides support for configuration"
+keywords = ["more", "configuration", "config"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://commonsensesoftware.github.io/more-rs-config/"
+repository = "https://github.com/commonsensesoftware/more-rs-config"
+
+# RUSTDOCFLAGS="--cfg docsrs"; cargo +nightly doc
+[package.metadata.docs.rs]
+features = [
+    "binder",
+    "chained",
+    "cmd",
+    "env",
+    "ini",
+    "json",
+    "mem",
+    "xml",
+]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lib]
+name = "config"
+path = "src/lib.rs"
+doctest = false
+
+[features]
+default = ["cmd", "env", "mem"]
+async = ["dep:maybe-impl"]
+binder = ["dep:serde"]
+chained = []
+cmd = []
+env = []
+ini = ["dep:configparser", "more-changetoken/fs"]
+json = ["dep:serde_json", "more-changetoken/fs"]
+mem = []
+xml = ["dep:xml_rs", "more-changetoken/fs"]
+all = ["binder", "chained", "cmd", "env", "ini", "json", "mem", "xml"]
 
 [workspace.dependencies]
-cfg-if = "1.0"
-maybe-impl = "0.1"
-more-changetoken = "2.1"
 serde = "1.0"
-serde_json = "1.0"
-test-case = "2.2"
+
+[dependencies]
+cfg-if = "1.0"
+maybe-impl = { version = "0.1.0", optional = true }
+more-changetoken = "2.1.0"
+configparser = { version = "3.1.0", optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { version = "1.0", optional = true }
+xml_rs = { version = "1.0.0", package = "xml", optional = true }
+thiserror = "2.0.18"
+
+[dev-dependencies]
+more-config = { path = ".", features = ["all"] }
+serde = { workspace = true, features = ["derive"] }
+tempfile = "3.27.0"
+test-case = "3.3.1"
+
+[[example]]
+name = "demo"
+path = "examples/demo.rs"

@@ -1,8 +1,7 @@
-use config::{ext::*, *};
+use config::prelude::*;
 use serde::Deserialize;
-use std::env::temp_dir;
-use std::fs::{remove_file, File};
 use std::io::Write;
+use tempfile::NamedTempFile;
 
 #[derive(Default, Deserialize)]
 struct ContactOptions {
@@ -26,7 +25,7 @@ struct ArrayExample {
 #[test]
 fn reify_should_deserialize_configuration_to_options() {
     // arrange
-    let config = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("name", "John Doe"),
             ("primary", "true"),
@@ -34,10 +33,11 @@ fn reify_should_deserialize_configuration_to_options() {
             ("phones:1", "+44 2345678"),
         ])
         .build()
+        .load()
         .unwrap();
 
     // act
-    let options: ContactOptions = config.reify();
+    let options: ContactOptions = config.reify().unwrap();
 
     // assert
     assert_eq!(&options.name, "John Doe");
@@ -48,7 +48,7 @@ fn reify_should_deserialize_configuration_to_options() {
 #[test]
 fn reify_should_deserialize_section_to_options() {
     // arrange
-    let config = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("array:entries:0", "value00"),
             ("array:entries:1", "value10"),
@@ -58,12 +58,13 @@ fn reify_should_deserialize_section_to_options() {
             ("array:entries:5", "value50"),
         ])
         .build()
+        .load()
         .unwrap();
     let section = config.section("array");
     let expected = vec!["value00", "value10", "value20", "value30", "value40", "value50"];
 
     // act
-    let options: ArrayExample = section.reify();
+    let options: ArrayExample = section.reify().unwrap();
 
     // assert
     assert_eq!(&options.entries, &expected);
@@ -72,7 +73,7 @@ fn reify_should_deserialize_section_to_options() {
 #[test]
 fn bind_should_deserialize_configuration_to_options() {
     // arrange
-    let config = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("name", "John Doe"),
             ("primary", "true"),
@@ -80,11 +81,12 @@ fn bind_should_deserialize_configuration_to_options() {
             ("phones:1", "+44 2345678"),
         ])
         .build()
+        .load()
         .unwrap();
     let mut options = ContactOptions::default();
 
     // act
-    config.bind(&mut options);
+    config.bind(&mut options).unwrap();
 
     // assert
     assert_eq!(&options.name, "John Doe");
@@ -95,7 +97,7 @@ fn bind_should_deserialize_configuration_to_options() {
 #[test]
 fn bind_at_should_deserialize_configuration_to_options() {
     // arrange
-    let config = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("contact:name", "John Doe"),
             ("contact:primary", "true"),
@@ -103,11 +105,12 @@ fn bind_at_should_deserialize_configuration_to_options() {
             ("contact:phones:1", "+44 2345678"),
         ])
         .build()
+        .load()
         .unwrap();
     let mut options = ContactOptions::default();
 
     // act
-    config.bind_at("contact", &mut options);
+    config.bind_at("contact", &mut options).unwrap();
 
     // assert
     assert_eq!(&options.name, "John Doe");
@@ -118,7 +121,7 @@ fn bind_at_should_deserialize_configuration_to_options() {
 #[test]
 fn get_value_should_deserialize_configuration_value() {
     // arrange
-    let config = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("name", "John Doe"),
             ("primary", "true"),
@@ -126,6 +129,7 @@ fn get_value_should_deserialize_configuration_value() {
             ("phones:1", "+44 2345678"),
         ])
         .build()
+        .load()
         .unwrap();
 
     // act
@@ -138,13 +142,14 @@ fn get_value_should_deserialize_configuration_value() {
 #[test]
 fn get_value_should_return_none_for_missing_configuration_value() {
     // arrange
-    let config = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("name", "John Doe"),
             ("phones:0", "+44 1234567"),
             ("phones:1", "+44 2345678"),
         ])
         .build()
+        .load()
         .unwrap();
 
     // act
@@ -157,13 +162,14 @@ fn get_value_should_return_none_for_missing_configuration_value() {
 #[test]
 fn get_value_or_default_should_return_default_value_for_missing_configuration_value() {
     // arrange
-    let config = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("name", "John Doe"),
             ("phones:0", "+44 1234567"),
             ("phones:1", "+44 2345678"),
         ])
         .build()
+        .load()
         .unwrap();
 
     // act
@@ -176,8 +182,7 @@ fn get_value_or_default_should_return_default_value_for_missing_configuration_va
 #[test]
 fn deserialization_should_preserve_case_in_ini_file() {
     // arrange
-    let path = temp_dir().join("test1.servicesettings.overrides.ini");
-    let mut file = File::create(&path).unwrap();
+    let mut file = NamedTempFile::new().unwrap();
 
     file.write_all(b"[Service]\n").unwrap();
     file.write_all(b"Disabled=true\n").unwrap();
@@ -191,18 +196,12 @@ fn deserialization_should_preserve_case_in_ini_file() {
     file.write_all(b"[RequiredFiles]\n").unwrap();
     file.write_all(b"start.bat=1").unwrap();
 
-    let config = DefaultConfigurationBuilder::new().add_ini_file(&path).build().unwrap();
-
-    // act
+    let config = config::builder().add_ini_file(file.path()).build().load().unwrap();
     let mut settings = FileCopySettings::default();
 
     // act
-    config.bind_at("FileCopySettings", &mut settings);
+    config.bind_at("FileCopySettings", &mut settings).unwrap();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-
     assert!(settings.use_native_copy);
 }

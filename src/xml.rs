@@ -1,19 +1,19 @@
-use crate::{
-    util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource, FileSource,
-    LoadError, LoadResult, Value,
+use crate::{path, Error, FileSource, Properties, Settings};
+use std::{
+    cell::RefCell,
+    fmt::{self, Display, Formatter},
+    fs::File,
+    io::BufReader,
+    mem::take,
+    ops::Deref,
+    rc::Rc,
 };
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::fmt::{self, Display, Formatter};
-use std::fs::File;
-use std::io::BufReader;
-use std::ops::Deref;
-use std::rc::Rc;
-use std::sync::{Arc, RwLock};
-use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken, Subscription};
-use xml_rs::attribute::OwnedAttribute;
-use xml_rs::name::OwnedName;
-use xml_rs::reader::{EventReader, XmlEvent};
+use tokens::{ChangeToken, FileChangeToken, NeverChangeToken};
+use xml_rs::{
+    attribute::OwnedAttribute,
+    name::OwnedName,
+    reader::{EventReader, XmlEvent::*},
+};
 
 trait LocalNameResolver {
     fn local_name_or_error(&self, element: &OwnedName, line: usize) -> Result<String, String>;
@@ -25,18 +25,18 @@ impl LocalNameResolver for OwnedName {
             Ok(self.local_name.clone())
         } else {
             Err(format!(
-                "XML namespaces are not supported. ({}, Line: {})",
-                &element.local_name, line
+                "XML namespaces are not supported. ({name}, Line: {line})",
+                name = &element.local_name
             ))
         }
     }
 }
 
-trait VecExtensions<TKey: PartialEq, TValue> {
+trait VecExt<TKey: PartialEq, TValue> {
     fn get_or_add(&mut self, key: TKey) -> &mut TValue;
 }
 
-impl VecExtensions<String, Vec<Rc<RefCell<Element>>>> for Vec<(String, Vec<Rc<RefCell<Element>>>)> {
+impl VecExt<String, Vec<Rc<RefCell<Element>>>> for Vec<(String, Vec<Rc<RefCell<Element>>>)> {
     fn get_or_add(&mut self, key: String) -> &mut Vec<Rc<RefCell<Element>>> {
         let index = self.iter_mut().position(|i| i.0 == key).unwrap_or(self.len());
 
@@ -66,7 +66,7 @@ impl Element {
         let local_name = element_name.local_name_or_error(&element_name, line)?;
         let sibling_name = name
             .as_ref()
-            .map(|n| ConfigurationPath::combine(&[&local_name.to_uppercase(), &n.to_uppercase()]))
+            .map(|n| path::combine(&[&local_name.to_uppercase(), &n.to_uppercase()]))
             .unwrap_or(local_name.to_uppercase());
 
         Ok(Self {
@@ -96,10 +96,9 @@ impl Prefix {
             self.text.push_str(value.as_ref());
             self.lengths.push(value.as_ref().len());
         } else {
-            self.text.push_str(ConfigurationPath::key_delimiter());
+            self.text.push(path::delimiter());
             self.text.push_str(value.as_ref());
-            self.lengths
-                .push(value.as_ref().len() + ConfigurationPath::key_delimiter().len());
+            self.lengths.push(value.as_ref().len() + 1);
         }
     }
 
@@ -114,6 +113,7 @@ impl Prefix {
 }
 
 impl Display for Prefix {
+    #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str(&self.text)
     }
@@ -123,44 +123,33 @@ fn get_name(element: &OwnedName, attributes: &Vec<OwnedAttribute>, line: usize) 
     for attribute in attributes {
         let local_name = attribute.name.local_name_or_error(element, line)?;
 
-        match local_name.as_str() {
-            "name" | "Name" | "NAME" => {
-                return Ok(Some(attribute.value.clone()));
-            }
-            _ => {}
+        if local_name.eq_ignore_ascii_case("name") {
+            return Ok(Some(attribute.value.clone()));
         }
     }
 
     Ok(None)
 }
 
-fn process_element(
-    prefix: &mut Prefix,
-    element: &Element,
-    config: &mut HashMap<String, (String, String)>,
-) -> Result<(), String> {
-    process_attributes(prefix, element, config)?;
-    process_element_content(prefix, element, config)?;
-    process_children(prefix, element, config)
+fn visit_element(prefix: &mut Prefix, element: &Element, settings: &mut Settings) -> Result<(), String> {
+    visit_attributes(prefix, element, settings)?;
+    visit_element_content(prefix, element, settings)?;
+    visit_children(prefix, element, settings)
 }
 
-fn process_element_content(
-    prefix: &mut Prefix,
-    element: &Element,
-    config: &mut HashMap<String, (String, String)>,
-) -> Result<(), String> {
+fn visit_element_content(prefix: &mut Prefix, element: &Element, settings: &mut Settings) -> Result<(), String> {
     if let Some(ref value) = element.text {
-        add_to_config(prefix.to_string(), value.clone(), element, config)
+        add_setting(prefix.to_string(), value.clone(), element, settings)
     } else {
         Ok(())
     }
 }
 
-fn process_element_child(
+fn visit_element_child(
     prefix: &mut Prefix,
     child: &Element,
     index: Option<usize>,
-    config: &mut HashMap<String, (String, String)>,
+    settings: &mut Settings,
 ) -> Result<(), String> {
     prefix.push(&child.element_name);
 
@@ -172,7 +161,7 @@ fn process_element_child(
         prefix.push(i.to_string());
     }
 
-    process_element(prefix, child, config)?;
+    visit_element(prefix, child, settings)?;
 
     if index.is_some() {
         prefix.pop();
@@ -186,31 +175,23 @@ fn process_element_child(
     Ok(())
 }
 
-fn process_attributes(
-    prefix: &mut Prefix,
-    element: &Element,
-    config: &mut HashMap<String, (String, String)>,
-) -> Result<(), String> {
+fn visit_attributes(prefix: &mut Prefix, element: &Element, settings: &mut Settings) -> Result<(), String> {
     for attribute in &element.attributes {
         prefix.push(&attribute.0);
-        add_to_config(prefix.to_string(), attribute.1.clone(), element, config)?;
+        add_setting(prefix.to_string(), attribute.1.clone(), element, settings)?;
         prefix.pop();
     }
 
     Ok(())
 }
 
-fn process_children(
-    prefix: &mut Prefix,
-    element: &Element,
-    config: &mut HashMap<String, (String, String)>,
-) -> Result<(), String> {
+fn visit_children(prefix: &mut Prefix, element: &Element, settings: &mut Settings) -> Result<(), String> {
     for children in element.children.iter().map(|i| &i.1) {
         if children.len() == 1 {
-            process_element_child(prefix, &children[0].deref().borrow(), None, config)?;
+            visit_element_child(prefix, &children[0].deref().borrow(), None, settings)?;
         } else {
             for (i, child) in children.iter().enumerate() {
-                process_element_child(prefix, &child.deref().borrow(), Some(i), config)?;
+                visit_element_child(prefix, &child.deref().borrow(), Some(i), settings)?;
             }
         }
     }
@@ -218,41 +199,19 @@ fn process_children(
     Ok(())
 }
 
-fn add_to_config(
-    key: String,
-    value: String,
-    element: &Element,
-    config: &mut HashMap<String, (String, String)>,
-) -> Result<(), String> {
-    if let Some((dup_key, _)) = config.insert(key.to_uppercase(), (key, value)) {
+fn add_setting(key: String, value: String, element: &Element, settings: &mut Settings) -> Result<(), String> {
+    if settings.insert(key.clone(), value).is_some() {
         Err(format!(
-            "A duplicate key '{}' was found. ({}, Line: {})",
-            &dup_key, &element.element_name, element.line
+            "A duplicate key '{key}' was found. ({name}, Line: {line})",
+            name = &element.element_name,
+            line = element.line,
         ))
     } else {
         Ok(())
     }
 }
 
-fn to_config(mut root: Option<Rc<RefCell<Element>>>) -> Result<HashMap<String, (String, String)>, String> {
-    if let Some(cell) = root.take() {
-        let element = &cell.deref().borrow();
-        let mut data = HashMap::new();
-        let mut prefix = Prefix::default();
-
-        if let Some(ref name) = element.name {
-            prefix.push(name);
-        }
-
-        process_element(&mut prefix, element, &mut data)?;
-        data.shrink_to_fit();
-        Ok(data)
-    } else {
-        Ok(HashMap::with_capacity(0))
-    }
-}
-
-fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
+fn visit(file: File, settings: &mut Settings) -> Result<(), String> {
     let content = BufReader::new(file);
     let events = EventReader::new(content);
     let mut has_content = false;
@@ -263,7 +222,7 @@ fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
 
     for event in events.into_iter() {
         match event {
-            Ok(XmlEvent::StartElement { name, attributes, .. }) => {
+            Ok(StartElement { name, attributes, .. }) => {
                 line += 1;
                 has_content = false;
                 last_name = Some(name.clone());
@@ -279,7 +238,7 @@ fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
 
                 current.push((name, child));
             }
-            Ok(XmlEvent::EndElement { name }) => {
+            Ok(EndElement { name }) => {
                 if has_content {
                     if let Some(ref last) = last_name {
                         if last != &name {
@@ -292,7 +251,7 @@ fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
                     last_name = Some(current_name);
                 }
             }
-            Ok(XmlEvent::CData(text)) | Ok(XmlEvent::Characters(text)) => {
+            Ok(CData(text)) | Ok(Characters(text)) => {
                 has_content = true;
                 if let Some(parent) = current.last() {
                     parent.1.borrow_mut().text = Some(text);
@@ -302,179 +261,74 @@ fn visit(file: File) -> Result<HashMap<String, (String, String)>, String> {
         };
     }
 
-    to_config(root)
-}
+    if let Some(cell) = root.take() {
+        let element = &cell.deref().borrow();
+        let mut prefix = Prefix::default();
 
-struct InnerProvider {
-    file: FileSource,
-    data: RwLock<HashMap<String, (String, String)>>,
-    token: RwLock<SharedChangeToken<SingleChangeToken>>,
-}
-
-impl InnerProvider {
-    fn new(file: FileSource) -> Self {
-        Self {
-            file,
-            data: RwLock::new(HashMap::with_capacity(0)),
-            token: Default::default(),
+        if let Some(ref name) = element.name {
+            prefix.push(name);
         }
+
+        visit_element(&mut prefix, element, settings)?;
     }
 
-    fn load(&self, reload: bool) -> LoadResult {
-        if !self.file.path.is_file() {
-            if self.file.optional || reload {
-                let mut data = self.data.write().unwrap();
-                if !data.is_empty() {
-                    *data = HashMap::with_capacity(0);
-                }
+    Ok(())
+}
 
-                return Ok(());
-            } else {
-                return Err(LoadError::File {
-                    message: format!(
-                        "The configuration file '{}' was not found and is not optional.",
-                        self.file.path.display()
-                    ),
-                    path: self.file.path.clone(),
-                });
-            }
-        }
+struct Provider(FileSource);
 
-        if let Ok(file) = File::open(&self.file.path) {
-            let data = visit(file).map_err(|e| LoadError::File {
-                message: e,
-                path: self.file.path.clone(),
-            })?;
-            *self.data.write().unwrap() = data;
-        } else {
-            *self.data.write().unwrap() = HashMap::with_capacity(0);
-        }
-
-        let previous = std::mem::take(&mut *self.token.write().unwrap());
-
-        previous.notify();
-        Ok(())
-    }
-
-    fn get(&self, key: &str) -> Option<Value> {
-        self.data
-            .read()
-            .unwrap()
-            .get(&key.to_uppercase())
-            .map(|t| t.1.clone().into())
+impl crate::Provider for Provider {
+    #[inline]
+    fn name(&self) -> &str {
+        "Xml"
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
-        Box::new(self.token.read().unwrap().clone())
+        if self.0.reload_on_change {
+            Box::new(FileChangeToken::new(self.0.path.clone()))
+        } else {
+            Box::new(NeverChangeToken)
+        }
     }
 
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
-        let data = self.data.read().unwrap();
-        accumulate_child_keys(&data, earlier_keys, parent_path)
+    fn load(&self, settings: &mut Settings) -> crate::Result {
+        if !self.0.path.is_file() {
+            if self.0.optional {
+                return Ok(());
+            } else {
+                return Err(Error::MissingFile(self.0.path.clone()));
+            }
+        }
+
+        let file = File::open(&self.0.path).map_err(Error::unknown)?;
+
+        visit(file, settings).map_err(|e| Error::InvalidFile {
+            message: e,
+            path: self.0.path.clone(),
+        })?;
+
+        Ok(())
     }
 }
 
-/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) for `*.xml` files.
-pub struct XmlConfigurationProvider {
-    inner: Arc<InnerProvider>,
-    _subscription: Option<Box<dyn Subscription>>,
-}
+/// Represents a [configuration source](Source) for `*.xml` files.
+pub struct Source(FileSource);
 
-impl XmlConfigurationProvider {
+impl Source {
     /// Initializes a new `*.xml` file configuration provider.
     ///
     /// # Arguments
     ///
-    /// * `file` - The `*.xml` [`FileSource`](crate::FileSource) information
+    /// * `file` - The `*.xml` [file source](FileSource) information
+    #[inline]
     pub fn new(file: FileSource) -> Self {
-        let path = file.path.clone();
-        let inner = Arc::new(InnerProvider::new(file));
-        let subscription: Option<Box<dyn Subscription>> = if inner.file.reload_on_change {
-            Some(Box::new(tokens::on_change(
-                move || FileChangeToken::new(path.clone()),
-                |state| {
-                    let provider = state.unwrap();
-                    std::thread::sleep(provider.file.reload_delay);
-                    provider.load(true).ok();
-                },
-                Some(inner.clone()),
-            )))
-        } else {
-            None
-        };
-
-        Self {
-            inner,
-            _subscription: subscription,
-        }
+        Self(file)
     }
 }
 
-impl ConfigurationProvider for XmlConfigurationProvider {
-    fn get(&self, key: &str) -> Option<Value> {
-        self.inner.get(key)
-    }
-
-    fn reload_token(&self) -> Box<dyn ChangeToken> {
-        self.inner.reload_token()
-    }
-
-    fn load(&mut self) -> LoadResult {
-        self.inner.load(false)
-    }
-
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
-        self.inner.child_keys(earlier_keys, parent_path)
-    }
-}
-
-/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for `*.xml` files.
-pub struct XmlConfigurationSource {
-    file: FileSource,
-}
-
-impl XmlConfigurationSource {
-    /// Initializes a new `*.xml` file configuration source.
-    ///
-    /// # Arguments
-    ///
-    /// * `file` - The `*.xml` [`FileSource`](crate::FileSource) information
-    pub fn new(file: FileSource) -> Self {
-        Self { file }
-    }
-}
-
-impl ConfigurationSource for XmlConfigurationSource {
-    fn build(&self, _builder: &dyn ConfigurationBuilder) -> Box<dyn ConfigurationProvider> {
-        Box::new(XmlConfigurationProvider::new(self.file.clone()))
-    }
-}
-
-pub mod ext {
-
-    use super::*;
-
-    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
-    pub trait XmlConfigurationExtensions {
-        /// Adds a `*.xml` file as a configuration source.
-        ///
-        /// # Arguments
-        ///
-        /// * `file` - The `*.xml` [`FileSource`](crate::FileSource) information
-        fn add_xml_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
-    }
-
-    impl XmlConfigurationExtensions for dyn ConfigurationBuilder + '_ {
-        fn add_xml_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self {
-            self.add(Box::new(XmlConfigurationSource::new(file.into())));
-            self
-        }
-    }
-
-    impl<T: ConfigurationBuilder> XmlConfigurationExtensions for T {
-        fn add_xml_file<F: Into<FileSource>>(&mut self, file: F) -> &mut Self {
-            self.add(Box::new(XmlConfigurationSource::new(file.into())));
-            self
-        }
+impl crate::Source for Source {
+    #[inline]
+    fn build(&mut self, _properties: &mut Properties) -> Box<dyn crate::Provider> {
+        Box::new(Provider(take(&mut self.0)))
     }
 }

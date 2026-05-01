@@ -1,196 +1,65 @@
-use crate::FileSource;
-use crate::{
-    util::accumulate_child_keys, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource,
-    LoadError, LoadResult, Value,
-};
+use crate::{path, properties::Properties, Error, FileSource, Result, Settings};
 use configparser::ini::Ini;
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
-use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken, Subscription};
+use std::mem::take;
+use tokens::{ChangeToken, FileChangeToken, NeverChangeToken};
 
-struct InnerProvider {
-    file: FileSource,
-    data: RwLock<HashMap<String, (String, String)>>,
-    token: RwLock<SharedChangeToken<SingleChangeToken>>,
-}
+struct Provider(FileSource);
 
-impl InnerProvider {
-    fn new(file: FileSource) -> Self {
-        Self {
-            file,
-            data: RwLock::new(HashMap::with_capacity(0)),
-            token: Default::default(),
-        }
-    }
-
-    fn get(&self, key: &str) -> Option<Value> {
-        self.data
-            .read()
-            .unwrap()
-            .get(&key.to_uppercase())
-            .map(|t| t.1.clone().into())
+impl crate::Provider for Provider {
+    #[inline]
+    fn name(&self) -> &str {
+        "Ini"
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
-        Box::new(self.token.read().unwrap().clone())
+        if self.0.reload_on_change {
+            Box::new(FileChangeToken::new(self.0.path.clone()))
+        } else {
+            Box::new(NeverChangeToken)
+        }
     }
 
-    fn load(&self, reload: bool) -> LoadResult {
-        if !self.file.path.is_file() {
-            if self.file.optional || reload {
-                let mut data = self.data.write().unwrap();
-                if !data.is_empty() {
-                    *data = HashMap::with_capacity(0);
-                }
-
+    fn load(&self, settings: &mut Settings) -> Result {
+        if !self.0.path.is_file() {
+            if self.0.optional {
                 return Ok(());
             } else {
-                return Err(LoadError::File {
-                    message: format!(
-                        "The configuration file '{}' was not found and is not optional.",
-                        self.file.path.display()
-                    ),
-                    path: self.file.path.clone(),
-                });
+                return Err(Error::MissingFile(self.0.path.clone()));
             }
         }
 
         let mut ini = Ini::new_cs();
-        let data = if let Ok(sections) = ini.load(&self.file.path) {
-            let capacity = sections.iter().map(|p| p.1.len()).sum();
-            let mut map = HashMap::with_capacity(capacity);
+        let sections = ini.load(&self.0.path).map_err(Error::Custom)?;
 
-            for (section, pairs) in sections {
-                for (key, value) in pairs {
-                    let mut new_key = section.to_owned();
-                    let new_value = value.unwrap_or_default();
-
-                    new_key.push_str(ConfigurationPath::key_delimiter());
-                    new_key.push_str(&key);
-                    map.insert(new_key.to_uppercase(), (new_key, new_value));
-                }
+        for (section, pairs) in sections {
+            for (key, value) in pairs {
+                let key = format!("{section}{}{key}", path::delimiter());
+                settings.insert(key, value.unwrap_or_default());
             }
+        }
 
-            map
-        } else {
-            HashMap::with_capacity(0)
-        };
-
-        *self.data.write().unwrap() = data;
-
-        let previous = std::mem::take(&mut *self.token.write().unwrap());
-
-        previous.notify();
         Ok(())
     }
-
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
-        let data = self.data.read().unwrap();
-        accumulate_child_keys(&data, earlier_keys, parent_path)
-    }
 }
 
-/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) for `*.ini` files.
-pub struct IniConfigurationProvider {
-    inner: Arc<InnerProvider>,
-    _subscription: Option<Box<dyn Subscription>>,
-}
+/// Represents a [configuration source](Source) for `*.ini` files.
+pub struct Source(FileSource);
 
-impl IniConfigurationProvider {
-    /// Initializes a new `*.ini` file configuration provider.
-    ///
-    /// # Arguments
-    ///
-    /// * `file` - The `*.ini` [`FileSource`](crate::FileSource) information
-    pub fn new(file: FileSource) -> Self {
-        let path = file.path.clone();
-        let inner = Arc::new(InnerProvider::new(file));
-        let subscription: Option<Box<dyn Subscription>> = if inner.file.reload_on_change {
-            Some(Box::new(tokens::on_change(
-                move || FileChangeToken::new(path.clone()),
-                |state| {
-                    let provider = state.unwrap();
-                    std::thread::sleep(provider.file.reload_delay);
-                    provider.load(true).ok();
-                },
-                Some(inner.clone()),
-            )))
-        } else {
-            None
-        };
-
-        Self {
-            inner,
-            _subscription: subscription,
-        }
-    }
-}
-
-impl ConfigurationProvider for IniConfigurationProvider {
-    fn get(&self, key: &str) -> Option<Value> {
-        self.inner.get(key)
-    }
-
-    fn reload_token(&self) -> Box<dyn ChangeToken> {
-        self.inner.reload_token()
-    }
-
-    fn load(&mut self) -> LoadResult {
-        self.inner.load(false)
-    }
-
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
-        self.inner.child_keys(earlier_keys, parent_path)
-    }
-}
-
-/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for `*.ini` files.
-pub struct IniConfigurationSource {
-    file: FileSource,
-}
-
-impl IniConfigurationSource {
+impl Source {
     /// Initializes a new `*.ini` file configuration source.
     ///
     /// # Arguments
     ///
-    /// * `file` - The `*.ini` [`FileSource`](crate::FileSource) information
+    /// * `file` - The `*.ini` [file source](FileSource) information
+    #[inline]
     pub fn new(file: FileSource) -> Self {
-        Self { file }
+        Self(file)
     }
 }
 
-impl ConfigurationSource for IniConfigurationSource {
-    fn build(&self, _builder: &dyn ConfigurationBuilder) -> Box<dyn ConfigurationProvider> {
-        Box::new(IniConfigurationProvider::new(self.file.clone()))
-    }
-}
-
-pub mod ext {
-
-    use super::*;
-
-    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
-    pub trait IniConfigurationExtensions {
-        /// Adds an `*.ini` file as a configuration source.
-        ///
-        /// # Arguments
-        ///
-        /// * `file` - The `*.ini` [`FileSource`](crate::FileSource) information
-        fn add_ini_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
-    }
-
-    impl IniConfigurationExtensions for dyn ConfigurationBuilder + '_ {
-        fn add_ini_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self {
-            self.add(Box::new(IniConfigurationSource::new(file.into())));
-            self
-        }
-    }
-
-    impl<T: ConfigurationBuilder> IniConfigurationExtensions for T {
-        fn add_ini_file<F: Into<FileSource>>(&mut self, file: F) -> &mut Self {
-            self.add(Box::new(IniConfigurationSource::new(file.into())));
-            self
-        }
+impl crate::Source for Source {
+    #[inline]
+    fn build(&mut self, _properties: &mut Properties) -> Box<dyn crate::Provider> {
+        Box::new(Provider(take(&mut self.0)))
     }
 }
