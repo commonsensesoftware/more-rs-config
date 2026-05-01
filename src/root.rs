@@ -30,6 +30,8 @@ impl Root {
             tokens.push(provider.reload_token());
         }
 
+        settings.shrink_to_fit();
+
         Ok(Configuration::new(settings, tokens))
     }
 }

@@ -204,6 +204,13 @@ impl Settings {
     pub fn insert(&mut self, key: impl Into<String>, value: impl Into<String>) -> Option<String> {
         self.0.insert(Key::from(key.into()), value.into())
     }
+
+    /// Shrinks the capacity of the settings as much as possible. It will drop down as much as possible while
+    /// maintaining the internal rules and possibly leaving some space in accordance with the resize policy.
+    #[inline]
+    pub fn shrink_to_fit(&mut self) {
+        self.0.shrink_to_fit();
+    }
 }
 
 /// Represents a iterator over the key/value pairs in [Settings].
