@@ -74,6 +74,23 @@ pub struct UserDefined {
     settings: HashMap<String, Vec<String>>,
 }
 
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub struct Place {
+    pub name: String,
+    pub enums: Vec<Enum>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all(deserialize = "PascalCase"))]
+pub enum Enum {
+    First,
+    Second(String),
+
+    #[serde(rename_all(deserialize = "PascalCase"))]
+    Third { id: usize, kind: String },
+}
+
 #[test]
 fn from_should_deserialize_simple_struct() -> Result {
     let config = config::builder()
@@ -384,6 +401,39 @@ fn from_should_deserialize_deep_nested_map() -> Result {
 
     // act
     let actual = config::de::from::<HashMap<String, Vec<HashMap<String, Vec<String>>>>>(&config)?;
+
+    // assert
+    assert_eq!(actual, expected);
+    Ok(())
+}
+
+#[test]
+fn reify_should_deserialize_non_scalar_enum() -> Result {
+    // arrange
+    let config = config::builder()
+        .add_in_memory(&[
+            ("Name", "some name"),
+            ("Enums:0", "First"),
+            ("Enums:1:Second", "test"),
+            ("Enums:2:Third:Id", "42"),
+            ("Enums:2:Third:Kind", "Encounter"),
+        ])
+        .build()
+        .load()?;
+    let expected = Place {
+        name: "some name".into(),
+        enums: vec![
+            Enum::First,
+            Enum::Second("test".into()),
+            Enum::Third {
+                id: 42,
+                kind: "Encounter".into(),
+            },
+        ],
+    };
+
+    // act
+    let actual: Place = config.reify()?;
 
     // assert
     assert_eq!(actual, expected);
