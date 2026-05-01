@@ -20,10 +20,10 @@ struct AppOptions {
 }
 
 fn main() -> Result<(), Box<dyn Error + 'static>> {
-    let file = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples").join("demo.json");
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples").join("demo.json");
     let config = config::builder()
         .add_in_memory(&[("Demo", "false")])
-        .add_json_file(file)
+        .add_json_file(path)
         .add_env_vars()
         .add_command_line()
         .build()
