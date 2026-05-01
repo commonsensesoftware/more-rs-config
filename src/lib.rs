@@ -13,19 +13,17 @@ mod section;
 mod settings;
 mod source;
 
-/// Provides configuration path utilities.
-pub mod path;
-
-/// Contains library prelude.
-pub mod prelude;
-
 /// Contains chained configuration support.
 #[cfg(feature = "chained")]
 pub mod chained;
 
-/// Contains in-memory configuration support.
-#[cfg(feature = "mem")]
-pub mod mem;
+/// Contains command line configuration support.
+#[cfg(feature = "cmd")]
+pub mod cmd;
+
+/// Contains strongly-typed configuration deserialization support.
+#[cfg(feature = "binder")]
+pub mod de;
 
 /// Contains environment variable configuration support.
 #[cfg(feature = "env")]
@@ -39,17 +37,19 @@ pub mod ini;
 #[cfg(feature = "json")]
 pub mod json;
 
-/// Contains command line configuration support.
-#[cfg(feature = "cmd")]
-pub mod cmd;
+/// Contains in-memory configuration support.
+#[cfg(feature = "mem")]
+pub mod mem;
+
+/// Provides configuration path utilities.
+pub mod path;
+
+/// Contains library prelude.
+pub mod prelude;
 
 /// Contains `*.xml` file configuration support.
 #[cfg(feature = "xml")]
 pub mod xml;
-
-/// Contains strongly-typed configuration deserialization support.
-#[cfg(feature = "binder")]
-pub mod de;
 
 pub use builder::Builder;
 pub use configuration::Configuration;
