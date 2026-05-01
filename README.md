@@ -18,18 +18,17 @@ You may be looking for:
 
 This crate provides the following features:
 
-- _default_ - Abstractions for configuration, including the **std** features
-- **std** - Standard configuration implementation
+- _default_ - Abstractions for configuration, including the **env**, **cmd**, and **mem** features
 - **all** - Includes all features, except **async**
 - **async** - Use configuration in an asynchronous context
-- **mem** - An in-memory configuration source
-- **env** - An environment variables configuration source
-- **cmd** - A command-line argument configuration source
-- **json** - A \*.json file configuration source
-- **xml** - A \*.xml file configuration source
-- **ini** - An \*.ini file configuration source
-- **chained** - Chain multiple configuration sources
 - **binder** - Bind a configuration to strongly-typed values and structs
+- **chained** - Chain multiple configuration sources
+- **cmd** - A command-line argument configuration source
+- **env** - An environment variables configuration source
+- **ini** - An \*.ini file configuration source
+- **json** - A \*.json file configuration source
+- **mem** - An in-memory configuration source
+- **xml** - A \*.xml file configuration source
 
 >Use `--features all,async` for all features with asynchronous support
 
@@ -50,81 +49,74 @@ Consider the following `demo.json` file:
 
 The configuration can be loaded, merged, and accessed from multiple sources:
 
-```rust
-use config::{*, ext::*};
+```rust,no_run
+use config::prelude::*;
+use std::error::Error;
 
-fn main() {
-    let config = DefaultConfigurationBuilder::new()
+fn main() -> Result<(), Box<dyn Error + 'static>> {
+    let config = config::builder()
         .add_in_memory(&[("Demo", "false")])
         .add_json_file("demo.json".is().optional())
         .add_env_vars()
         .add_command_line()
         .build()
-        .unwrap();
+        .load()?;
     
     if let Some(demo) = config.get("demo") {
-      if demo.as_str() == "true" {
-        println!("{}", config.get("Text").unwrap().as_str());
-        println!("{}", config.get("Clients:0:Region").unwrap().as_str());
-        return;
+      if demo == "true" {
+        println!("{}", config.get("Text").unwrap_or_default());
+        println!("{}", config.get("Clients:0:Region").unwrap_or_default());
       }
+    } else {
+      println!("Not a demo!");
     }
     
-    println!("Not a demo!");
+    Ok(())
 }
 ```
 
-Raw configuration values can be used, but they are much more interesting when we data bind them to strongly-typed values:
+Raw configuration values can be used, but they are much more interesting when we data bind them to strongly-typed values.
 
-```rust
+>The first letter of JSON configuration keys are normalized to uppercase.
+
+```rust,no_run
+use config::prelude::*;
 use serde::Deserialize;
+use std::{error::Error, path::Path};
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all(deserialize = "PascalCase"))]
 struct Client {
-    region: String,
-    url: String,
+  region: String,
+  url: String,
 }
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all(deserialize = "PascalCase"))]
 struct AppOptions {
-    text: String,
-    demo: bool,
-    clients: Vec<Client>,
+  text: String,
+  demo: bool,
+  clients: Vec<Client>,
 }
-```
->The first letter of JSON configuration keys are normalized to uppercase.
 
-```rust
-use config::{*, ext::*};
+fn main() -> Result<(), Box<dyn Error + 'static>> {
+  let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("demo.json");
+  let config = config::builder().add_json_file(path).build().load()?;
+  let app: AppOptions = config.reify()?;
 
-fn main() {
-    let file = std::env::current_exe()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("../../demo.json");
-    let config = DefaultConfigurationBuilder::new()
-        .add_json_file(file)
-        .build()
-        .unwrap();
-    let app: AppOptions = config.reify();
-    
-    if app.demo {
-        println!("{}", &app.text);
-        println!("{}", &app.clients[0].region);
-        return;
-    }
-    
+  if app.demo {
+    println!("{}", &app.text);
+    println!("{}", &app.clients[0].region);
+  } else {
     println!("Not a demo!");
+  }
 }
 ```
 
 ## Minimum Supported Rust Version
 
-When increasing the minimum supported Rust version (MSRV), the new version must have been released
-at least six months ago. The current MSRV is 1.60.
+When increasing the minimum supported Rust version (MSRV), the new version must have been released at least six months
+ago. The current MSRV is 1.60.
 
 ## License
 
