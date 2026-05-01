@@ -14,9 +14,9 @@ impl crate::Provider for Provider {
         Box::new(self.0.reload_token())
     }
 
-    #[inline]
     fn load(&self, settings: &mut Settings) -> Result {
-        Ok(settings.merge(&*self.0))
+        settings.merge(&*self.0);
+        Ok(())
     }
 }
 

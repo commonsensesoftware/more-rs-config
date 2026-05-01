@@ -11,25 +11,7 @@ use std::{
     str,
 };
 
-fn insensitive_cmp(s: &str, other: &str) -> Ordering {
-    let mut order = s.len().cmp(&other.len());
-
-    if order != Ordering::Equal {
-        return order;
-    }
-
-    for (a, b) in s.chars().zip(other.chars()) {
-        order = a.to_ascii_uppercase().cmp(&b.to_ascii_uppercase());
-
-        if order != Ordering::Equal {
-            break;
-        }
-    }
-
-    order
-}
-
-#[derive(Clone, Eq, Ord)]
+#[derive(Clone, Eq)]
 struct Key<'a>(Cow<'a, str>);
 
 impl PartialEq for Key<'_> {
@@ -39,10 +21,30 @@ impl PartialEq for Key<'_> {
     }
 }
 
+impl Ord for Key<'_> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let mut order = self.0.len().cmp(&other.0.len());
+
+        if order != Ordering::Equal {
+            return order;
+        }
+
+        for (a, b) in self.0.chars().zip(other.0.chars()) {
+            order = a.to_ascii_uppercase().cmp(&b.to_ascii_uppercase());
+
+            if order != Ordering::Equal {
+                break;
+            }
+        }
+
+        order
+    }
+}
+
 impl PartialOrd for Key<'_> {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(insensitive_cmp(self.0.as_ref(), other.0.as_ref()))
+        Some(self.cmp(other))
     }
 }
 
