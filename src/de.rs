@@ -175,7 +175,22 @@ impl<'de> de::Deserializer<'de> for Val<'de> {
         _variants: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Self::Error> {
-        visitor.visit_enum(self.0.value().into_deserializer())
+        let value = self.0.value();
+
+        if !value.is_empty() {
+            // unit variant: the value itself is the variant name (e.g. "First")
+            visitor.visit_enum(value.into_deserializer())
+        } else {
+            // non-scalar variant: a subsection key is the variant name
+            // and its value/children are the variant data (e.g. Second: "test")
+            let sections = self.0.sections();
+
+            if let Some(section) = sections.into_iter().next() {
+                visitor.visit_enum(EnumDeserializer(section))
+            } else {
+                visitor.visit_enum(value.into_deserializer())
+            }
+        }
     }
 
     serde::forward_to_deserialize_any! {
@@ -186,6 +201,43 @@ impl<'de> de::Deserializer<'de> for Val<'de> {
 }
 
 struct ConfigValues<'a>(IntoIter<Section<'a>>);
+
+struct EnumDeserializer<'a>(Section<'a>);
+
+impl<'de> de::EnumAccess<'de> for EnumDeserializer<'de> {
+    type Error = Error;
+    type Variant = Self;
+
+    fn variant_seed<V: de::DeserializeSeed<'de>>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error> {
+        let variant = self.0.key().to_owned();
+        let val = seed.deserialize(variant.into_deserializer())?;
+        Ok((val, self))
+    }
+}
+
+impl<'de> de::VariantAccess<'de> for EnumDeserializer<'de> {
+    type Error = Error;
+
+    #[inline]
+    fn unit_variant(self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
+    #[inline]
+    fn newtype_variant_seed<T: de::DeserializeSeed<'de>>(self, seed: T) -> Result<T::Value, Self::Error> {
+        seed.deserialize(Val(Rc::new(self.0)))
+    }
+
+    #[inline]
+    fn tuple_variant<V: Visitor<'de>>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error> {
+        de::Deserializer::deserialize_seq(Val(Rc::new(self.0)), visitor)
+    }
+
+    #[inline]
+    fn struct_variant<V: Visitor<'de>>(self, _fields: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error> {
+        de::Deserializer::deserialize_map(Val(Rc::new(self.0)), visitor)
+    }
+}
 
 impl<'a> Iterator for ConfigValues<'a> {
     type Item = (Key<'a>, Val<'a>);
