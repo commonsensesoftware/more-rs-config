@@ -2,30 +2,35 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 /// Represents a file configuration source.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct FileSource {
     /// Gets or sets the source file path.
     pub path: PathBuf,
 
     /// Gets or sets a value indicating whether the file is optional.
-    /// The default value is false.
-    pub optional: bool,
-
-    /// Gets or sets a value indicating whether the file will be loaded
-    /// if the underlying file changes. The default value is false.
-    pub reload_on_change: bool,
-
-    /// Get or sets the amount of time to wait after a change before reloading.
-    /// The default value is 250ms.
     ///
     /// # Remarks
     ///
-    /// This helps avoid triggering reload before a file is completely written.
+    /// The default value is false.
+    pub optional: bool,
+
+    /// Gets or sets a value indicating whether the file will be loaded if the underlying file changes.
+    ///
+    /// # Remarks
+    ///
+    /// The default value is false.
+    pub reload_on_change: bool,
+
+    /// Get or sets the amount of time to wait after a change before reloading.
+    ///
+    /// # Remarks
+    ///
+    /// The default value is `250ms`. This helps avoid triggering reload before a file is completely written.
     pub reload_delay: Duration,
 }
 
 impl FileSource {
-    /// Initializes a new file configuration source.
+    /// Initializes a new [FileSource].
     ///
     /// # Arguments
     ///
@@ -33,6 +38,7 @@ impl FileSource {
     /// * `optional` - Indicates whether the source file must exist
     /// * `reload_on_change` - Indicates if a reload should occur if the source file changes
     /// * `reload_delay` - The amount of delay before reload after the source file changes
+    #[inline]
     pub fn new(path: PathBuf, optional: bool, reload_on_change: bool, reload_delay: Option<Duration>) -> Self {
         Self {
             path,
@@ -47,48 +53,55 @@ impl FileSource {
     /// # Arguments
     ///
     /// * `path` - The source file path
+    #[inline]
     pub fn optional<P: AsRef<Path>>(path: P) -> Self {
         Self::new(path.as_ref().to_path_buf(), true, false, None)
     }
 }
 
 impl From<PathBuf> for FileSource {
+    #[inline]
     fn from(value: PathBuf) -> Self {
         Self::new(value, false, false, None)
     }
 }
 
 impl From<&PathBuf> for FileSource {
+    #[inline]
     fn from(value: &PathBuf) -> Self {
         Self::from(value.clone())
     }
 }
 
 impl From<&Path> for FileSource {
+    #[inline]
     fn from(value: &Path) -> Self {
         Self::from(value.to_path_buf())
     }
 }
 
 impl From<&str> for FileSource {
+    #[inline]
     fn from(value: &str) -> Self {
         Self::from(PathBuf::from(value))
     }
 }
 
 impl From<String> for FileSource {
+    #[inline]
     fn from(value: String) -> Self {
         Self::from(PathBuf::from(value))
     }
 }
 
 impl From<&String> for FileSource {
+    #[inline]
     fn from(value: &String) -> Self {
         Self::from(PathBuf::from(value))
     }
 }
 
-/// Represents a builder for a file source.
+/// Represents a builder for a [file source](FileSource).
 pub struct FileSourceBuilder {
     path: PathBuf,
     optional: bool,
@@ -102,6 +115,7 @@ impl FileSourceBuilder {
     /// # Arguments
     ///
     /// * `path` - The path to build a file source for
+    #[inline]
     pub fn new(path: PathBuf) -> Self {
         Self {
             path,
@@ -129,7 +143,8 @@ impl FileSourceBuilder {
         self
     }
 
-    /// Creates and returns a new [`FileSource`].
+    /// Creates and returns a new [file source](FileSource).
+    #[inline]
     pub fn build(&self) -> FileSource {
         FileSource::new(
             self.path.clone(),
@@ -141,29 +156,15 @@ impl FileSourceBuilder {
 }
 
 impl From<FileSourceBuilder> for FileSource {
+    #[inline]
     fn from(value: FileSourceBuilder) -> Self {
         value.build()
     }
 }
 
 impl From<&FileSourceBuilder> for FileSource {
+    #[inline]
     fn from(value: &FileSourceBuilder) -> Self {
         value.build()
-    }
-}
-
-pub mod ext {
-
-    use super::*;
-
-    /// Provides extension methods to create a [`FileSourceBuilder`].
-    pub trait FileSourceBuilderExtensions {
-        fn is(&self) -> FileSourceBuilder;
-    }
-
-    impl<T: AsRef<Path>> FileSourceBuilderExtensions for T {
-        fn is(&self) -> FileSourceBuilder {
-            FileSourceBuilder::new(self.as_ref().to_path_buf())
-        }
     }
 }

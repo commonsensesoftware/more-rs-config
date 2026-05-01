@@ -1,31 +1,43 @@
-use crate::{
-    util::*, ConfigurationBuilder, ConfigurationPath, ConfigurationProvider, ConfigurationSource, FileSource,
-    LoadError, LoadResult, Value,
-};
+use crate::{path, properties::Properties, Error, FileSource, Result, Settings};
 use serde_json::{map::Map, Value as JsonValue};
-use std::collections::HashMap;
-use std::fs;
-use std::sync::{Arc, RwLock};
-use tokens::{ChangeToken, FileChangeToken, SharedChangeToken, SingleChangeToken, Subscription};
+use std::{fs, mem::take};
+use tokens::{ChangeToken, FileChangeToken, NeverChangeToken};
 
-#[derive(Default)]
-struct JsonVisitor {
-    data: HashMap<String, (String, String)>,
+fn to_pascal_case(text: &str) -> String {
+    let mut chars = text.chars();
+
+    if let Some(first) = chars.next() {
+        first.to_uppercase().collect::<String>() + chars.as_str()
+    } else {
+        String::new()
+    }
+}
+
+struct JsonVisitor<'a> {
+    settings: &'a mut Settings,
     paths: Vec<String>,
 }
 
-impl JsonVisitor {
-    fn visit(mut self, root: &Map<String, JsonValue>) -> HashMap<String, (String, String)> {
-        self.visit_element(root);
-        self.data.shrink_to_fit();
-        self.data
+impl<'a> JsonVisitor<'a> {
+    #[inline]
+    fn new(settings: &'a mut Settings) -> Self {
+        Self {
+            settings,
+            paths: Vec::new(),
+        }
+    }
+}
+
+impl JsonVisitor<'_> {
+    #[inline]
+    fn visit(mut self, root: &Map<String, JsonValue>) {
+        self.visit_element(root)
     }
 
     fn visit_element(&mut self, element: &Map<String, JsonValue>) {
         if element.is_empty() {
             if let Some(key) = self.paths.last() {
-                self.data
-                    .insert(key.to_uppercase(), (to_pascal_case(key), String::new()));
+                self.settings.insert(to_pascal_case(key), String::new());
             }
         } else {
             for (name, value) in element {
@@ -54,72 +66,58 @@ impl JsonVisitor {
     }
 
     fn add_value<T: ToString>(&mut self, value: T) {
-        let key = self.paths.last().unwrap().to_string();
-        self.data.insert(key.to_uppercase(), (key, value.to_string()));
+        let key = self.paths.last().expect("no paths").to_string();
+        self.settings.insert(key, value.to_string());
     }
 
     fn enter_context(&mut self, context: String) {
         if self.paths.is_empty() {
             self.paths.push(context);
-            return;
+        } else {
+            self.paths
+                .push(path::combine(&[&self.paths[self.paths.len() - 1], &context]));
         }
-
-        let path = ConfigurationPath::combine(&[&self.paths[self.paths.len() - 1], &context]);
-        self.paths.push(path);
     }
 
+    #[inline]
     fn exit_context(&mut self) {
         self.paths.pop();
     }
 }
 
-struct InnerProvider {
-    file: FileSource,
-    data: RwLock<HashMap<String, (String, String)>>,
-    token: RwLock<SharedChangeToken<SingleChangeToken>>,
-}
+struct Provider(FileSource);
 
-impl InnerProvider {
-    fn new(file: FileSource) -> Self {
-        Self {
-            file,
-            data: RwLock::new(HashMap::with_capacity(0)),
-            token: Default::default(),
+impl crate::Provider for Provider {
+    #[inline]
+    fn name(&self) -> &str {
+        "Json"
+    }
+
+    fn reload_token(&self) -> Box<dyn ChangeToken> {
+        if self.0.reload_on_change {
+            Box::new(FileChangeToken::new(self.0.path.clone()))
+        } else {
+            Box::new(NeverChangeToken)
         }
     }
 
-    fn load(&self, reload: bool) -> LoadResult {
-        if !self.file.path.is_file() {
-            if self.file.optional || reload {
-                let mut data = self.data.write().unwrap();
-                if !data.is_empty() {
-                    *data = HashMap::with_capacity(0);
-                }
-
+    fn load(&self, settings: &mut Settings) -> Result {
+        if !self.0.path.is_file() {
+            if self.0.optional {
                 return Ok(());
             } else {
-                return Err(LoadError::File {
-                    message: format!(
-                        "The configuration file '{}' was not found and is not optional.",
-                        self.file.path.display()
-                    ),
-                    path: self.file.path.clone(),
-                });
+                return Err(Error::MissingFile(self.0.path.clone()));
             }
         }
 
         // REF: https://docs.serde.rs/serde_json/de/fn.from_reader.html
-        let content = fs::read(&self.file.path).unwrap();
-        let json: JsonValue = serde_json::from_slice(&content).unwrap();
+        let content = fs::read(&self.0.path).map_err(Error::unknown)?;
+        let json: JsonValue = serde_json::from_slice(&content).map_err(Error::unknown)?;
 
         if let Some(root) = json.as_object() {
-            let visitor = JsonVisitor::default();
-            let data = visitor.visit(root);
-            *self.data.write().unwrap() = data;
-        } else if reload {
-            *self.data.write().unwrap() = HashMap::with_capacity(0);
+            Ok(JsonVisitor::new(settings).visit(root))
         } else {
-            return Err(LoadError::File {
+            Err(Error::InvalidFile {
                 message: format!(
                     "Top-level JSON element must be an object. Instead, '{}' was found.",
                     match json {
@@ -131,135 +129,47 @@ impl InnerProvider {
                         _ => unreachable!(),
                     }
                 ),
-                path: self.file.path.clone(),
-            });
-        }
-
-        let previous = std::mem::take(&mut *self.token.write().unwrap());
-
-        previous.notify();
-        Ok(())
-    }
-
-    fn get(&self, key: &str) -> Option<Value> {
-        self.data
-            .read()
-            .unwrap()
-            .get(&key.to_uppercase())
-            .map(|t| t.1.clone().into())
-    }
-
-    fn reload_token(&self) -> Box<dyn ChangeToken> {
-        Box::new(self.token.read().unwrap().clone())
-    }
-
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
-        let data = self.data.read().unwrap();
-        accumulate_child_keys(&data, earlier_keys, parent_path)
-    }
-}
-
-/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) for `*.json` files.
-pub struct JsonConfigurationProvider {
-    inner: Arc<InnerProvider>,
-    _subscription: Option<Box<dyn Subscription>>,
-}
-
-impl JsonConfigurationProvider {
-    /// Initializes a new `*.json` file configuration provider.
-    ///
-    /// # Arguments
-    ///
-    /// * `file` - The `*.json` [`FileSource`](crate::FileSource) information
-    pub fn new(file: FileSource) -> Self {
-        let path = file.path.clone();
-        let inner = Arc::new(InnerProvider::new(file));
-        let subscription: Option<Box<dyn Subscription>> = if inner.file.reload_on_change {
-            Some(Box::new(tokens::on_change(
-                move || FileChangeToken::new(path.clone()),
-                |state| {
-                    let provider = state.unwrap();
-                    std::thread::sleep(provider.file.reload_delay);
-                    provider.load(true).ok();
-                },
-                Some(inner.clone()),
-            )))
-        } else {
-            None
-        };
-
-        Self {
-            inner,
-            _subscription: subscription,
+                path: self.0.path.clone(),
+            })
         }
     }
 }
 
-impl ConfigurationProvider for JsonConfigurationProvider {
-    fn get(&self, key: &str) -> Option<Value> {
-        self.inner.get(key)
-    }
+/// Represents a [configuration source](Source) for `*.json` files.
+pub struct Source(FileSource);
 
-    fn reload_token(&self) -> Box<dyn ChangeToken> {
-        self.inner.reload_token()
-    }
-
-    fn load(&mut self) -> LoadResult {
-        self.inner.load(false)
-    }
-
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
-        self.inner.child_keys(earlier_keys, parent_path)
-    }
-}
-
-/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for `*.json` files.
-pub struct JsonConfigurationSource {
-    file: FileSource,
-}
-
-impl JsonConfigurationSource {
+impl Source {
     /// Initializes a new `*.json` file configuration source.
     ///
     /// # Arguments
     ///
-    /// * `file` - The `*.json` [`FileSource`](crate::FileSource) information
+    /// * `file` - The `*.json` [file source](FileSource) information
+    #[inline]
     pub fn new(file: FileSource) -> Self {
-        Self { file }
+        Self(file)
     }
 }
 
-impl ConfigurationSource for JsonConfigurationSource {
-    fn build(&self, _builder: &dyn ConfigurationBuilder) -> Box<dyn ConfigurationProvider> {
-        Box::new(JsonConfigurationProvider::new(self.file.clone()))
+impl crate::Source for Source {
+    #[inline]
+    fn build(&mut self, _properties: &mut Properties) -> Box<dyn crate::Provider> {
+        Box::new(Provider(take(&mut self.0)))
     }
 }
 
-pub mod ext {
-
+#[cfg(test)]
+mod tests {
     use super::*;
 
-    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
-    pub trait JsonConfigurationExtensions {
-        /// Adds a `*.json` file as a configuration source.
-        ///
-        /// # Arguments
-        ///
-        /// * `file` - The `*.json` [`FileSource`](crate::FileSource) information
-        fn add_json_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self;
-    }
+    #[test]
+    fn to_pascal_case_should_normalize_argument_name() {
+        // arrange
+        let argument = "noBuild";
 
-    impl JsonConfigurationExtensions for dyn ConfigurationBuilder + '_ {
-        fn add_json_file<T: Into<FileSource>>(&mut self, file: T) -> &mut Self {
-            self.add(Box::new(JsonConfigurationSource::new(file.into())));
-            self
-        }
-    }
+        // act
+        let pascal_case = to_pascal_case(argument);
 
-    impl<T: ConfigurationBuilder> JsonConfigurationExtensions for T {
-        fn add_json_file<F: Into<FileSource>>(&mut self, file: F) -> &mut Self {
-            self.add(Box::new(JsonConfigurationSource::new(file.into())));
-            self
-        }
+        // assert
+        assert_eq!(pascal_case, "NoBuild");
     }
 }

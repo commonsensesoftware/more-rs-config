@@ -1,20 +1,15 @@
+use config::prelude::*;
+use serde::Deserialize;
 use std::collections::HashMap;
 
-use config::{ext::*, ConfigurationBuilder, DefaultConfigurationBuilder};
-use serde::Deserialize;
-
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, Default, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Size {
     Small,
+
+    #[default]
     Medium,
     Large,
-}
-
-impl Default for Size {
-    fn default() -> Size {
-        Size::Medium
-    }
 }
 
 pub fn default_kaboom() -> u16 {
@@ -80,8 +75,8 @@ pub struct UserDefined {
 }
 
 #[test]
-fn from_config_should_deserialize_simple_struct() {
-    let root = DefaultConfigurationBuilder::new()
+fn from_should_deserialize_simple_struct() {
+    let config = config::builder()
         .add_in_memory(&[
             ("Bar", "test"),
             ("Baz", "true"),
@@ -95,10 +90,11 @@ fn from_config_should_deserialize_simple_struct() {
             ("Child:Ignored", "42"),
         ])
         .build()
+        .load()
         .unwrap();
 
     // act
-    let result = from_config::<Foo>(root.deref());
+    let result = config::de::from::<Foo>(&config);
 
     // assert
     match result {
@@ -122,8 +118,8 @@ fn from_config_should_deserialize_simple_struct() {
 }
 
 #[test]
-fn from_config_should_deserialize_parent_child_struct() {
-    let root = DefaultConfigurationBuilder::new()
+fn from_should_deserialize_parent_child_struct() {
+    let config = config::builder()
         .add_in_memory(&[
             ("Name:First", "Jane"),
             ("Name:Last", "Doe"),
@@ -140,10 +136,11 @@ fn from_config_should_deserialize_parent_child_struct() {
             ("Child:Children:1:Age", "5"),
         ])
         .build()
+        .load()
         .unwrap();
 
     // act
-    let result = from_config::<Parent>(root.deref());
+    let result = config::de::from::<Parent>(&config);
 
     // assert
     match result {
@@ -184,24 +181,25 @@ fn from_config_should_deserialize_parent_child_struct() {
 }
 
 #[test]
-fn from_config_should_fail_with_missing_value() {
+fn from_should_fail_with_missing_value() {
     // arrange
-    let root = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[("Bar", "test"), ("Baz", "true")])
         .build()
+        .load()
         .unwrap();
 
     // act
-    let error = from_config::<Foo>(root.deref()).err().unwrap();
+    let error = config::de::from::<Foo>(&config).err().unwrap();
 
     // assert
-    assert_eq!(error, Error::MissingValue("Doom"));
+    assert_eq!(error, config::de::Error::MissingValue("Doom"));
 }
 
 #[test]
-fn from_config_should_fail_with_invalid_type() {
+fn from_should_fail_with_invalid_type() {
     // arrange
-    let root = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("Bar", "test"),
             ("Baz", "notabool"),
@@ -210,34 +208,36 @@ fn from_config_should_fail_with_invalid_type() {
             ("Doom:2", "3"),
         ])
         .build()
+        .load()
         .unwrap();
 
     // act
-    let error = from_config::<Foo>(root.deref()).err().unwrap();
+    let error = config::de::from::<Foo>(&config).err().unwrap();
 
     // assert
     assert_eq!(
         error,
-        Error::Custom(String::from(
+        config::de::Error::Custom(String::from(
             "provided string was not `true` or `false` while parsing value \'notabool\' provided by Baz"
         ))
     );
 }
 
 #[test]
-fn from_config_should_deserialize_nested_string_map() {
+fn from_should_deserialize_nested_string_map() {
     // arrange
-    let root = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("Dimensions:Foo", "bar"),
             ("Dimensions:Bar", "foo"),
             ("Dimensions:Baz", "other"),
         ])
         .build()
+        .load()
         .unwrap();
 
     // act
-    let result = from_config::<HashMap<String, String>>(root.section("Dimensions").deref());
+    let result = config::de::from::<HashMap<String, String>>(config.section("Dimensions"));
 
     // assert
     match result {
@@ -253,15 +253,16 @@ fn from_config_should_deserialize_nested_string_map() {
 }
 
 #[test]
-fn from_config_should_deserialize_nested_typed_map() {
+fn from_should_deserialize_nested_typed_map() {
     // arrange
-    let root = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[("Limits:Foo", "42"), ("Limits:Bar", "0"), ("Limits:Baz", "420")])
         .build()
+        .load()
         .unwrap();
 
     // act
-    let result = from_config::<HashMap<String, usize>>(root.section("Limits").deref());
+    let result = config::de::from::<HashMap<String, usize>>(config.section("Limits"));
 
     // assert
     match result {
@@ -277,9 +278,9 @@ fn from_config_should_deserialize_nested_typed_map() {
 }
 
 #[test]
-fn from_config_should_deserialize_map_with_nested_vec() {
+fn from_should_deserialize_map_with_nested_vec() {
     // arrange
-    let root = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("Settings:Key1:0", "bar"),
             ("Settings:Key2:0", "foo"),
@@ -288,6 +289,7 @@ fn from_config_should_deserialize_map_with_nested_vec() {
             ("Settings:Key3:2", "c"),
         ])
         .build()
+        .load()
         .unwrap();
     let expected = HashMap::from([
         ("Key1".to_owned(), vec!["bar".to_owned()]),
@@ -296,7 +298,7 @@ fn from_config_should_deserialize_map_with_nested_vec() {
     ]);
 
     // act
-    let result = from_config::<HashMap<String, Vec<String>>>(root.section("Settings").deref());
+    let result = config::de::from::<HashMap<String, Vec<String>>>(config.section("Settings"));
 
     // assert
     match result {
@@ -308,7 +310,7 @@ fn from_config_should_deserialize_map_with_nested_vec() {
 #[test]
 fn reify_should_deserialize_map_with_nested_vec() {
     // arrange
-    let root = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("Settings:Key1:0", "bar"),
             ("Settings:Key2:0", "foo"),
@@ -317,6 +319,7 @@ fn reify_should_deserialize_map_with_nested_vec() {
             ("Settings:Key3:2", "c"),
         ])
         .build()
+        .load()
         .unwrap();
     let expected = UserDefined {
         settings: HashMap::from([
@@ -327,16 +330,16 @@ fn reify_should_deserialize_map_with_nested_vec() {
     };
 
     // act
-    let actual: UserDefined = root.reify();
+    let actual: UserDefined = config.reify().unwrap();
 
     // assert
     assert_eq!(actual, expected);
 }
 
 #[test]
-fn from_config_should_deserialize_deep_nested_map() {
+fn from_should_deserialize_deep_nested_map() {
     // arrange
-    let root = DefaultConfigurationBuilder::new()
+    let config = config::builder()
         .add_in_memory(&[
             ("Key1:0:Subkey1_0:0", "1"),
             ("Key1:0:Subkey1_0:1", "2"),
@@ -358,6 +361,7 @@ fn from_config_should_deserialize_deep_nested_map() {
             ("Key3:0:Subkey6_0:2", "z"),
         ])
         .build()
+        .load()
         .unwrap();
     let expected = HashMap::from([
         (
@@ -402,7 +406,7 @@ fn from_config_should_deserialize_deep_nested_map() {
     ]);
 
     // act
-    let result = from_config::<HashMap<String, Vec<HashMap<String, Vec<String>>>>>(root.deref());
+    let result = config::de::from::<HashMap<String, Vec<HashMap<String, Vec<String>>>>>(&config);
 
     // assert
     match result {

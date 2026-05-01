@@ -52,7 +52,7 @@ pub trait ConfigurationRoot:
     + Deref<Target = dyn Configuration>
     + Debug
 {
-    fn reload(&mut self) -> ReloadResult;
+    fn reload(&mut self) -> ReResult;
     fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_>;
     fn as_config(&self) -> Box<dyn Configuration>;
 }
@@ -67,7 +67,7 @@ pub trait ConfigurationProvider {
     fn name(&self) -> &str;
     fn get(&self, key: &str) -> Option<Value>;
     fn reload_token(&self) -> Box<dyn ChangeToken>;
-    fn load(&mut self) -> LoadResult;
+    fn load(&mut self) -> Result;
     fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>);
 }
 ```

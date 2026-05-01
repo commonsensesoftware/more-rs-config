@@ -1,4 +1,4 @@
-use crate::{Configuration, ConfigurationSection};
+use crate::{Configuration, Section};
 use serde::{
     de::{
         self,
@@ -7,63 +7,40 @@ use serde::{
     },
     Deserialize,
 };
-use std::{
-    fmt::{self, Display, Formatter},
-    iter::IntoIterator,
-    ops::Deref,
-    vec::IntoIter,
-};
+use std::{fmt::Display, iter::IntoIterator, rc::Rc, vec::IntoIter};
+use thiserror::Error;
 
 /// Represents the deserialization errors that can occur.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Error, Debug, PartialEq)]
 pub enum Error {
-    /// Indicates a value is missing
+    /// Indicates a value is missing for a field.
+    #[error("Missing value for field '{0}'")]
     MissingValue(&'static str),
 
     /// Indicates a custom error message
+    #[error("{0}")]
     Custom(String),
 }
 
 impl de::Error for Error {
+    #[inline]
     fn custom<T: Display>(message: T) -> Self {
-        Error::Custom(message.to_string())
+        Self::Custom(message.to_string())
     }
 
-    fn missing_field(field: &'static str) -> Error {
-        Error::MissingValue(field)
-    }
-}
-
-impl Display for Error {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
-        match *self {
-            Error::MissingValue(field) => {
-                formatter.write_str("missing value for field ")?;
-                formatter.write_str(field)
-            }
-            Error::Custom(ref msg) => formatter.write_str(msg),
-        }
-    }
-}
-
-impl std::error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::MissingValue(_) => "missing value",
-            Error::Custom(_) => "custom error",
-        }
+    #[inline]
+    fn missing_field(field: &'static str) -> Self {
+        Self::MissingValue(field)
     }
 }
 
 macro_rules! forward_parsed_values {
     ($($ty:ident => $method:ident,)*) => {
         $(
-            fn $method<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-                where V: de::Visitor<'de>
-            {
+            fn $method<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
                 match self.0.value().parse::<$ty>() {
                     Ok(val) => val.into_deserializer().$method(visitor),
-                    Err(e) => Err(de::Error::custom(format_args!("{} while parsing value '{}' provided by {}", e, self.0.value(), self.0.key())))
+                    Err(e) => Err(de::Error::custom(format_args!("{e} while parsing value '{}' provided by {}", self.0.value(), self.0.key())))
                 }
             }
         )*
@@ -71,32 +48,34 @@ macro_rules! forward_parsed_values {
 }
 
 // configuration is a key/value pair mapping of String: String or String: Vec<String>; however,
-// we need a surrogate type to implement forward the deserialization on to underlying primitives
-struct Key(String);
-struct Val(Box<dyn ConfigurationSection>);
+// we need a surrogate type to implement the deserialization on to underlying primitives
+struct Key<'a>(Rc<Section<'a>>);
 
-impl<'de> IntoDeserializer<'de, Error> for Key {
+struct Val<'a>(Rc<Section<'a>>);
+
+impl<'de> IntoDeserializer<'de, Error> for Key<'de> {
     type Deserializer = Self;
 
+    #[inline]
     fn into_deserializer(self) -> Self::Deserializer {
         self
     }
 }
 
-impl<'de> de::Deserializer<'de> for Key {
+impl<'de> de::Deserializer<'de> for Key<'de> {
     type Error = Error;
 
-    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: de::Visitor<'de>,
-    {
-        self.0.into_deserializer().deserialize_any(visitor)
+    #[inline]
+    fn deserialize_any<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+        self.0.key().to_owned().into_deserializer().deserialize_any(visitor)
     }
 
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
+    #[inline]
+    fn deserialize_newtype_struct<V: Visitor<'de>>(
+        self,
+        _name: &'static str,
+        visitor: V,
+    ) -> Result<V::Value, Self::Error> {
         visitor.visit_newtype_struct(self)
     }
 
@@ -108,72 +87,51 @@ impl<'de> de::Deserializer<'de> for Key {
     }
 }
 
-impl<'de> IntoDeserializer<'de, Error> for Val {
+impl<'de> IntoDeserializer<'de, Error> for Val<'de> {
     type Deserializer = Self;
 
+    #[inline]
     fn into_deserializer(self) -> Self::Deserializer {
         self
     }
 }
 
-impl<'de> de::Deserializer<'de> for Val {
+impl<'de> de::Deserializer<'de> for Val<'de> {
     type Error = Error;
 
-    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: de::Visitor<'de>,
-    {
-        self.0
-            .value()
-            .deref()
-            .clone()
-            .into_deserializer()
-            .deserialize_any(visitor)
+    #[inline]
+    fn deserialize_any<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+        self.0.value().into_deserializer().deserialize_any(visitor)
     }
 
-    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: de::Visitor<'de>,
-    {
-        let mut values: Vec<_> = self
+    // parse each numeric key exactly once, then sort by index. this is required to ensure the zero-based ordering
+    // of the sequence entries (e.g. array) are retained.
+    fn deserialize_seq<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+        let mut indexed: Vec<_> = self
             .0
-            .children()
+            .sections()
             .into_iter()
-            .take_while(|c| c.key().parse::<usize>().is_ok())
-            .map(Val)
+            .filter_map(|s| s.key().parse::<usize>().ok().map(|i| (i, s)))
             .collect();
 
-        // guarantee stable ordering by zero-based ordinal index; for example,
-        // Key:0
-        // Key:1
-        // Key:n
-        values.sort_by(|s1, s2| {
-            s1.0.key()
-                .parse::<usize>()
-                .unwrap()
-                .cmp(&s2.0.key().parse::<usize>().unwrap())
-        });
+        indexed.sort_by_key(|(i, _)| *i);
 
-        SeqDeserializer::new(values.into_iter()).deserialize_seq(visitor)
+        let values = indexed.into_iter().map(|(_, s)| Val(Rc::new(s)));
+
+        SeqDeserializer::new(values).deserialize_seq(visitor)
     }
 
-    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        let values = self
-            .0
-            .children()
-            .into_iter()
-            .map(|section| (section.key().to_owned(), Val(section)));
+    fn deserialize_map<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+        let values = self.0.sections().into_iter().map(|section| {
+            let section = Rc::new(section);
+            (Key(Rc::clone(&section)), Val(section))
+        });
 
         MapDeserializer::new(values).deserialize_map(visitor)
     }
 
-    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: de::Visitor<'de>,
-    {
+    #[inline]
+    fn deserialize_option<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         visitor.visit_some(self)
     }
 
@@ -191,37 +149,33 @@ impl<'de> de::Deserializer<'de> for Val {
         f64 => deserialize_f64,
     }
 
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
+    #[inline]
+    fn deserialize_newtype_struct<V: Visitor<'de>>(
+        self,
+        _name: &'static str,
+        visitor: V,
+    ) -> Result<V::Value, Self::Error> {
         visitor.visit_newtype_struct(self)
     }
 
-    fn deserialize_struct<V>(
+    #[inline]
+    fn deserialize_struct<V: Visitor<'de>>(
         self,
         _name: &'static str,
         _fields: &'static [&'static str],
         visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        let config = self.0.deref();
-        let deserializer = Deserializer::new(config);
-        de::Deserializer::deserialize_any(deserializer, visitor)
+    ) -> Result<V::Value, Self::Error> {
+        de::Deserializer::deserialize_any(Deserializer::from_ref(self.0), visitor)
     }
 
-    fn deserialize_enum<V>(
+    #[inline]
+    fn deserialize_enum<V: Visitor<'de>>(
         self,
         _name: &'static str,
         _variants: &'static [&'static str],
         visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: de::Visitor<'de>,
-    {
-        visitor.visit_enum(self.0.value().deref().clone().into_deserializer())
+    ) -> Result<V::Value, Self::Error> {
+        visitor.visit_enum(self.0.value().into_deserializer())
     }
 
     serde::forward_to_deserialize_any! {
@@ -231,45 +185,62 @@ impl<'de> de::Deserializer<'de> for Val {
     }
 }
 
-struct ConfigValues(IntoIter<Box<dyn ConfigurationSection>>);
+struct ConfigValues<'a>(IntoIter<Section<'a>>);
 
-impl Iterator for ConfigValues {
-    type Item = (Key, Val);
+impl<'a> Iterator for ConfigValues<'a> {
+    type Item = (Key<'a>, Val<'a>);
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0
-            .next()
-            .map(|section| (Key(section.key().to_owned()), Val(section)))
+        self.0.next().map(|section| {
+            let section = Rc::new(section);
+            (Key(Rc::clone(&section)), Val(section))
+        })
     }
 }
 
-struct Deserializer<'de> {
-    inner: MapDeserializer<'de, ConfigValues, Error>,
+struct Deserializer<'de>(MapDeserializer<'de, ConfigValues<'de>, Error>);
+
+impl<'de> From<&'de Configuration> for Deserializer<'de> {
+    #[inline]
+    fn from(config: &'de Configuration) -> Self {
+        Self(MapDeserializer::new(ConfigValues(config.sections().into_iter())))
+    }
 }
 
 impl<'de> Deserializer<'de> {
-    fn new(config: &dyn Configuration) -> Self {
-        Deserializer {
-            inner: MapDeserializer::new(ConfigValues(config.children().into_iter())),
+    fn from_ref(section: Rc<Section<'de>>) -> Self {
+        match Rc::try_unwrap(section) {
+            Ok(section) => Self::from(section),
+            Err(section) => Self(MapDeserializer::new(ConfigValues((*section).sections().into_iter()))),
         }
+    }
+}
+
+impl<'de> From<Section<'de>> for Deserializer<'de> {
+    #[inline]
+    fn from(section: Section<'de>) -> Self {
+        Self(MapDeserializer::new(ConfigValues(section.sections().into_iter())))
+    }
+}
+
+impl<'de> From<Vec<Section<'de>>> for Deserializer<'de> {
+    #[inline]
+    fn from(sections: Vec<Section<'de>>) -> Self {
+        Self(MapDeserializer::new(ConfigValues(sections.into_iter())))
     }
 }
 
 impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     type Error = Error;
 
-    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: de::Visitor<'de>,
-    {
+    #[inline]
+    fn deserialize_any<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         self.deserialize_map(visitor)
     }
 
-    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: de::Visitor<'de>,
-    {
-        visitor.visit_map(self.inner)
+    #[inline]
+    fn deserialize_map<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+        visitor.visit_map(self.0)
     }
 
     serde::forward_to_deserialize_any! {
@@ -280,26 +251,23 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     }
 }
 
-/// Deserializes a data structure from the specified configuration.
+/// Deserializes a data structure from the specified configuration sections.
 ///
 /// # Arguments
 ///
-/// * `configuration` - The [`Configuration`](crate::Configuration) to deserialize
-pub fn from_config<'a, T>(configuration: &'a dyn Configuration) -> Result<T, Error>
-where
-    T: Deserialize<'a>,
-{
-    T::deserialize(Deserializer::new(configuration))
+/// * `configuration` - The configuration [sections](Section) to deserialize
+#[inline]
+pub fn from<'a, T: Deserialize<'a>>(configuration: impl Into<Vec<Section<'a>>>) -> Result<T, Error> {
+    T::deserialize(Deserializer::from(configuration.into()))
 }
 
 /// Deserializes the specified configuration to an existing data structure.
 ///
 /// # Arguments
 ///
-/// * `configuration` - The [`Configuration`](crate::Configuration) to deserialize
-pub fn bind_config<'a, T>(configuration: &'a dyn Configuration, data: &mut T) -> Result<(), Error>
-where
-    T: Deserialize<'a>,
-{
-    T::deserialize_in_place(Deserializer::new(configuration), data)
+/// * `configuration` - The configuration [sections](Section) to bind to the data
+/// * `data` - The data to bind the configuration to
+#[inline]
+pub fn bind<'a, T: Deserialize<'a>>(sections: impl Into<Vec<Section<'a>>>, data: &mut T) -> Result<(), Error> {
+    T::deserialize_in_place(Deserializer::from(sections.into()), data)
 }

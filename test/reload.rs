@@ -35,29 +35,28 @@ impl Trigger {
     }
 }
 
-struct ReloadableConfigProvider {
-    counter: u8,
-    value: Value,
+struct ReloadableProvider {
+    counter: AtomicU8,
     trigger: Rc<Trigger>,
 }
 
-impl ReloadableConfigProvider {
+impl ReloadableProvider {
     fn new(trigger: Rc<Trigger>) -> Self {
         Self {
-            counter: 0,
-            value: Value::new("0".into()),
+            counter: AtomicU8::new(1),
             trigger,
         }
     }
 }
 
-impl ConfigurationProvider for ReloadableConfigProvider {
-    fn get(&self, key: &str) -> Option<Value> {
-        if key == "Test" {
-            Some(self.value.clone())
-        } else {
-            None
-        }
+impl Provider for ReloadableProvider {
+    fn name(&self) -> &str {
+        "Test"
+    }
+
+    fn load(&self, settings: &mut Settings) -> Result {
+        settings.insert("Test", self.counter.fetch_add(1, Ordering::Relaxed).to_string());
+        Ok(())
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
@@ -69,78 +68,42 @@ impl ConfigurationProvider for ReloadableConfigProvider {
             }
         }
     }
-
-    fn load(&mut self) -> LoadResult {
-        self.counter += 1;
-        self.value = self.counter.to_string().into();
-        Ok(())
-    }
-
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, _parent_path: Option<&str>) {
-        earlier_keys.push("Test".into());
-    }
 }
 
 #[derive(Default)]
-struct ReloadableConfigSource {
+struct ReloadableSource {
     trigger: Rc<Trigger>,
 }
 
-impl ReloadableConfigSource {
+impl ReloadableSource {
     fn new(trigger: Rc<Trigger>) -> Self {
         Self { trigger }
     }
 }
 
-impl ConfigurationSource for ReloadableConfigSource {
-    fn build(&self, _builder: &dyn ConfigurationBuilder) -> Box<dyn ConfigurationProvider> {
-        Box::new(ReloadableConfigProvider::new(self.trigger.clone()))
+impl Source for ReloadableSource {
+    fn build(&mut self, _properties: &mut Properties) -> Box<dyn Provider> {
+        Box::new(ReloadableProvider::new(self.trigger.clone()))
     }
 }
 
 #[test]
-fn reload_should_load_providers() {
+fn load_should_reload_providers() {
     // arrange
-    let mut builder = DefaultConfigurationBuilder::new();
+    let mut builder = config::builder();
 
-    builder.add(Box::new(ReloadableConfigSource::default()));
+    builder.add(ReloadableSource::default());
 
-    let mut root = builder.build().unwrap();
+    let root = builder.build();
+    let mut config = root.load().unwrap();
 
-    assert_eq!(root.get("Test").unwrap().as_str(), "1");
+    assert_eq!(config.get("Test"), Some("1"));
 
     // act
-    root.reload().ok();
+    config = root.load().unwrap();
 
     // assert
-    assert_eq!(root.get("Test").unwrap().as_str(), "2");
-}
-
-#[test]
-fn reload_token_should_indicate_change_after_reload() {
-    // arrange
-    let data = Arc::<AtomicU8>::default();
-    let mut builder = DefaultConfigurationBuilder::new();
-
-    builder.add(Box::new(ReloadableConfigSource::default()));
-
-    let mut root = builder.build().unwrap();
-    let _unused = root.reload_token().register(
-        Box::new(|state| {
-            state
-                .unwrap()
-                .downcast_ref::<AtomicU8>()
-                .unwrap()
-                .store(1, Ordering::SeqCst)
-        }),
-        Some(data.clone()),
-    );
-
-    // act
-    root.reload().ok();
-
-    // assert
-    assert_eq!(data.load(Ordering::SeqCst), 1);
+    assert_eq!(config.get("Test"), Some("2"));
 }
 
 #[test]
@@ -148,12 +111,13 @@ fn reload_token_should_indicate_change_after_provider_change() {
     // arrange
     let trigger = Rc::new(Trigger::default());
     let data = Arc::<AtomicU8>::default();
-    let mut builder = DefaultConfigurationBuilder::new();
+    let mut builder = config::builder();
 
-    builder.add(Box::new(ReloadableConfigSource::new(trigger.clone())));
+    builder.add(ReloadableSource::new(trigger.clone()));
 
-    let root = builder.build().unwrap();
-    let _unused = root.reload_token().register(
+    let root = builder.build();
+    let config = root.load().unwrap();
+    let _unused = config.reload_token().register(
         Box::new(|state| {
             state
                 .unwrap()

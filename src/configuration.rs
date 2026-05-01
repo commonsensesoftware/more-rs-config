@@ -1,94 +1,93 @@
-use crate::{ConfigurationPath, ConfigurationSection, Value};
-use tokens::ChangeToken;
+use crate::{path, settings, Section, Settings};
+use tokens::{ChangeToken, CompositeChangeToken, SharedChangeToken};
 
-/// Defines the behavior of a configuration.
-#[cfg_attr(feature = "async", maybe_impl::traits(Send, Sync))]
-pub trait Configuration {
-    /// Gets the configuration value.
-    ///
-    /// # Arguments
-    ///
-    /// * `key` - The configuration key
-    fn get(&self, key: &str) -> Option<Value>;
-
-    /// Gets a [`ConfigurationSection`](crate::ConfigurationSection) with the specified key.
-    fn section(&self, key: &str) -> Box<dyn ConfigurationSection>;
-
-    /// Gets the sequence of [`ConfigurationSection`](crate::ConfigurationSection) children.
-    fn children(&self) -> Vec<Box<dyn ConfigurationSection>>;
-
-    /// Returns a [`ChangeToken`](tokens::ChangeToken) that can be used to observe when this configuration is reloaded.
-    fn reload_token(&self) -> Box<dyn ChangeToken>;
-
-    /// Attempts to convert the [`Configuration`] as a [`ConfigurationSection`](crate::ConfigurationSection).
-    fn as_section(&self) -> Option<&dyn ConfigurationSection> {
-        None
-    }
-
-    /// Gets an iterator of the key/value pairs within the [`Configuration`].
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - The type of [`ConfigurationPath`] used when iterating
-    fn iter(&self, path: Option<ConfigurationPath>) -> Box<dyn Iterator<Item = (String, Value)>>;
+/// Represents a configuration.
+pub struct Configuration {
+    pub(crate) settings: Settings,
+    token: SharedChangeToken<CompositeChangeToken>,
 }
 
-/// Represents an iterator of key/value pairs for a [`Configuration`].
-pub struct ConfigurationIterator {
-    stack: Vec<Box<dyn ConfigurationSection>>,
-    first: Option<(String, Value)>,
-    prefix_length: usize,
-}
-
-impl ConfigurationIterator {
-    /// Initializes a new configuration iterator.
+impl Configuration {
+    /// Initializes a new [Configuration].
     ///
     /// # Arguments
     ///
-    /// * `configuration` - The [`Configuration`] to iterate
-    /// * `path` - The type of [`ConfigurationPath`] used when iterating
-    pub fn new(configuration: &dyn Configuration, path: ConfigurationPath) -> Self {
-        let stack = configuration.children();
-        let mut first = None;
-        let mut prefix_length = 0;
-
-        if let Some(root) = configuration.as_section() {
-            if path == ConfigurationPath::Relative {
-                prefix_length = root.path().len() + 1;
-            } else {
-                let key = root.path()[prefix_length..].to_owned();
-                let value = root.value();
-
-                first = Some((key, value));
-            }
-        }
-
+    /// * `settings` - The configuration [settings](Settings)
+    /// * `tokens` - The [sequence](Iterator) of [change tokens](ChangeToken) associated with the configuration
+    #[inline]
+    pub fn new(settings: Settings, tokens: impl IntoIterator<Item = Box<dyn ChangeToken>>) -> Self {
         Self {
-            stack,
-            first,
-            prefix_length,
+            settings,
+            token: SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter())),
         }
     }
-}
 
-impl Iterator for ConfigurationIterator {
-    type Item = (String, Value);
+    /// Gets a configuration value.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The case-insensitive key of the configuration value to get
+    #[inline]
+    pub fn get(&self, key: &str) -> Option<&str> {
+        self.settings.get(key)
+    }
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(first) = self.first.take() {
-            return Some(first);
-        }
+    /// Gets a section in this configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The case-insensitive key of the configuration subsection to get
+    #[inline]
+    pub fn section(&self, key: impl Into<String>) -> Section<'_> {
+        Section::new(self, key.into())
+    }
 
-        while let Some(config) = self.stack.pop() {
-            self.stack.extend(config.children());
+    /// Gets all of the sections in this configuration.
+    pub fn sections(&self) -> Vec<Section<'_>> {
+        let mut keys = Vec::new();
 
-            if let Some(section) = config.as_section() {
-                let key = section.path()[self.prefix_length..].to_owned();
-                let value = section.value();
-                return Some((key, value));
+        for (path, _) in self {
+            if let Some(key) = path::next(path, None) {
+                if !keys.iter().any(|k: &String| k.eq_ignore_ascii_case(key)) {
+                    keys.push(key.to_owned());
+                }
             }
         }
 
-        None
+        keys.sort_by(path::cmp);
+        keys.into_iter().map(|key| self.section(key)).collect()
+    }
+
+    /// Returns a [change token](ChangeToken) that indicates when the configuration has changed.
+    #[inline]
+    pub fn reload_token(&self) -> impl ChangeToken {
+        self.token.clone()
+    }
+}
+
+impl<'a> IntoIterator for &'a Configuration {
+    type Item = (&'a str, &'a str);
+    type IntoIter = settings::Iter<'a>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.settings).into_iter()
+    }
+}
+
+impl IntoIterator for Configuration {
+    type Item = (String, String);
+    type IntoIter = settings::IntoIter;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.settings.into_iter()
+    }
+}
+
+impl<'a> From<&'a Configuration> for Vec<Section<'a>> {
+    #[inline]
+    fn from(config: &'a Configuration) -> Self {
+        config.sections()
     }
 }

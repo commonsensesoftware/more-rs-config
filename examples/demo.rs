@@ -1,5 +1,6 @@
-use config::{ext::*, *};
+use config::prelude::*;
 use serde::Deserialize;
+use std::{error::Error, path::Path};
 
 #[allow(dead_code)]
 #[derive(Default, Deserialize)]
@@ -18,26 +19,24 @@ struct AppOptions {
     clients: Vec<Client>,
 }
 
-fn main() {
-    let file = std::env::current_exe()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("../../examples/demo/demo.json");
-    let config = DefaultConfigurationBuilder::new()
+fn main() -> Result<(), Box<dyn Error + 'static>> {
+    let file = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples").join("demo.json");
+    let config = config::builder()
         .add_in_memory(&[("Demo", "false")])
         .add_json_file(file)
         .add_env_vars()
         .add_command_line()
         .build()
+        .load()
         .unwrap();
-    let app: AppOptions = config.reify();
+    let app: AppOptions = config.reify()?;
 
     if app.demo {
         println!("{}", &app.text);
         println!("{}", &app.clients[0].region);
-        return;
+    } else {
+        println!("Not a demo!");
     }
 
-    println!("Not a demo!");
+    Ok(())
 }

@@ -1,43 +1,42 @@
-use crate::{util::*, ConfigurationBuilder, ConfigurationProvider, ConfigurationSource, LoadResult, Value};
-use std::borrow::Cow;
-use std::collections::HashMap;
+use crate::{Properties, Result, Settings};
+use std::{borrow::Cow, collections::HashMap, mem::take};
 
-/// Represents a [`ConfigurationProvider`](crate::ConfigurationProvider) that
-/// provides command line configuration values.
-pub struct CommandLineConfigurationProvider {
-    data: HashMap<String, (String, Value)>,
+fn to_pascal_case(text: String, sep: char) -> String {
+    let parts = text.split(sep);
+    let mut pascal_case = String::with_capacity(text.len());
+
+    for part in parts {
+        let mut chars = part.chars();
+
+        if let Some(first) = chars.next() {
+            pascal_case.push_str(&first.to_uppercase().to_string());
+            pascal_case.push_str(chars.as_str());
+        }
+    }
+
+    pascal_case
+}
+
+#[derive(Debug)]
+struct Provider {
     args: Vec<String>,
     switch_mappings: HashMap<String, String>,
 }
 
-impl CommandLineConfigurationProvider {
-    /// Initializes a new command line configuration provider.
-    ///
-    /// # Arguments
-    ///
-    /// * `args` - The command line arguments
-    /// * `switch_mappings` - The mapping of switches to configuration values
-    ///
-    /// # Remarks
-    ///
-    /// Only switch mapping keys that start with `--` or `-` are acceptable. Command
-    /// line arguments may start with `--`, `-`, or `/`
-    pub fn new(args: Vec<String>, switch_mappings: HashMap<String, String>) -> Self {
-        Self {
-            data: Default::default(),
-            args,
-            switch_mappings,
-        }
+impl Provider {
+    #[inline]
+    fn new(args: Vec<String>, switch_mappings: HashMap<String, String>) -> Self {
+        Self { args, switch_mappings }
     }
 }
 
-impl ConfigurationProvider for CommandLineConfigurationProvider {
-    fn get(&self, key: &str) -> Option<Value> {
-        self.data.get(&key.to_uppercase()).map(|t| t.1.clone())
+impl crate::Provider for Provider {
+    #[inline]
+    fn name(&self) -> &str {
+        "Command Line"
     }
 
-    fn load(&mut self) -> LoadResult {
-        let mut data = HashMap::new();
+    fn load(&self, settings: &mut Settings) -> Result {
         let mut args = self.args.iter();
 
         while let Some(arg) = args.next() {
@@ -55,8 +54,7 @@ impl ConfigurationProvider for CommandLineConfigurationProvider {
             } else {
                 0
             };
-
-            let mut key: String;
+            let key: String;
             let value: String;
 
             if let Some(separator) = current.find('=') {
@@ -82,7 +80,7 @@ impl ConfigurationProvider for CommandLineConfigurationProvider {
 
                 key = if let Some(mapping) = self.switch_mappings.get(&current.to_uppercase()) {
                     mapping.clone()
-                } else if start == 0 {
+                } else if start == 1 {
                     continue;
                 } else {
                     current.chars().skip(start).collect()
@@ -95,32 +93,24 @@ impl ConfigurationProvider for CommandLineConfigurationProvider {
                 }
             }
 
-            key = to_pascal_case_parts(key, '-');
-            data.insert(key.to_uppercase(), (key, value.into()));
+            settings.insert(to_pascal_case(key, '-'), value);
         }
 
-        data.shrink_to_fit();
-        self.data = data;
         Ok(())
     }
-
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>) {
-        accumulate_child_keys(&self.data, earlier_keys, parent_path)
-    }
 }
 
-/// Represents a [`ConfigurationSource`](crate::ConfigurationSource) for command line data.
+/// Represents a [configuration source](Source) for command line data.
 #[derive(Default)]
-pub struct CommandLineConfigurationSource {
-    /// Gets or sets a collection of key/value pairs representing the mapping between
-    /// switches and configuration keys.
-    pub switch_mappings: HashMap<String, String>,
-
+pub struct Source {
     /// Gets or sets the command line arguments.
     pub args: Vec<String>,
+
+    /// Gets or sets a collection of key/value pairs representing the mapping between switches and configuration keys.
+    pub switch_mappings: HashMap<String, String>,
 }
 
-impl CommandLineConfigurationSource {
+impl Source {
     /// Initializes a new command line configuration source.
     ///
     /// # Arguments
@@ -130,13 +120,13 @@ impl CommandLineConfigurationSource {
     ///
     /// # Remarks
     ///
-    /// Only switch mapping keys that start with `--` or `-` are acceptable. Command
-    /// line arguments may start with `--`, `-`, or `/`.
-    pub fn new<I, S1, S2>(args: I, switch_mappings: &[(S2, S2)]) -> Self
+    /// Only switch mapping keys that start with `--` or `-` are acceptable. Command line arguments may start with
+    /// `--`, `-`, or `/`.
+    pub fn new<I, V, S>(args: I, switch_mappings: &[(S, S)]) -> Self
     where
-        I: Iterator<Item = S1>,
-        S1: AsRef<str>,
-        S2: AsRef<str>,
+        I: Iterator<Item = V>,
+        V: AsRef<str>,
+        S: AsRef<str>,
     {
         Self {
             args: args.map(|a| a.as_ref().to_owned()).collect(),
@@ -149,114 +139,56 @@ impl CommandLineConfigurationSource {
     }
 }
 
-impl<I, S> From<I> for CommandLineConfigurationSource
+impl<I, V> From<I> for Source
 where
-    I: Iterator<Item = S>,
-    S: AsRef<str>,
+    I: Iterator<Item = V>,
+    V: AsRef<str>,
 {
+    #[inline]
     fn from(value: I) -> Self {
-        let switch_mappings = Vec::<(&str, &str)>::with_capacity(0);
-        Self::new(value, &switch_mappings)
+        Self::new(value, &Vec::<(&str, &str)>::new())
     }
 }
 
-impl ConfigurationSource for CommandLineConfigurationSource {
-    fn build(&self, _builder: &dyn ConfigurationBuilder) -> Box<dyn ConfigurationProvider> {
-        Box::new(CommandLineConfigurationProvider::new(
-            self.args.clone(),
-            self.switch_mappings.clone(),
-        ))
-    }
-}
-
-pub mod ext {
-
-    use super::*;
-
-    /// Defines extension methods for [`ConfigurationBuilder`](crate::ConfigurationBuilder).
-    pub trait CommandLineConfigurationBuilderExtensions {
-        /// Adds the command line configuration source.
-        fn add_command_line(&mut self) -> &mut Self;
-
-        /// Adds the command line configuration source.
-        ///
-        /// # Arguments
-        ///
-        /// * `switch_mappings` - The mapping of switches to configuration values
-        fn add_command_line_map<S: AsRef<str>>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self;
-    }
-
-    impl CommandLineConfigurationBuilderExtensions for dyn ConfigurationBuilder + '_ {
-        fn add_command_line(&mut self) -> &mut Self {
-            self.add(Box::new(CommandLineConfigurationSource::from(std::env::args())));
-            self
-        }
-
-        fn add_command_line_map<S: AsRef<str>>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self {
-            self.add(Box::new(CommandLineConfigurationSource::new(
-                std::env::args(),
-                switch_mappings,
-            )));
-            self
-        }
-    }
-
-    impl<T: ConfigurationBuilder> CommandLineConfigurationBuilderExtensions for T {
-        fn add_command_line(&mut self) -> &mut Self {
-            self.add(Box::new(CommandLineConfigurationSource::from(std::env::args())));
-            self
-        }
-
-        fn add_command_line_map<S: AsRef<str>>(&mut self, switch_mappings: &[(S, S)]) -> &mut Self {
-            self.add(Box::new(CommandLineConfigurationSource::new(
-                std::env::args(),
-                switch_mappings,
-            )));
-            self
-        }
+impl crate::Source for Source {
+    fn build(&mut self, _properties: &mut Properties) -> Box<dyn crate::Provider> {
+        Box::new(Provider::new(take(&mut self.args), take(&mut self.switch_mappings)))
     }
 }
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
+    use crate::{Properties, Source as _};
 
-    struct TestConfigurationBuilder;
+    #[test]
+    fn to_pascal_case_should_normalize_argument_name() {
+        // arrange
+        let argument = "no-build";
 
-    impl ConfigurationBuilder for TestConfigurationBuilder {
-        fn properties(&self) -> &HashMap<String, Box<dyn std::any::Any>> {
-            unimplemented!()
-        }
+        // act
+        let pascal_case = to_pascal_case(argument.into(), '-');
 
-        fn sources(&self) -> &[Box<dyn ConfigurationSource>] {
-            unimplemented!()
-        }
-
-        fn add(&mut self, _source: Box<dyn ConfigurationSource>) {
-            unimplemented!()
-        }
-
-        fn build(&self) -> Result<Box<dyn crate::ConfigurationRoot>, crate::ReloadError> {
-            unimplemented!()
-        }
+        // assert
+        assert_eq!(pascal_case, "NoBuild");
     }
 
     #[test]
     fn load_should_ignore_unknown_arguments() {
         // arrange
         let args = ["foo", "/bar=baz"].iter();
-        let source = CommandLineConfigurationSource::from(args);
-        let mut provider = source.build(&TestConfigurationBuilder);
-        let mut child_keys = Vec::with_capacity(2);
+        let mut source = Source::from(args);
+        let provider = source.build(&mut Properties::default());
+        let mut settings = Settings::default();
 
         // act
-        provider.load().unwrap();
-        provider.child_keys(&mut child_keys, None);
+        provider.load(&mut settings).unwrap();
+
+        println!("{settings:?}");
 
         // assert
-        assert_eq!(child_keys.len(), 1);
-        assert_eq!(provider.get("bar").unwrap().as_str(), "baz");
+        assert_eq!(settings.len(), 1);
+        assert_eq!(settings.get("bar"), Some("baz"));
     }
 
     #[test]
@@ -275,20 +207,19 @@ mod tests {
             "Bogus3",
         ]
         .iter();
-        let source = CommandLineConfigurationSource::from(args);
-        let mut provider = source.build(&TestConfigurationBuilder);
-        let mut child_keys = Vec::with_capacity(5);
+        let mut source = Source::from(args);
+        let provider = source.build(&mut Properties::default());
+        let mut settings = Settings::default();
 
         // act
-        provider.load().unwrap();
-        provider.child_keys(&mut child_keys, None);
+        provider.load(&mut settings).unwrap();
 
         // assert
-        assert_eq!(provider.get("Key1").unwrap().as_str(), "Value1");
-        assert_eq!(provider.get("Key2").unwrap().as_str(), "Value2");
-        assert_eq!(provider.get("Key3").unwrap().as_str(), "Value3");
-        assert_eq!(provider.get("Key4").unwrap().as_str(), "Value4");
-        assert_eq!(provider.get("Key5").unwrap().as_str(), "Value5");
+        assert_eq!(settings.get("Key1"), Some("Value1"));
+        assert_eq!(settings.get("Key2"), Some("Value2"));
+        assert_eq!(settings.get("Key3"), Some("Value3"));
+        assert_eq!(settings.get("Key4"), Some("Value4"));
+        assert_eq!(settings.get("Key5"), Some("Value5"));
     }
 
     #[test]
@@ -306,20 +237,21 @@ mod tests {
             "--two-part=2",
         ]
         .iter();
-        let source = CommandLineConfigurationSource::from(args);
-        let mut provider = source.build(&TestConfigurationBuilder);
+        let mut source = Source::from(args);
+        let provider = source.build(&mut Properties::default());
+        let mut settings = Settings::default();
 
         // act
-        provider.load().unwrap();
+        provider.load(&mut settings).unwrap();
 
         // assert
-        assert_eq!(provider.get("Key1").unwrap().as_str(), "Value1");
-        assert_eq!(provider.get("Key2").unwrap().as_str(), "Value2");
-        assert_eq!(provider.get("Key3").unwrap().as_str(), "Value3");
-        assert_eq!(provider.get("Key4").unwrap().as_str(), "Value4");
-        assert_eq!(provider.get("Key5").unwrap().as_str(), "Value5");
-        assert_eq!(provider.get("Single").unwrap().as_str(), "1");
-        assert_eq!(provider.get("TwoPart").unwrap().as_str(), "2");
+        assert_eq!(settings.get("Key1"), Some("Value1"));
+        assert_eq!(settings.get("Key2"), Some("Value2"));
+        assert_eq!(settings.get("Key3"), Some("Value3"));
+        assert_eq!(settings.get("Key4"), Some("Value4"));
+        assert_eq!(settings.get("Key5"), Some("Value5"));
+        assert_eq!(settings.get("Single"), Some("1"));
+        assert_eq!(settings.get("TwoPart"), Some("2"));
     }
 
     #[test]
@@ -341,66 +273,66 @@ mod tests {
             ("--Key2", "SuperLongKey2"),
             ("--Key6", "SuchALongKey6"),
         ];
-        let source = CommandLineConfigurationSource::new(args, &switch_mappings);
-        let mut provider = source.build(&TestConfigurationBuilder);
+        let mut source = Source::new(args, &switch_mappings);
+        let provider = source.build(&mut Properties::default());
+        let mut settings = Settings::default();
 
         // act
-        provider.load().unwrap();
+        provider.load(&mut settings).unwrap();
 
         // assert
-        assert_eq!(provider.get("LongKey1").unwrap().as_str(), "Value1");
-        assert_eq!(provider.get("SuperLongKey2").unwrap().as_str(), "Value2");
-        assert_eq!(provider.get("Key3").unwrap().as_str(), "Value3");
-        assert_eq!(provider.get("Key4").unwrap().as_str(), "Value4");
-        assert_eq!(provider.get("Key5").unwrap().as_str(), "Value5");
-        assert_eq!(provider.get("SuchALongKey6").unwrap().as_str(), "Value6");
+        assert_eq!(settings.get("LongKey1"), Some("Value1"));
+        assert_eq!(settings.get("SuperLongKey2"), Some("Value2"));
+        assert_eq!(settings.get("Key3"), Some("Value3"));
+        assert_eq!(settings.get("Key4"), Some("Value4"));
+        assert_eq!(settings.get("Key5"), Some("Value5"));
+        assert_eq!(settings.get("SuchALongKey6"), Some("Value6"));
     }
 
     #[test]
     fn load_should_override_value_when_key_is_duplicated() {
         // arrange
         let args = ["/Key1=Value1", "--Key1=Value2"].iter();
-        let source = CommandLineConfigurationSource::from(args);
-        let mut provider = source.build(&TestConfigurationBuilder);
+        let mut source = Source::from(args);
+        let provider = source.build(&mut Properties::default());
+        let mut settings = Settings::default();
 
         // act
-        provider.load().unwrap();
+        provider.load(&mut settings).unwrap();
 
         // assert
-        assert_eq!(provider.get("Key1").unwrap().as_str(), "Value2");
+        assert_eq!(settings.get("Key1"), Some("Value2"));
     }
 
     #[test]
     fn load_should_ignore_key_when_value_is_missing() {
         // arrange
         let args = ["--Key1", "Value1", "/Key2"].iter();
-        let source = CommandLineConfigurationSource::from(args);
-        let mut provider = source.build(&TestConfigurationBuilder);
-        let mut child_keys = Vec::with_capacity(2);
+        let mut source = Source::from(args);
+        let provider = source.build(&mut Properties::default());
+        let mut settings = Settings::default();
 
         // act
-        provider.load().unwrap();
-        provider.child_keys(&mut child_keys, None);
+        provider.load(&mut settings).unwrap();
 
         // assert
-        assert_eq!(child_keys.len(), 1);
-        assert_eq!(provider.get("Key1").unwrap().as_str(), "Value1");
+        assert_eq!(settings.len(), 1);
+        assert_eq!(settings.get("Key1"), Some("Value1"));
     }
 
     #[test]
     fn load_should_ignore_unrecognizable_argument() {
         // arrange
         let args = ["ArgWithoutPrefixAndEqualSign"].iter();
-        let source = CommandLineConfigurationSource::from(args);
-        let mut provider = source.build(&TestConfigurationBuilder);
-        let mut child_keys = Vec::with_capacity(1);
+        let mut source = Source::from(args);
+        let provider = source.build(&mut Properties::default());
+        let mut settings = Settings::default();
 
         // act
-        provider.load().unwrap();
-        provider.child_keys(&mut child_keys, None);
+        provider.load(&mut settings).unwrap();
 
         // assert
-        assert!(child_keys.is_empty());
+        assert!(settings.is_empty());
     }
 
     #[test]
@@ -408,15 +340,14 @@ mod tests {
         // arrange
         let args = ["-Key1", "Value1"].iter();
         let switch_mappings = [("-Key2", "LongKey2")];
-        let source = CommandLineConfigurationSource::new(args, &switch_mappings);
-        let mut provider = source.build(&TestConfigurationBuilder);
-        let mut child_keys = Vec::with_capacity(1);
+        let mut source = Source::new(args, &switch_mappings);
+        let provider = source.build(&mut Properties::default());
+        let mut settings = Settings::default();
 
         // act
-        provider.load().unwrap();
-        provider.child_keys(&mut child_keys, Some(""));
+        provider.load(&mut settings).unwrap();
 
         // assert
-        assert!(child_keys.is_empty());
+        assert!(settings.is_empty());
     }
 }
