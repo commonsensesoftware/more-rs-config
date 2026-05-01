@@ -27,8 +27,7 @@ fn main() -> Result<(), Box<dyn Error + 'static>> {
         .add_env_vars()
         .add_command_line()
         .build()
-        .load()
-        .unwrap();
+        .load()?;
     let app: AppOptions = config.reify()?;
 
     if app.demo {
