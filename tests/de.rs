@@ -1,4 +1,4 @@
-use config::prelude::*;
+use config::{prelude::*, Result};
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -75,7 +75,7 @@ pub struct UserDefined {
 }
 
 #[test]
-fn from_should_deserialize_simple_struct() {
+fn from_should_deserialize_simple_struct() -> Result {
     let config = config::builder()
         .add_in_memory(&[
             ("Bar", "test"),
@@ -90,35 +90,30 @@ fn from_should_deserialize_simple_struct() {
             ("Child:Ignored", "42"),
         ])
         .build()
-        .load()
-        .unwrap();
+        .load()?;
+    let expected = Foo {
+        bar: String::from("test"),
+        baz: true,
+        zoom: None,
+        doom: vec![1, 2, 3],
+        boom: vec![],
+        kaboom: 8080,
+        debug_mode: false,
+        size: Size::Small,
+        provided: Some(String::from("test")),
+        new_type: CustomNewType(42),
+    };
 
     // act
-    let result = config::de::from::<Foo>(&config);
+    let actual = config::de::from::<Foo>(&config)?;
 
     // assert
-    match result {
-        Ok(actual) => assert_eq!(
-            actual,
-            Foo {
-                bar: String::from("test"),
-                baz: true,
-                zoom: None,
-                doom: vec![1, 2, 3],
-                boom: vec![],
-                kaboom: 8080,
-                debug_mode: false,
-                size: Size::Small,
-                provided: Some(String::from("test")),
-                new_type: CustomNewType(42)
-            }
-        ),
-        Err(e) => panic!("{:#?}", e),
-    }
+    assert_eq!(actual, expected);
+    Ok(())
 }
 
 #[test]
-fn from_should_deserialize_parent_child_struct() {
+fn from_should_deserialize_parent_child_struct() -> Result {
     let config = config::builder()
         .add_in_memory(&[
             ("Name:First", "Jane"),
@@ -136,68 +131,63 @@ fn from_should_deserialize_parent_child_struct() {
             ("Child:Children:1:Age", "5"),
         ])
         .build()
-        .load()
-        .unwrap();
+        .load()?;
+    let expected = Parent {
+        name: Name {
+            first: String::from("Jane"),
+            last: String::from("Doe"),
+        },
+        child: Child {
+            name: Name {
+                first: String::from("John"),
+                last: String::from("Doe"),
+            },
+            magic_numbers: vec![42, 7, 13],
+            children: vec![
+                GrandChild {
+                    name: Name {
+                        first: String::from("Bob"),
+                        last: String::from("Doe"),
+                    },
+                    age: 7,
+                },
+                GrandChild {
+                    name: Name {
+                        first: String::from("Sally"),
+                        last: String::from("Doe"),
+                    },
+                    age: 5,
+                },
+            ],
+        },
+    };
 
     // act
-    let result = config::de::from::<Parent>(&config);
+    let actual = config::de::from::<Parent>(&config)?;
 
     // assert
-    match result {
-        Ok(actual) => assert_eq!(
-            actual,
-            Parent {
-                name: Name {
-                    first: String::from("Jane"),
-                    last: String::from("Doe")
-                },
-                child: Child {
-                    name: Name {
-                        first: String::from("John"),
-                        last: String::from("Doe")
-                    },
-                    magic_numbers: vec![42, 7, 13],
-                    children: vec![
-                        GrandChild {
-                            name: Name {
-                                first: String::from("Bob"),
-                                last: String::from("Doe")
-                            },
-                            age: 7
-                        },
-                        GrandChild {
-                            name: Name {
-                                first: String::from("Sally"),
-                                last: String::from("Doe")
-                            },
-                            age: 5
-                        },
-                    ]
-                }
-            }
-        ),
-        Err(e) => panic!("{:#?}", e),
-    }
+    assert_eq!(actual, expected);
+    Ok(())
 }
 
 #[test]
-fn from_should_fail_with_missing_value() {
+fn from_should_fail_with_missing_value() -> Result {
     // arrange
     let config = config::builder()
         .add_in_memory(&[("Bar", "test"), ("Baz", "true")])
         .build()
-        .load()
-        .unwrap();
+        .load()?;
 
     // act
     let error = config::de::from::<Foo>(&config).err().unwrap();
 
     // assert
     assert_eq!(error, config::de::Error::MissingValue("Doom"));
+    Ok(())
 }
 
 #[test]
-fn from_should_fail_with_invalid_type() {
+fn from_should_fail_with_invalid_type() -> Result {
     // arrange
     let config = config::builder()
         .add_in_memory(&[
@@ -208,8 +198,7 @@ fn from_should_fail_with_invalid_type() {
             ("Doom:2", "3"),
         ])
         .build()
-        .load()
-        .unwrap();
+        .load()?;
 
     // act
     let error = config::de::from::<Foo>(&config).err().unwrap();
@@ -221,10 +210,11 @@ fn from_should_fail_with_invalid_type() {
             "provided string was not `true` or `false` while parsing value \'notabool\' provided by Baz"
         ))
     );
+    Ok(())
 }
 
 #[test]
-fn from_should_deserialize_nested_string_map() {
+fn from_should_deserialize_nested_string_map() -> Result {
     // arrange
     let config = config::builder()
         .add_in_memory(&[
@@ -233,52 +223,42 @@ fn from_should_deserialize_nested_string_map() {
             ("Dimensions:Baz", "other"),
         ])
         .build()
-        .load()
-        .unwrap();
+        .load()?;
+    let expected = [("Foo", "bar"), ("Bar", "foo"), ("Baz", "other")]
+        .iter()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect::<HashMap<_, _>>();
 
     // act
-    let result = config::de::from::<HashMap<String, String>>(config.section("Dimensions"));
+    let actual = config::de::from::<HashMap<String, String>>(config.section("Dimensions"))?;
 
     // assert
-    match result {
-        Ok(actual) => assert_eq!(
-            actual,
-            [("Foo", "bar"), ("Bar", "foo"), ("Baz", "other")]
-                .iter()
-                .map(|(k, v)| (k.to_string(), v.to_string()))
-                .collect::<HashMap<_, _>>(),
-        ),
-        Err(e) => panic!("{:#?}", e),
-    }
+    assert_eq!(actual, expected);
+    Ok(())
 }
 
 #[test]
-fn from_should_deserialize_nested_typed_map() {
+fn from_should_deserialize_nested_typed_map() -> Result {
     // arrange
     let config = config::builder()
         .add_in_memory(&[("Limits:Foo", "42"), ("Limits:Bar", "0"), ("Limits:Baz", "420")])
         .build()
-        .load()
-        .unwrap();
+        .load()?;
+    let expected = [("Foo", 42), ("Bar", 0), ("Baz", 420)]
+        .iter()
+        .map(|(k, v)| (k.to_string(), *v))
+        .collect::<HashMap<_, usize>>();
 
     // act
-    let result = config::de::from::<HashMap<String, usize>>(config.section("Limits"));
+    let actual = config::de::from::<HashMap<String, usize>>(config.section("Limits"))?;
 
     // assert
-    match result {
-        Ok(actual) => assert_eq!(
-            actual,
-            [("Foo", 42), ("Bar", 0), ("Baz", 420)]
-                .iter()
-                .map(|(k, v)| (k.to_string(), *v))
-                .collect::<HashMap<_, usize>>(),
-        ),
-        Err(e) => panic!("{:#?}", e),
-    }
+    assert_eq!(actual, expected);
+    Ok(())
 }
 
 #[test]
-fn from_should_deserialize_map_with_nested_vec() {
+fn from_should_deserialize_map_with_nested_vec() -> Result {
     // arrange
     let config = config::builder()
         .add_in_memory(&[
@@ -289,8 +269,7 @@ fn from_should_deserialize_map_with_nested_vec() {
             ("Settings:Key3:2", "c"),
         ])
         .build()
-        .load()
-        .unwrap();
+        .load()?;
     let expected = HashMap::from([
         ("Key1".to_owned(), vec!["bar".to_owned()]),
         ("Key2".to_owned(), vec!["foo".to_owned()]),
@@ -298,17 +277,15 @@ fn from_should_deserialize_map_with_nested_vec() {
     ]);
 
     // act
-    let result = config::de::from::<HashMap<String, Vec<String>>>(config.section("Settings"));
+    let actual = config::de::from::<HashMap<String, Vec<String>>>(config.section("Settings"))?;
 
     // assert
-    match result {
-        Ok(actual) => assert_eq!(actual, expected),
-        Err(e) => panic!("{:#?}", e),
-    }
+    assert_eq!(actual, expected);
+    Ok(())
 }
 
 #[test]
-fn reify_should_deserialize_map_with_nested_vec() {
+fn reify_should_deserialize_map_with_nested_vec() -> Result {
     // arrange
     let config = config::builder()
         .add_in_memory(&[
@@ -319,8 +296,7 @@ fn reify_should_deserialize_map_with_nested_vec() {
             ("Settings:Key3:2", "c"),
         ])
         .build()
-        .load()
-        .unwrap();
+        .load()?;
     let expected = UserDefined {
         settings: HashMap::from([
             ("Key1".to_owned(), vec!["bar".to_owned()]),
@@ -330,14 +306,15 @@ fn reify_should_deserialize_map_with_nested_vec() {
     };
 
     // act
-    let actual: UserDefined = config.reify().unwrap();
+    let actual: UserDefined = config.reify()?;
 
     // assert
     assert_eq!(actual, expected);
+    Ok(())
 }
 
 #[test]
-fn from_should_deserialize_deep_nested_map() {
+fn from_should_deserialize_deep_nested_map() -> Result {
     // arrange
     let config = config::builder()
         .add_in_memory(&[
@@ -406,11 +383,9 @@ fn from_should_deserialize_deep_nested_map() {
     ]);
 
     // act
-    let result = config::de::from::<HashMap<String, Vec<HashMap<String, Vec<String>>>>>(&config);
+    let actual = config::de::from::<HashMap<String, Vec<HashMap<String, Vec<String>>>>>(&config)?;
 
     // assert
-    match result {
-        Ok(actual) => assert_eq!(actual, expected),
-        Err(e) => panic!("{:#?}", e),
-    }
+    assert_eq!(actual, expected);
+    Ok(())
 }
