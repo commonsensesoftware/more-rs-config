@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 /// Represents a file configuration source.
 #[derive(Clone, Default)]
@@ -20,13 +19,6 @@ pub struct FileSource {
     ///
     /// The default value is false.
     pub reload_on_change: bool,
-
-    /// Get or sets the amount of time to wait after a change before reloading.
-    ///
-    /// # Remarks
-    ///
-    /// The default value is `250ms`. This helps avoid triggering reload before a file is completely written.
-    pub reload_delay: Duration,
 }
 
 impl FileSource {
@@ -37,14 +29,12 @@ impl FileSource {
     /// * `path` - The source file path
     /// * `optional` - Indicates whether the source file must exist
     /// * `reload_on_change` - Indicates if a reload should occur if the source file changes
-    /// * `reload_delay` - The amount of delay before reload after the source file changes
     #[inline]
-    pub fn new(path: PathBuf, optional: bool, reload_on_change: bool, reload_delay: Option<Duration>) -> Self {
+    pub fn new(path: PathBuf, optional: bool, reload_on_change: bool) -> Self {
         Self {
             path,
             optional,
             reload_on_change,
-            reload_delay: reload_delay.unwrap_or(Duration::from_millis(250)),
         }
     }
 
@@ -55,14 +45,14 @@ impl FileSource {
     /// * `path` - The source file path
     #[inline]
     pub fn optional<P: AsRef<Path>>(path: P) -> Self {
-        Self::new(path.as_ref().to_path_buf(), true, false, None)
+        Self::new(path.as_ref().to_path_buf(), true, false)
     }
 }
 
 impl From<PathBuf> for FileSource {
     #[inline]
     fn from(value: PathBuf) -> Self {
-        Self::new(value, false, false, None)
+        Self::new(value, false, false)
     }
 }
 
@@ -106,7 +96,6 @@ pub struct FileSourceBuilder {
     path: PathBuf,
     optional: bool,
     reload_on_change: bool,
-    reload_delay: Option<Duration>,
 }
 
 impl FileSourceBuilder {
@@ -121,7 +110,6 @@ impl FileSourceBuilder {
             path,
             optional: false,
             reload_on_change: false,
-            reload_delay: None,
         }
     }
 
@@ -137,12 +125,6 @@ impl FileSourceBuilder {
         self
     }
 
-    /// Sets the delay to wait before reloading when a file source changes.
-    pub fn reload_delay(mut self, delay: Duration) -> Self {
-        self.reload_delay = Some(delay);
-        self
-    }
-
     /// Creates and returns a new [file source](FileSource).
     #[inline]
     pub fn build(&self) -> FileSource {
@@ -150,7 +132,6 @@ impl FileSourceBuilder {
             self.path.clone(),
             self.optional,
             self.reload_on_change,
-            self.reload_delay,
         )
     }
 }
