@@ -1,4 +1,5 @@
 use crate::{path, settings, Section, Settings};
+use std::fmt::{Debug, Display, Formatter, Result};
 use tokens::{ChangeToken, CompositeChangeToken, SharedChangeToken};
 
 /// Represents a configuration.
@@ -89,5 +90,19 @@ impl<'a> From<&'a Configuration> for Vec<Section<'a>> {
     #[inline]
     fn from(config: &'a Configuration) -> Self {
         config.sections()
+    }
+}
+
+impl Debug for Configuration {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        Debug::fmt(&self.settings, f)
+    }
+}
+
+impl Display for Configuration {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        Display::fmt(&self.settings, f)
     }
 }
