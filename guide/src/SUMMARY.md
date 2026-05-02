@@ -18,5 +18,6 @@
 - [XML Provider](guide/xml.md)
 - [YAML Provider](guide/yaml.md)
 - [INI Provider](guide/ini.md)
+- [Typed Provider](guide/typed.md)
 - [Chained Provider](guide/chained.md)
 - [Data Binding](guide/binding.md)

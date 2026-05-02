@@ -21,6 +21,9 @@ mod json;
 #[cfg(feature = "mem")]
 mod mem;
 
+#[cfg(feature = "typed")]
+mod typed;
+
 #[cfg(feature = "xml")]
 mod xml;
 
@@ -56,6 +59,10 @@ pub use json::JsonExt;
 #[cfg(feature = "mem")]
 #[cfg_attr(docsrs, doc(cfg(feature = "mem")))]
 pub use mem::MemoryExt;
+
+#[cfg(feature = "typed")]
+#[cfg_attr(docsrs, doc(cfg(feature = "typed")))]
+pub use typed::TypedExt;
 
 #[cfg(feature = "xml")]
 #[cfg_attr(docsrs, doc(cfg(feature = "xml")))]

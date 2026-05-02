@@ -44,5 +44,6 @@ REF: https://github.com/tag1consulting/goose/issues/320
 [ini::Provider]: https://docs.rs/more-config/3.0.0/config/ini/struct.Provider.html
 [json::Provider]: https://docs.rs/more-config/3.0.0/config/json/struct.Provider.html
 [mem::Provider]: https://docs.rs/more-config/3.0.0/config/mem/struct.Provider.html
+[typed::Provider]: https://docs.rs/more-config/3.0.0/config/typed/struct.Provider.html
 [xml::Provider]: https://docs.rs/more-config/3.0.0/config/xml/struct.Provider.html
 [yaml::Provider]: https://docs.rs/more-config/3.0.0/config/yaml/struct.Provider.html
