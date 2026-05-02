@@ -26,8 +26,7 @@ fn main() -> Result<(), Box<dyn Error + 'static>> {
         .add_json_file(path)
         .add_env_vars()
         .add_command_line()
-        .build()
-        .load()?;
+        .build()?;
     let app: AppOptions = config.reify()?;
 
     if app.demo {

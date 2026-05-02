@@ -22,7 +22,7 @@ fn add_json_file_should_load_settings_from_file() {
 
     file.write_all(json.to_string().as_bytes()).unwrap();
 
-    let config = config::builder().add_json_file(&path).build().load().unwrap();
+    let config = config::builder().add_json_file(&path).build().unwrap();
     let section = config.section("Feature").section("NativeCopy");
 
     // act
@@ -42,7 +42,7 @@ fn add_json_file_should_fail_if_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.json");
 
     // act
-    let result = config::builder().add_json_file(&path).build().load();
+    let result = config::builder().add_json_file(&path).build();
 
     // assert
     if let Err(error) = result {
@@ -75,7 +75,6 @@ fn add_optional_json_file_should_load_settings_from_file() {
     let config = config::builder()
         .add_json_file(FileSource::optional(&path))
         .build()
-        .load()
         .unwrap();
     let section = config.section("Feature").section("NativeCopy");
 
@@ -99,7 +98,6 @@ fn add_json_file_should_succeed_if_optional_file_does_not_exist() {
     let config = config::builder()
         .add_json_file(FileSource::optional(&path))
         .build()
-        .load()
         .unwrap();
 
     // assert
@@ -116,7 +114,7 @@ fn simple_json_array_should_be_converted_to_key_value_pairs() {
     file.write_all(json.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_json_file(&path).build().load().unwrap();
+    let config = config::builder().add_json_file(&path).build().unwrap();
 
     // assert
     if path.exists() {
@@ -141,7 +139,7 @@ fn complex_json_array_should_be_converted_to_key_value_pairs() {
     file.write_all(json.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_json_file(&path).build().load().unwrap();
+    let config = config::builder().add_json_file(&path).build().unwrap();
 
     // assert
     if path.exists() {
@@ -167,7 +165,7 @@ fn nested_json_array_should_be_converted_to_key_value_pairs() {
     file.write_all(json.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_json_file(&path).build().load().unwrap();
+    let config = config::builder().add_json_file(&path).build().unwrap();
 
     // assert
     if path.exists() {
@@ -198,7 +196,6 @@ fn json_array_item_should_be_implicitly_replaced() {
         .add_json_file(&path1)
         .add_json_file(&path2)
         .build()
-        .load()
         .unwrap();
 
     // assert
@@ -234,7 +231,6 @@ fn json_array_item_should_be_explicitly_replaced() {
         .add_json_file(&path1)
         .add_json_file(&path2)
         .build()
-        .load()
         .unwrap();
 
     // assert
@@ -270,7 +266,6 @@ fn json_arrays_should_be_merged() {
         .add_json_file(&path1)
         .add_json_file(&path2)
         .build()
-        .load()
         .unwrap();
 
     // assert
@@ -309,8 +304,8 @@ fn json_file_should_reload_when_changed() {
     file.write_all(json.to_string().as_bytes()).unwrap();
     drop(file);
 
-    let root = config::builder().add_json_file(&path.is().reloadable()).build();
-    let mut config = root.load().unwrap();
+    let builder = config::builder().add_json_file(&path.is().reloadable());
+    let mut config = builder.build().unwrap();
     let section = config.section("Feature").section("NativeCopy");
     let initial = section.get("Disabled").unwrap_or_default().to_owned();
 
@@ -352,7 +347,8 @@ fn json_file_should_reload_when_changed() {
     }
 
     // act
-    config = root.load().unwrap();
+    config = builder.build().unwrap();
+
     let section = config.section("Feature").section("NativeCopy");
     let current = section.get("Disabled").unwrap_or_default();
 

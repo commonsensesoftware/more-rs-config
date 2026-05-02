@@ -29,7 +29,7 @@ fn add_xml_file_should_load_settings_from_file() {
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
     let section = config.section("Data.Setting").section("DefaultConnection");
 
     // act
@@ -45,7 +45,7 @@ fn add_xml_file_should_fail_if_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.xml");
 
     // act
-    let result = config::builder().add_xml_file(&path).build().load();
+    let result = config::builder().add_xml_file(&path).build();
 
     // assert
     if let Err(error) = result {
@@ -86,7 +86,6 @@ fn add_optional_xml_file_should_load_settings_from_file() {
     let config = config::builder()
         .add_xml_file(file.path().is().optional())
         .build()
-        .load()
         .unwrap();
     let section = config.section("Data.Setting").section("Inventory");
 
@@ -103,11 +102,7 @@ fn add_xml_file_should_succeed_if_optional_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.xml");
 
     // act
-    let config = config::builder()
-        .add_xml_file(&path.is().optional())
-        .build()
-        .load()
-        .unwrap();
+    let config = config::builder().add_xml_file(&path.is().optional()).build().unwrap();
 
     // assert
     assert_eq!(config.sections().len(), 0);
@@ -133,7 +128,7 @@ fn add_xml_file_should_process_attributes() {
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // assert
     assert_eq!(config.get("Port"), Some("8008"));
@@ -161,7 +156,7 @@ fn add_xml_file_should_mix_elements_and_attributes() {
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // assert
     assert_eq!(config.get("Port"), Some("8008"));
@@ -192,7 +187,7 @@ fn name_attribute_should_contribute_to_prefix(attribute: &str) {
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // assert
     assert_eq!(config.get("Data:DefaultConnection:Name"), Some("DefaultConnection"));
@@ -225,7 +220,7 @@ fn root_element_name_attribute_should_contribute_to_prefix() {
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // assert
     assert_eq!(config.get("Data:Name"), Some("Data"));
@@ -253,7 +248,7 @@ fn numeric_name_attribute_should_be_array_like() {
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // assert
     assert_eq!(config.get("DefaultConnection:0:Provider"), Some("SqlClient1"));
@@ -283,7 +278,7 @@ fn repeated_element_should_be_array_like(element: &str) {
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // assert
     assert_eq!(config.get("DefaultConnection:0:Provider"), Some("SqlClient1"));
@@ -310,7 +305,7 @@ fn repeated_element_with_different_name_attribute_should_have_different_prefix()
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // assert
     assert_eq!(config.get("DefaultConnection:Data1:Provider"), Some("SqlClient1"));
@@ -337,7 +332,7 @@ fn nested_repeated_element_should_be_array_like() {
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // assert
     assert_eq!(
@@ -385,7 +380,7 @@ fn mixed_repeated_element_should_be_array_like() {
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // assert
     assert_eq!(
@@ -422,7 +417,7 @@ fn config_values_should_process_cdata() {
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // act
     let actual = config.get("Data:Inventory:Provider");
@@ -455,7 +450,7 @@ fn xml_declaration_and_processing_instructions_should_be_ignored() {
 
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
-    let config = config::builder().add_xml_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_xml_file(file.path()).build().unwrap();
 
     // act
     let actual = config.get("Data:DefaultConnection:Provider");
@@ -486,7 +481,7 @@ fn load_should_fail_when_xml_namespace_is_encountered() {
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let result = config::builder().add_xml_file(file.path()).build().load();
+    let result = config::builder().add_xml_file(file.path()).build();
 
     // assert
     if let Err(error) = result {
@@ -518,7 +513,7 @@ fn load_should_fail_when_key_is_duplicated() {
     file.write_all(xml.to_string().as_bytes()).unwrap();
 
     // act
-    let result = config::builder().add_xml_file(file.path()).build().load();
+    let result = config::builder().add_xml_file(file.path()).build();
 
     // assert
     if let Err(error) = result {
@@ -554,8 +549,8 @@ fn xml_file_should_reload_when_changed() {
     file.write_all(xml.to_string().as_bytes()).unwrap();
     drop(file);
 
-    let root = config::builder().add_xml_file(&path.is().reloadable()).build();
-    let mut config = root.load().unwrap();
+    let builder = config::builder().add_xml_file(&path.is().reloadable());
+    let mut config = builder.build().unwrap();
     let section = config.section("Connections").section("Connection");
     let initial = section.get("Retries").unwrap_or_default().to_owned();
 
@@ -594,7 +589,7 @@ fn xml_file_should_reload_when_changed() {
         reloaded = event.wait_timeout(reloaded, Duration::from_secs(1)).unwrap().0;
     }
 
-    config = root.load().unwrap();
+    config = builder.build().unwrap();
 
     // act
     let section = config.section("Connections").section("Connection");

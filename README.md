@@ -59,8 +59,7 @@ fn main() -> Result<(), Box<dyn Error + 'static>> {
         .add_json_file("demo.json".is().optional())
         .add_env_vars()
         .add_command_line()
-        .build()
-        .load()?;
+        .build()?;
     
     if let Some(demo) = config.get("demo") {
       if demo == "true" {
@@ -101,7 +100,7 @@ struct AppOptions {
 
 fn main() -> Result<(), Box<dyn Error + 'static>> {
   let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("demo.json");
-  let config = config::builder().add_json_file(path).build().load()?;
+  let config = config::builder().add_json_file(path).build()?;
   let app: AppOptions = config.reify()?;
 
   if app.demo {

@@ -12,7 +12,7 @@ pub trait MemoryExt: Sized {
 
 impl MemoryExt for Builder {
     fn add_in_memory<S: AsRef<str>>(mut self, data: &[(S, S)]) -> Self {
-        self.add(mem::Source::new(data));
+        self.add(mem::Provider::new(data));
         self
     }
 }

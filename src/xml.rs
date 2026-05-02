@@ -1,10 +1,9 @@
-use crate::{path, Error, FileSource, Properties, Settings};
+use crate::{path, Error, FileSource, Settings};
 use std::{
     cell::RefCell,
     fmt::{self, Display, Formatter},
     fs::File,
     io::BufReader,
-    mem::take,
     ops::Deref,
     rc::Rc,
 };
@@ -275,7 +274,20 @@ fn visit(file: File, settings: &mut Settings) -> Result<(), String> {
     Ok(())
 }
 
-struct Provider(FileSource);
+/// Represents a [configuration provider](Provider) for `*.xml` files.
+pub struct Provider(FileSource);
+
+impl Provider {
+    /// Initializes a new `*.xml` file configuration provider.
+    ///
+    /// # Arguments
+    ///
+    /// * `file` - The `*.xml` [file source](FileSource) information
+    #[inline]
+    pub fn new(file: FileSource) -> Self {
+        Self(file)
+    }
+}
 
 impl crate::Provider for Provider {
     #[inline]
@@ -308,27 +320,5 @@ impl crate::Provider for Provider {
         })?;
 
         Ok(())
-    }
-}
-
-/// Represents a [configuration source](Source) for `*.xml` files.
-pub struct Source(FileSource);
-
-impl Source {
-    /// Initializes a new `*.xml` file configuration provider.
-    ///
-    /// # Arguments
-    ///
-    /// * `file` - The `*.xml` [file source](FileSource) information
-    #[inline]
-    pub fn new(file: FileSource) -> Self {
-        Self(file)
-    }
-}
-
-impl crate::Source for Source {
-    #[inline]
-    fn build(&mut self, _properties: &mut Properties) -> Box<dyn crate::Provider> {
-        Box::new(Provider(take(&mut self.0)))
     }
 }

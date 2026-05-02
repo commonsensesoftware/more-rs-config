@@ -1,6 +1,6 @@
-use crate::{path, properties::Properties, Error, FileSource, Result, Settings};
+use crate::{path, Error, FileSource, Result, Settings};
 use serde_json::{map::Map, Value as JsonValue};
-use std::{fs, mem::take};
+use std::fs;
 use tokens::{ChangeToken, FileChangeToken, NeverChangeToken};
 
 fn to_pascal_case(text: &str) -> String {
@@ -85,7 +85,20 @@ impl JsonVisitor<'_> {
     }
 }
 
-struct Provider(FileSource);
+/// Represents a [configuration provider](Provider) for `*.json` files.
+pub struct Provider(FileSource);
+
+impl Provider {
+    /// Initializes a new `*.json` file configuration provider.
+    ///
+    /// # Arguments
+    ///
+    /// * `file` - The `*.json` [file source](FileSource) information
+    #[inline]
+    pub fn new(file: FileSource) -> Self {
+        Self(file)
+    }
+}
 
 impl crate::Provider for Provider {
     #[inline]
@@ -133,44 +146,5 @@ impl crate::Provider for Provider {
                 path: self.0.path.clone(),
             })
         }
-    }
-}
-
-/// Represents a [configuration source](Source) for `*.json` files.
-pub struct Source(FileSource);
-
-impl Source {
-    /// Initializes a new `*.json` file configuration source.
-    ///
-    /// # Arguments
-    ///
-    /// * `file` - The `*.json` [file source](FileSource) information
-    #[inline]
-    pub fn new(file: FileSource) -> Self {
-        Self(file)
-    }
-}
-
-impl crate::Source for Source {
-    #[inline]
-    fn build(&mut self, _properties: &mut Properties) -> Box<dyn crate::Provider> {
-        Box::new(Provider(take(&mut self.0)))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn to_pascal_case_should_normalize_argument_name() {
-        // arrange
-        let argument = "noBuild";
-
-        // act
-        let pascal_case = to_pascal_case(argument);
-
-        // assert
-        assert_eq!(pascal_case, "NoBuild");
     }
 }

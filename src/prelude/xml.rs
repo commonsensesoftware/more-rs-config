@@ -12,7 +12,7 @@ pub trait XmlExt: Sized {
 
 impl XmlExt for Builder {
     fn add_xml_file<F: Into<FileSource>>(mut self, file: F) -> Self {
-        self.add(xml::Source::new(file.into()));
+        self.add(xml::Provider::new(file.into()));
         self
     }
 }

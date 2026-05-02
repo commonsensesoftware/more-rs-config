@@ -1,32 +1,39 @@
-use crate::{Properties, Result, Settings};
-use std::{borrow::Cow, collections::HashMap, mem::take};
+use crate::{Result, Settings};
+use std::{borrow::Cow, collections::HashMap};
 
-fn to_pascal_case(text: String, sep: char) -> String {
-    let parts = text.split(sep);
-    let mut pascal_case = String::with_capacity(text.len());
-
-    for part in parts {
-        let mut chars = part.chars();
-
-        if let Some(first) = chars.next() {
-            pascal_case.push_str(&first.to_uppercase().to_string());
-            pascal_case.push_str(chars.as_str());
-        }
-    }
-
-    pascal_case
-}
-
+/// Represents a [configuration provider](Provider) for command line arguments.
 #[derive(Debug)]
-struct Provider {
+pub struct Provider {
     args: Vec<String>,
     switch_mappings: HashMap<String, String>,
 }
 
 impl Provider {
-    #[inline]
-    fn new(args: Vec<String>, switch_mappings: HashMap<String, String>) -> Self {
-        Self { args, switch_mappings }
+    /// Initializes a new command line configuration provider.
+    ///
+    /// # Arguments
+    ///
+    /// * `args` - The command line arguments
+    /// * `switch_mappings` - The mapping of switches to configuration values
+    ///
+    /// # Remarks
+    ///
+    /// Only switch mapping keys that start with `--` or `-` are acceptable. Command line arguments may start with
+    /// `--`, `-`, or `/`.
+    pub fn new<I, V, S>(args: I, switch_mappings: &[(S, S)]) -> Self
+    where
+        I: Iterator<Item = V>,
+        V: AsRef<str>,
+        S: AsRef<str>,
+    {
+        Self {
+            args: args.map(|a| a.as_ref().to_owned()).collect(),
+            switch_mappings: switch_mappings
+                .iter()
+                .filter(|m| m.0.as_ref().starts_with("--") || m.0.as_ref().starts_with('-'))
+                .map(|(k, v)| (k.as_ref().to_uppercase(), v.as_ref().to_owned()))
+                .collect(),
+        }
     }
 }
 
@@ -100,46 +107,7 @@ impl crate::Provider for Provider {
     }
 }
 
-/// Represents a [configuration source](Source) for command line data.
-#[derive(Default)]
-pub struct Source {
-    /// Gets or sets the command line arguments.
-    pub args: Vec<String>,
-
-    /// Gets or sets a collection of key/value pairs representing the mapping between switches and configuration keys.
-    pub switch_mappings: HashMap<String, String>,
-}
-
-impl Source {
-    /// Initializes a new command line configuration source.
-    ///
-    /// # Arguments
-    ///
-    /// * `args` - The command line arguments
-    /// * `switch_mappings` - The mapping of switches to configuration values
-    ///
-    /// # Remarks
-    ///
-    /// Only switch mapping keys that start with `--` or `-` are acceptable. Command line arguments may start with
-    /// `--`, `-`, or `/`.
-    pub fn new<I, V, S>(args: I, switch_mappings: &[(S, S)]) -> Self
-    where
-        I: Iterator<Item = V>,
-        V: AsRef<str>,
-        S: AsRef<str>,
-    {
-        Self {
-            args: args.map(|a| a.as_ref().to_owned()).collect(),
-            switch_mappings: switch_mappings
-                .iter()
-                .filter(|m| m.0.as_ref().starts_with("--") || m.0.as_ref().starts_with('-'))
-                .map(|(k, v)| (k.as_ref().to_uppercase(), v.as_ref().to_owned()))
-                .collect(),
-        }
-    }
-}
-
-impl<I, V> From<I> for Source
+impl<I, V> From<I> for Provider
 where
     I: Iterator<Item = V>,
     V: AsRef<str>,
@@ -150,35 +118,16 @@ where
     }
 }
 
-impl crate::Source for Source {
-    fn build(&mut self, _properties: &mut Properties) -> Box<dyn crate::Provider> {
-        Box::new(Provider::new(take(&mut self.args), take(&mut self.switch_mappings)))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Properties, Source as _};
-
-    #[test]
-    fn to_pascal_case_should_normalize_argument_name() {
-        // arrange
-        let argument = "no-build";
-
-        // act
-        let pascal_case = to_pascal_case(argument.into(), '-');
-
-        // assert
-        assert_eq!(pascal_case, "NoBuild");
-    }
+    use crate::Provider as _;
 
     #[test]
     fn load_should_ignore_unknown_arguments() {
         // arrange
         let args = ["foo", "/bar=baz"].iter();
-        let mut source = Source::from(args);
-        let provider = source.build(&mut Properties::default());
+        let provider = Provider::from(args);
         let mut settings = Settings::default();
 
         // act
@@ -207,8 +156,7 @@ mod tests {
             "Bogus3",
         ]
         .iter();
-        let mut source = Source::from(args);
-        let provider = source.build(&mut Properties::default());
+        let provider = Provider::from(args);
         let mut settings = Settings::default();
 
         // act
@@ -237,8 +185,7 @@ mod tests {
             "--two-part=2",
         ]
         .iter();
-        let mut source = Source::from(args);
-        let provider = source.build(&mut Properties::default());
+        let provider = Provider::from(args);
         let mut settings = Settings::default();
 
         // act
@@ -273,8 +220,7 @@ mod tests {
             ("--Key2", "SuperLongKey2"),
             ("--Key6", "SuchALongKey6"),
         ];
-        let mut source = Source::new(args, &switch_mappings);
-        let provider = source.build(&mut Properties::default());
+        let provider = Provider::new(args, &switch_mappings);
         let mut settings = Settings::default();
 
         // act
@@ -293,8 +239,7 @@ mod tests {
     fn load_should_override_value_when_key_is_duplicated() {
         // arrange
         let args = ["/Key1=Value1", "--Key1=Value2"].iter();
-        let mut source = Source::from(args);
-        let provider = source.build(&mut Properties::default());
+        let provider = Provider::from(args);
         let mut settings = Settings::default();
 
         // act
@@ -308,8 +253,7 @@ mod tests {
     fn load_should_ignore_key_when_value_is_missing() {
         // arrange
         let args = ["--Key1", "Value1", "/Key2"].iter();
-        let mut source = Source::from(args);
-        let provider = source.build(&mut Properties::default());
+        let provider = Provider::from(args);
         let mut settings = Settings::default();
 
         // act
@@ -324,8 +268,7 @@ mod tests {
     fn load_should_ignore_unrecognizable_argument() {
         // arrange
         let args = ["ArgWithoutPrefixAndEqualSign"].iter();
-        let mut source = Source::from(args);
-        let provider = source.build(&mut Properties::default());
+        let provider = Provider::from(args);
         let mut settings = Settings::default();
 
         // act
@@ -340,8 +283,7 @@ mod tests {
         // arrange
         let args = ["-Key1", "Value1"].iter();
         let switch_mappings = [("-Key2", "LongKey2")];
-        let mut source = Source::new(args, &switch_mappings);
-        let provider = source.build(&mut Properties::default());
+        let provider = Provider::new(args, &switch_mappings);
         let mut settings = Settings::default();
 
         // act

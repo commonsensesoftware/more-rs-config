@@ -12,7 +12,7 @@ pub trait IniExt: Sized {
 
 impl IniExt for Builder {
     fn add_ini_file<F: Into<FileSource>>(mut self, file: F) -> Self {
-        self.add(ini::Source::new(file.into()));
+        self.add(ini::Provider::new(file.into()));
         self
     }
 }

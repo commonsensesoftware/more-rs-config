@@ -6,12 +6,9 @@ mod configuration;
 mod error;
 mod file;
 mod merge;
-mod properties;
 mod provider;
-mod root;
 mod section;
 mod settings;
-mod source;
 
 /// Contains chained configuration support.
 #[cfg(feature = "chained")]
@@ -56,12 +53,9 @@ pub use configuration::Configuration;
 pub use error::Error;
 pub use file::{FileSource, FileSourceBuilder};
 pub use merge::Merge;
-pub use properties::Properties;
 pub use provider::Provider;
-pub use root::Root;
 pub use section::Section;
 pub use settings::Settings;
-pub use source::Source;
 
 /// Represents the type alias for a configuration reference.
 #[cfg(not(feature = "async"))]

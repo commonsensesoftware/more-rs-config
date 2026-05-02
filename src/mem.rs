@@ -1,32 +1,13 @@
-use crate::{properties::Properties, Result, Settings};
-use std::mem::take;
-
-#[derive(Debug)]
-struct Provider(Vec<(String, String)>);
-
-impl crate::Provider for Provider {
-    #[inline]
-    fn name(&self) -> &str {
-        "Memory"
-    }
-
-    fn load(&self, settings: &mut Settings) -> Result {
-        for (key, value) in &self.0 {
-            settings.insert(key.clone(), value.clone());
-        }
-
-        Ok(())
-    }
-}
+use crate::{Result, Settings};
 
 /// Represents a [configuration source](Source) for in-memory data.
-#[derive(Default)]
-pub struct Source {
+#[derive(Debug, Default)]
+pub struct Provider {
     /// Gets a list of key/value pairs representing the initial data.
     pub data: Vec<(String, String)>,
 }
 
-impl Source {
+impl Provider {
     /// Initializes a new in-memory configuration source.
     ///
     /// # Arguments
@@ -42,9 +23,17 @@ impl Source {
     }
 }
 
-impl crate::Source for Source {
+impl crate::Provider for Provider {
     #[inline]
-    fn build(&mut self, _properties: &mut Properties) -> Box<dyn crate::Provider> {
-        Box::new(Provider(take(&mut self.data)))
+    fn name(&self) -> &str {
+        "Memory"
+    }
+
+    fn load(&self, settings: &mut Settings) -> Result {
+        for (key, value) in &self.data {
+            settings.insert(key.clone(), value.clone());
+        }
+
+        Ok(())
     }
 }
