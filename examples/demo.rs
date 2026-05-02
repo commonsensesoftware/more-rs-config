@@ -28,8 +28,8 @@ fn main() -> Result<(), Box<dyn Error + 'static>> {
     let app: AppOptions = config.reify()?;
 
     if app.demo {
-        println!("{}", &app.text);
-        println!("{}", &app.clients[0].region);
+        println!("Text = {}", &app.text);
+        println!("Region = {}", &app.clients[0].region);
     } else {
         println!("Not a demo!");
     }

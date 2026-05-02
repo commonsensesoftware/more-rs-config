@@ -111,6 +111,21 @@ fn main() -> Result<(), Box<dyn Error + 'static>> {
 }
 ```
 
+## Examples
+
+A simple demonstration application is provided that combines in-memory settings, a demo.json file, and allows command
+line arguments. Run it with:
+
+```bash
+cargo run --example demo
+```
+
+To highlight overriding configuration via the command line, run it with:
+
+```bash
+cargo run --example demo -- --text "I'm a teapot!"
+```
+
 ## Minimum Supported Rust Version
 
 When increasing the minimum supported Rust version (MSRV), the new version must have been released at least six months
