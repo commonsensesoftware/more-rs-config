@@ -4,24 +4,29 @@
 
 >These features are only available if the **xml** feature is activated
 
-The [`XmlConfigurationProvider`] supports loading configuration from a `*.xml` file.
+The [xml::Provider] supports loading configuration from a `*.xml` file.
 
 The following code adds several configuration providers, including a couple of `*.xml` files:
 
 ```rust
-fn main() {
-    let name = env::var("ENVIRONMENT").or_else("production");
-    let config = DefaultConfigurationBuilder::new()
+use config::prelude::*;
+use std::error::Error;
+
+fn main() -> Result<(), Box<dyn Error + 'static>> {
+    let name = std::env::var("ENVIRONMENT").or_else("production");
+    let config = config::builder()
         .add_xml_file("MyXmlConfig.xml".is().optional())
-        .add_xml_file(format!("MyXmlConfig.{}.xml", name).is().optional())
+        .add_xml_file(format!("MyXmlConfig.{name}.xml").is().optional())
         .add_env_vars()
         .add_command_line()
-        .build()
-        .unwrap();
+        .build()?;
+
+    Ok(())
 }
 ```
 
-The XML configuration files have a few special rules that are different from other [configuration providers](abstractions.md#configuration-provider):
+The XML configuration files have a few special rules that are different from other
+[configuration providers](abstractions.md#configuration-provider):
 
 1. XML namespaces are not supported on elements or attributes
 2. The `Name` attribute (case-insensitive) is considered as a surrogate key in lieu of the element it is applied to
@@ -50,19 +55,15 @@ Consider the following configuration file:
 The following code displays several of the preceding configuration settings:
 
 ```rust
-let my_key_value = config.get("MyKey").unwrap().as_str();
-let title = config.get("Position:Title").unwrap().as_str();
-let name = config.section("Position").get("Name").unwrap().as_str();
-let default_log_level = config.get("Logging:LogLevel:Default").unwrap().as_str();
+let my_key_value = config.get("MyKey").unwrap();
+let title = config.get("Position:Title").unwrap();
+let name = config.section("Position").get("Name").unwrap();
+let default_log_level = config.get("Logging:LogLevel:Default").unwrap();
 
-println!("MyKey value: {}\n\
-          Title: {}\n\
-          Name: {}\n\
-          Default Log Level: {}",
-          my_key_value,
-          title,
-          name,
-          default_log_level);
+println!("MyKey value: {my_key_value}\n\
+          Title: {title}\n\
+          Name: {name}\n\
+          Default Log Level: {default_log_level}");
 ```
 
 Repeating elements that use the same element name work if the `name` attribute is used to distinguish the elements:
@@ -84,36 +85,31 @@ Repeating elements that use the same element name work if the `name` attribute i
 The following code reads the previous configuration file and displays the keys and values:
 
 ```rust
-use config::{*, ext::*};
+use config::prelude::*;
+use std::error::Error;
 
-fn main() {
-    let config = DefaultConfigurationBuilder::new()
-        .add_xml_file("MyXmlConfig2.xml")
-        .build()
-        .unwrap();
+fn main() -> Result<(), Box<dyn Error + 'static>> {
+    let config = config::builder().add_xml_file("MyXmlConfig2.xml").build()?;
+    let val00 = config.get("section:section0:key:key0").unwrap();
+    let val01 = config.get("section:section0:key:key1").unwrap();
+    let val10 = config.get("section:section1:key:key0").unwrap();
+    let val11 = config.get("section:section1:key:key1").unwrap();
 
-    let val00 = config.get("section:section0:key:key0").unwrap().as_str();
-    let val01 = config.get("section:section0:key:key1").unwrap().as_str();
-    let val10 = config.get("section:section1:key:key0").unwrap().as_str();
-    let val11 = config.get("section:section1:key:key1").unwrap().as_str();
+    println!("section:section0:key:key0 value: {val00}\n\
+              section:section0:key:key1 value: {val01}\n\
+              section:section1:key:key0 value: {val10}\n\
+              section:section1:key:key1 value: {val11}");
 
-    println!("section:section0:key:key0 value: {}\n\
-              section:section0:key:key1 value: {}\n\
-              section:section1:key:key0 value: {}\n\
-              section:section1:key:key1 value: {}",
-              val00
-              val01
-              val10
-              val11);
+    Ok(())
 }
 ```
 
 If the `name` attribute were not used, then the elements would be treated as _array-like_:
 
-- section:0:key:0
-- section:0:key:1
-- section:1:key:0
-- section:1:key:1
+- `section:0:key:0`
+- `section:0:key:1`
+- `section:1:key:0`
+- `section:1:key:1`
 
 Attributes can also be used to supply values:
 
@@ -129,5 +125,5 @@ Attributes can also be used to supply values:
 
 The previous configuration file loads the following keys with value of `value`:
 
-- key:attribute
-- section:key:attribute
+- `key:attribute`
+- `section:key:attribute`
