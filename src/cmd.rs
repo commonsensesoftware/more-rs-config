@@ -1,4 +1,4 @@
-use crate::{Result, Settings};
+use crate::{pascal_case, Result, Settings};
 use std::{borrow::Cow, collections::HashMap};
 
 /// Represents a [configuration provider](Provider) for command line arguments.
@@ -100,7 +100,7 @@ impl crate::Provider for Provider {
                 }
             }
 
-            settings.insert(to_pascal_case(key, '-'), value);
+            settings.insert(pascal_case(&key), value);
         }
 
         Ok(())
