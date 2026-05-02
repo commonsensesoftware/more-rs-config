@@ -77,10 +77,7 @@ pub enum Enum {
     First,
     Second(String),
 
-    Third {
-        id: usize,
-        kind: String,
-    },
+    Third { id: usize, kind: String },
 }
 
 #[test]

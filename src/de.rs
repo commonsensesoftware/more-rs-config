@@ -286,7 +286,7 @@ impl<'de> de::MapAccess<'de> for FieldMappingAccess<'de> {
     type Error = Error;
 
     fn next_key_seed<K: de::DeserializeSeed<'de>>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error> {
-        while let Some(section) = self.sections.next() {
+        for section in self.sections.by_ref() {
             let config_key = section.key();
 
             if let Some(&field) = self.fields.iter().find(|f| fields_match(config_key, f)) {
@@ -299,7 +299,10 @@ impl<'de> de::MapAccess<'de> for FieldMappingAccess<'de> {
     }
 
     fn next_value_seed<V: de::DeserializeSeed<'de>>(&mut self, seed: V) -> Result<V::Value, Self::Error> {
-        let section = self.pending_value.take().expect("next_value_seed called before next_key_seed");
+        let section = self
+            .pending_value
+            .take()
+            .expect("next_value_seed called before next_key_seed");
         seed.deserialize(Val(section))
     }
 }

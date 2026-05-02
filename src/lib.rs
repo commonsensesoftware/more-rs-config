@@ -148,7 +148,7 @@ mod tests {
     #[test_case("hello_world"; "from snake case")]
     #[test_case("HELLO_WORLD"; "from screaming snake case")]
     #[test_case("hello-world"; "from kebab case")]
-    #[test_case("HELLO-WORLD"; "from screaming kebab case")]    
+    #[test_case("HELLO-WORLD"; "from screaming kebab case")]
     fn pascal_case_should_convert_text(text: &str) {
         // arrange
 
