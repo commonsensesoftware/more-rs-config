@@ -20,7 +20,6 @@ pub fn default_kaboom() -> u16 {
 pub struct CustomNewType(u32);
 
 #[derive(Deserialize, Debug, PartialEq)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct Foo {
     bar: String,
     baz: bool,
@@ -29,65 +28,55 @@ pub struct Foo {
     boom: Vec<String>,
     #[serde(default = "default_kaboom")]
     kaboom: u16,
-    #[serde(default, alias = "DebugMode")]
+    #[serde(default)]
     debug_mode: bool,
     #[serde(default)]
     size: Size,
     provided: Option<String>,
-    #[serde(alias = "NewType")]
     new_type: CustomNewType,
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct Name {
     first: String,
     last: String,
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct GrandChild {
     name: Name,
     age: u8,
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct Child {
     name: Name,
-    #[serde(alias = "MagicNumbers")]
     magic_numbers: Vec<u8>,
     children: Vec<GrandChild>,
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct Parent {
     name: Name,
     child: Child,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct UserDefined {
     settings: HashMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct Place {
     pub name: String,
     pub enums: Vec<Enum>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 pub enum Enum {
     First,
     Second(String),
 
-    #[serde(rename_all(deserialize = "PascalCase"))]
     Third {
         id: usize,
         kind: String,
@@ -199,7 +188,7 @@ fn from_should_fail_with_missing_value() -> Result {
     let error = config::de::from::<Foo>(&config).err().unwrap();
 
     // assert
-    assert_eq!(error, config::de::Error::MissingValue("Doom"));
+    assert_eq!(error, config::de::Error::MissingValue("doom"));
     Ok(())
 }
 

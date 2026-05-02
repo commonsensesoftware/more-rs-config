@@ -84,14 +84,12 @@ use serde::Deserialize;
 use std::{error::Error, path::Path};
 
 #[derive(Default, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 struct Client {
   region: String,
   url: String,
 }
 
 #[derive(Default, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 struct AppOptions {
   text: String,
   demo: bool,

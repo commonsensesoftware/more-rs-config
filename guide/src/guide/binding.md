@@ -26,7 +26,6 @@ Consider the following struct:
 use serde::Deserialize;
 
 #[derive(Default, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 struct ContactOptions {
     name: String,
     primary: bool,
@@ -122,7 +121,6 @@ use config::{*, ext::*};
 use serde::Deserialize;
 
 #[derive(Default, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 struct ArrayExample {
     entries: Vec<String>,
 }
