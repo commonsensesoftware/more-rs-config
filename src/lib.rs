@@ -48,6 +48,10 @@ pub mod prelude;
 #[cfg(feature = "xml")]
 pub mod xml;
 
+/// Contains `*.yaml` and `*.yml` file configuration support.
+#[cfg(feature = "yaml")]
+pub mod yaml;
+
 pub use builder::Builder;
 pub use configuration::Configuration;
 pub use error::Error;
