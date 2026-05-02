@@ -75,7 +75,7 @@ impl JsonVisitor<'_> {
     }
 }
 
-/// Represents a [configuration provider](Provider) for `*.json` files.
+/// Represents a [configuration provider](crate::Provider) for `*.json` files.
 pub struct Provider(FileSource);
 
 impl Provider {

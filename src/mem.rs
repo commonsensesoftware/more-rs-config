@@ -1,6 +1,6 @@
 use crate::{Result, Settings};
 
-/// Represents a [configuration provider](Provider) for in-memory data.
+/// Represents a [configuration provider](crate::Provider) for in-memory data.
 #[derive(Debug, Default)]
 pub struct Provider {
     /// Gets a list of key/value pairs representing the initial data.

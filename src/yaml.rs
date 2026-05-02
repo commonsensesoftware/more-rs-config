@@ -84,7 +84,7 @@ impl YamlVisitor<'_> {
     }
 }
 
-/// Represents a [configuration provider](Provider) for `*.yaml` and `*.yml` files.
+/// Represents a [configuration provider](crate::Provider) for `*.yaml` and `*.yml` files.
 pub struct Provider(FileSource);
 
 impl Provider {

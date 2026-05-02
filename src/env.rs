@@ -13,7 +13,7 @@ fn starts_with(text: &str, other: &str) -> bool {
     text.len() >= other.len() && text.chars().zip(other.chars()).all(|(l, r)| l.eq_ignore_ascii_case(&r))
 }
 
-/// Represents a [configuration provider](Provider) for environment variables.
+/// Represents a [configuration provider](crate::Provider) for environment variables.
 #[derive(Debug, Default)]
 pub struct Provider(String);
 
