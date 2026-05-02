@@ -24,6 +24,9 @@ mod mem;
 #[cfg(feature = "xml")]
 mod xml;
 
+#[cfg(feature = "yaml")]
+mod yaml;
+
 #[cfg(feature = "binder")]
 #[cfg_attr(docsrs, doc(cfg(feature = "binder")))]
 pub use binder::Binder;
@@ -57,3 +60,7 @@ pub use mem::MemoryExt;
 #[cfg(feature = "xml")]
 #[cfg_attr(docsrs, doc(cfg(feature = "xml")))]
 pub use xml::XmlExt;
+
+#[cfg(feature = "yaml")]
+#[cfg_attr(docsrs, doc(cfg(feature = "yaml")))]
+pub use yaml::YamlExt;

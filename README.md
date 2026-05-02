@@ -18,17 +18,18 @@ You may be looking for:
 
 This crate provides the following features:
 
-- _default_ - Abstractions for configuration, including the **env**, **cmd**, and **mem** features
+- _default_ - Abstractions for configuration, including the **cmd**, **env**, and **mem** features
 - **all** - Includes all features, except **async**
 - **async** - Use configuration in an asynchronous context
 - **binder** - Bind a configuration to strongly-typed values and structs
-- **chained** - Chain multiple configuration sources
-- **cmd** - A command-line argument configuration source
-- **env** - An environment variables configuration source
-- **ini** - An \*.ini file configuration source
-- **json** - A \*.json file configuration source
-- **mem** - An in-memory configuration source
-- **xml** - A \*.xml file configuration source
+- **chained** - Chain multiple configuration providers
+- **cmd** - Configuration provided by command-line arguments
+- **env** - Configuration provided by environment variables
+- **ini** - Configuration provided by an \*.ini file
+- **json** - Configuration provided by a \*.json file
+- **mem** - Configuration provided by in-memory data
+- **xml** - Configuration provided by a \*.xml file
+- **yaml** - Configuration provided by a \*.yaml file
 
 >Use `--features all,async` for all features with asynchronous support
 
