@@ -109,8 +109,7 @@ fn from_should_deserialize_simple_struct() -> Result {
             ("NewType", "42"),
             ("Child:Ignored", "42"),
         ])
-        .build()
-        .load()?;
+        .build()?;
     let expected = Foo {
         bar: String::from("test"),
         baz: true,
@@ -150,8 +149,7 @@ fn from_should_deserialize_parent_child_struct() -> Result {
             ("Child:Children:1:Name:Last", "Doe"),
             ("Child:Children:1:Age", "5"),
         ])
-        .build()
-        .load()?;
+        .build()?;
     let expected = Parent {
         name: Name {
             first: String::from("Jane"),
@@ -195,8 +193,7 @@ fn from_should_fail_with_missing_value() -> Result {
     // arrange
     let config = config::builder()
         .add_in_memory(&[("Bar", "test"), ("Baz", "true")])
-        .build()
-        .load()?;
+        .build()?;
 
     // act
     let error = config::de::from::<Foo>(&config).err().unwrap();
@@ -217,8 +214,7 @@ fn from_should_fail_with_invalid_type() -> Result {
             ("Doom:1", "2"),
             ("Doom:2", "3"),
         ])
-        .build()
-        .load()?;
+        .build()?;
 
     // act
     let error = config::de::from::<Foo>(&config).err().unwrap();
@@ -242,8 +238,7 @@ fn from_should_deserialize_nested_string_map() -> Result {
             ("Dimensions:Bar", "foo"),
             ("Dimensions:Baz", "other"),
         ])
-        .build()
-        .load()?;
+        .build()?;
     let expected = [("Foo", "bar"), ("Bar", "foo"), ("Baz", "other")]
         .iter()
         .map(|(k, v)| (k.to_string(), v.to_string()))
@@ -262,8 +257,7 @@ fn from_should_deserialize_nested_typed_map() -> Result {
     // arrange
     let config = config::builder()
         .add_in_memory(&[("Limits:Foo", "42"), ("Limits:Bar", "0"), ("Limits:Baz", "420")])
-        .build()
-        .load()?;
+        .build()?;
     let expected = [("Foo", 42), ("Bar", 0), ("Baz", 420)]
         .iter()
         .map(|(k, v)| (k.to_string(), *v))
@@ -288,8 +282,7 @@ fn from_should_deserialize_map_with_nested_vec() -> Result {
             ("Settings:Key3:1", "b"),
             ("Settings:Key3:2", "c"),
         ])
-        .build()
-        .load()?;
+        .build()?;
     let expected = HashMap::from([
         ("Key1".to_owned(), vec!["bar".to_owned()]),
         ("Key2".to_owned(), vec!["foo".to_owned()]),
@@ -315,8 +308,7 @@ fn reify_should_deserialize_map_with_nested_vec() -> Result {
             ("Settings:Key3:1", "b"),
             ("Settings:Key3:2", "c"),
         ])
-        .build()
-        .load()?;
+        .build()?;
     let expected = UserDefined {
         settings: HashMap::from([
             ("Key1".to_owned(), vec!["bar".to_owned()]),
@@ -357,9 +349,7 @@ fn from_should_deserialize_deep_nested_map() -> Result {
             ("Key3:0:Subkey6_0:1", "y"),
             ("Key3:0:Subkey6_0:2", "z"),
         ])
-        .build()
-        .load()
-        .unwrap();
+        .build()?;
     let expected = HashMap::from([
         (
             "Key1".to_owned(),
@@ -421,8 +411,7 @@ fn reify_should_deserialize_non_scalar_enum() -> Result {
             ("Enums:2:Third:Id", "42"),
             ("Enums:2:Third:Kind", "Encounter"),
         ])
-        .build()
-        .load()?;
+        .build()?;
     let expected = Place {
         name: "some name".into(),
         enums: vec![

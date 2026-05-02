@@ -1,34 +1,38 @@
-use crate::{Properties, Root, Source};
+use crate::{Configuration, Provider, Result, Settings};
 
 /// Represents a [configuration](crate::Configuration) builder.
 #[derive(Default)]
-pub struct Builder {
-    sources: Vec<Box<dyn Source>>,
-
-    /// Gets or sets properties that can be passed to [configuration sources](Source).
-    pub properties: Properties,
-}
+pub struct Builder(Vec<Box<dyn Provider>>);
 
 impl Builder {
-    /// Gets the registered [sources](Source) used to obtain configuration values.
+    /// Gets the [configuration providers](Provider).
     #[inline]
-    pub fn sources(&self) -> &[Box<dyn Source>] {
-        &self.sources
+    pub fn providers(&self) -> impl Iterator<Item = &dyn Provider> {
+        self.0.iter().map(AsRef::as_ref)
     }
 
-    /// Adds a new configuration source.
+    /// Adds a new configuration provider.
     ///
     /// # Arguments
     ///
-    /// * `source` - The [configuration source](Source) to add
+    /// * `provider` - The [configuration provider](Provider) to add
     #[inline]
-    pub fn add(&mut self, source: impl Source + 'static) {
-        self.sources.push(Box::new(source))
+    pub fn add(&mut self, provider: impl Provider + 'static) {
+        self.0.push(Box::new(provider))
     }
 
-    /// Builds a [configuration root](Root) from the registered [configuration sources](Source).
-    pub fn build(mut self) -> Root {
-        let mut properties = self.properties;
-        Root::new(self.sources.iter_mut().map(|s| s.build(&mut properties)))
+    /// Builds a [configuration](Configuration) from the registered [configuration providers](Provider).
+    pub fn build(&self) -> Result<Configuration> {
+        let mut settings = Settings::new();
+        let mut tokens = Vec::with_capacity(self.0.len());
+
+        for provider in &self.0 {
+            provider.load(&mut settings)?;
+            tokens.push(provider.reload_token());
+        }
+
+        settings.shrink_to_fit();
+
+        Ok(Configuration::new(settings, tokens))
     }
 }

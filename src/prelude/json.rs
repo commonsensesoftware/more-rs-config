@@ -12,7 +12,7 @@ pub trait JsonExt: Sized {
 
 impl JsonExt for Builder {
     fn add_json_file<F: Into<FileSource>>(mut self, file: F) -> Self {
-        self.add(json::Source::new(file.into()));
+        self.add(json::Provider::new(file.into()));
         self
     }
 }

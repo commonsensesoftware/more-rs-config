@@ -1,7 +1,20 @@
-use crate::{properties::Properties, Configuration, Merge, Ref, Result, Settings};
+use crate::{Configuration, Merge, Ref, Result, Settings};
 use tokens::ChangeToken;
 
-struct Provider(Ref<Configuration>);
+/// Represents a chained [configuration provider](Provider).
+pub struct Provider(Ref<Configuration>);
+
+impl Provider {
+    /// Initializes a new chained configuration provider.
+    ///
+    /// # Arguments
+    ///
+    /// * `configuration` - The [configuration](Configuration) to chain
+    #[inline]
+    pub fn new(configuration: Ref<Configuration>) -> Self {
+        Self(configuration)
+    }
+}
 
 impl crate::Provider for Provider {
     #[inline]
@@ -17,27 +30,5 @@ impl crate::Provider for Provider {
     fn load(&self, settings: &mut Settings) -> Result {
         settings.merge(&*self.0);
         Ok(())
-    }
-}
-
-/// Represents a chained [configuration source](Source).
-pub struct Source(Ref<Configuration>);
-
-impl Source {
-    /// Initializes a new chained configuration source.
-    ///
-    /// # Arguments
-    ///
-    /// * `configuration` - The [configuration](Configuration) to chain
-    #[inline]
-    pub fn new(configuration: Ref<Configuration>) -> Self {
-        Self(configuration)
-    }
-}
-
-impl crate::Source for Source {
-    #[inline]
-    fn build(&mut self, _properties: &mut Properties) -> Box<dyn crate::Provider> {
-        Box::new(Provider(self.0.clone()))
     }
 }

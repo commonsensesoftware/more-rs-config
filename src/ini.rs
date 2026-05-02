@@ -1,9 +1,21 @@
-use crate::{path, properties::Properties, Error, FileSource, Result, Settings};
+use crate::{path, Error, FileSource, Result, Settings};
 use configparser::ini::Ini;
-use std::mem::take;
 use tokens::{ChangeToken, FileChangeToken, NeverChangeToken};
 
-struct Provider(FileSource);
+/// Represents a [configuration provider](Provider) for `*.ini` files.
+pub struct Provider(FileSource);
+
+impl Provider {
+    /// Initializes a new `*.ini` file configuration provider.
+    ///
+    /// # Arguments
+    ///
+    /// * `file` - The `*.ini` [file source](FileSource) information
+    #[inline]
+    pub fn new(file: FileSource) -> Self {
+        Self(file)
+    }
+}
 
 impl crate::Provider for Provider {
     #[inline]
@@ -39,27 +51,5 @@ impl crate::Provider for Provider {
         }
 
         Ok(())
-    }
-}
-
-/// Represents a [configuration source](Source) for `*.ini` files.
-pub struct Source(FileSource);
-
-impl Source {
-    /// Initializes a new `*.ini` file configuration source.
-    ///
-    /// # Arguments
-    ///
-    /// * `file` - The `*.ini` [file source](FileSource) information
-    #[inline]
-    pub fn new(file: FileSource) -> Self {
-        Self(file)
-    }
-}
-
-impl crate::Source for Source {
-    #[inline]
-    fn build(&mut self, _properties: &mut Properties) -> Box<dyn crate::Provider> {
-        Box::new(Provider(take(&mut self.0)))
     }
 }

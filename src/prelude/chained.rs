@@ -12,7 +12,7 @@ pub trait ChainedExt: Sized {
 
 impl ChainedExt for Builder {
     fn add_configuration<T: Into<Ref<Configuration>>>(mut self, configuration: T) -> Self {
-        self.add(chained::Source::new(configuration.into()));
+        self.add(chained::Provider::new(configuration.into()));
         self
     }
 }

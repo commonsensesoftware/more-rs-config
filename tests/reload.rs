@@ -49,6 +49,15 @@ impl ReloadableProvider {
     }
 }
 
+impl Default for ReloadableProvider {
+    fn default() -> Self {
+        Self {
+            counter: AtomicU8::new(1),
+            trigger: Default::default(),
+        }
+    }
+}
+
 impl Provider for ReloadableProvider {
     fn name(&self) -> &str {
         "Test"
@@ -70,37 +79,19 @@ impl Provider for ReloadableProvider {
     }
 }
 
-#[derive(Default)]
-struct ReloadableSource {
-    trigger: Rc<Trigger>,
-}
-
-impl ReloadableSource {
-    fn new(trigger: Rc<Trigger>) -> Self {
-        Self { trigger }
-    }
-}
-
-impl Source for ReloadableSource {
-    fn build(&mut self, _properties: &mut Properties) -> Box<dyn Provider> {
-        Box::new(ReloadableProvider::new(self.trigger.clone()))
-    }
-}
-
 #[test]
 fn load_should_reload_providers() {
     // arrange
     let mut builder = config::builder();
 
-    builder.add(ReloadableSource::default());
+    builder.add(ReloadableProvider::default());
 
-    let root = builder.build();
-    let mut config = root.load().unwrap();
+    let mut config = builder.build().unwrap();
 
     assert_eq!(config.get("Test"), Some("1"));
 
     // act
-    config = root.load().unwrap();
+    config = builder.build().unwrap();
 
     // assert
     assert_eq!(config.get("Test"), Some("2"));
@@ -113,10 +104,9 @@ fn reload_token_should_indicate_change_after_provider_change() {
     let data = Arc::<AtomicU8>::default();
     let mut builder = config::builder();
 
-    builder.add(ReloadableSource::new(trigger.clone()));
+    builder.add(ReloadableProvider::new(trigger.clone()));
 
-    let root = builder.build();
-    let config = root.load().unwrap();
+    let config = builder.build().unwrap();
     let _unused = config.reload_token().register(
         Box::new(|state| {
             state

@@ -33,7 +33,6 @@ fn reify_should_deserialize_configuration_to_options() {
             ("phones:1", "+44 2345678"),
         ])
         .build()
-        .load()
         .unwrap();
 
     // act
@@ -58,7 +57,6 @@ fn reify_should_deserialize_section_to_options() {
             ("array:entries:5", "value50"),
         ])
         .build()
-        .load()
         .unwrap();
     let section = config.section("array");
     let expected = vec!["value00", "value10", "value20", "value30", "value40", "value50"];
@@ -81,7 +79,6 @@ fn bind_should_deserialize_configuration_to_options() {
             ("phones:1", "+44 2345678"),
         ])
         .build()
-        .load()
         .unwrap();
     let mut options = ContactOptions::default();
 
@@ -105,7 +102,6 @@ fn bind_at_should_deserialize_configuration_to_options() {
             ("contact:phones:1", "+44 2345678"),
         ])
         .build()
-        .load()
         .unwrap();
     let mut options = ContactOptions::default();
 
@@ -129,7 +125,6 @@ fn get_value_should_deserialize_configuration_value() {
             ("phones:1", "+44 2345678"),
         ])
         .build()
-        .load()
         .unwrap();
 
     // act
@@ -149,7 +144,6 @@ fn get_value_should_return_none_for_missing_configuration_value() {
             ("phones:1", "+44 2345678"),
         ])
         .build()
-        .load()
         .unwrap();
 
     // act
@@ -169,7 +163,6 @@ fn get_value_or_default_should_return_default_value_for_missing_configuration_va
             ("phones:1", "+44 2345678"),
         ])
         .build()
-        .load()
         .unwrap();
 
     // act
@@ -196,7 +189,7 @@ fn deserialization_should_preserve_case_in_ini_file() {
     file.write_all(b"[RequiredFiles]\n").unwrap();
     file.write_all(b"start.bat=1").unwrap();
 
-    let config = config::builder().add_ini_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_ini_file(file.path()).build().unwrap();
     let mut settings = FileCopySettings::default();
 
     // act

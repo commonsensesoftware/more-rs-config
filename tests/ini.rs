@@ -17,7 +17,7 @@ fn add_ini_file_should_load_settings_from_file() {
     file.write_all(b"[Feature.Magic]\n").unwrap();
     file.write_all(b"Disabled=true").unwrap();
 
-    let config = config::builder().add_ini_file(file.path()).build().load().unwrap();
+    let config = config::builder().add_ini_file(file.path()).build().unwrap();
     let section = config.section("Feature.Magic");
 
     // act
@@ -33,7 +33,7 @@ fn add_ini_file_should_fail_if_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.ini");
 
     // act
-    let result = config::builder().add_ini_file(&path).build().load();
+    let result = config::builder().add_ini_file(&path).build();
 
     // assert
     if let Err(error) = result {
@@ -63,7 +63,6 @@ fn add_optional_ini_file_should_load_settings_from_file() {
     let config = config::builder()
         .add_ini_file(file.path().is().optional())
         .build()
-        .load()
         .unwrap();
     let section = config.section("Feature.Magic");
 
@@ -80,11 +79,7 @@ fn add_ini_file_should_succeed_if_optional_file_does_not_exist() {
     let path = PathBuf::from(r"C:\fake\settings.ini");
 
     // act
-    let config = config::builder()
-        .add_ini_file(&path.is().optional())
-        .build()
-        .load()
-        .unwrap();
+    let config = config::builder().add_ini_file(&path.is().optional()).build().unwrap();
 
     // assert
     assert_eq!(config.sections().len(), 0);
@@ -103,8 +98,8 @@ fn init_file_should_reload_when_changed() {
     file.write_all(b"Disabled=true").unwrap();
     drop(file);
 
-    let root = config::builder().add_ini_file(&path.is().reloadable()).build();
-    let mut config = root.load().unwrap();
+    let builder = config::builder().add_ini_file(&path.is().reloadable());
+    let mut config = builder.build().unwrap();
     let section = config.section("Feature.Magic");
     let initial = section.get("Disabled").unwrap_or_default().to_owned();
 
@@ -136,7 +131,7 @@ fn init_file_should_reload_when_changed() {
         reloaded = event.wait_timeout(reloaded, Duration::from_secs(1)).unwrap().0;
     }
 
-    config = root.load().unwrap();
+    config = builder.build().unwrap();
 
     // act
     let section = config.section("Feature.Magic");

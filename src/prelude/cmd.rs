@@ -16,12 +16,12 @@ pub trait CommandLineExt: Sized {
 
 impl CommandLineExt for Builder {
     fn add_command_line(mut self) -> Self {
-        self.add(cmd::Source::from(env::args()));
+        self.add(cmd::Provider::from(env::args()));
         self
     }
 
     fn add_command_line_map<S: AsRef<str>>(mut self, switch_mappings: &[(S, S)]) -> Self {
-        self.add(cmd::Source::new(env::args(), switch_mappings));
+        self.add(cmd::Provider::new(env::args(), switch_mappings));
         self
     }
 }

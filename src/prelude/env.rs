@@ -17,7 +17,7 @@ pub trait EnvVarsExt: Sized {
 }
 impl EnvVarsExt for Builder {
     fn add_env_vars_with_prefix<S: Into<String>>(mut self, prefix: S) -> Self {
-        self.add(env::Source::new(prefix));
+        self.add(env::Provider::new(prefix));
         self
     }
 }
