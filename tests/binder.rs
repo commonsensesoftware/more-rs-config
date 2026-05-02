@@ -11,9 +11,7 @@ struct ContactOptions {
 }
 
 #[derive(Default, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 struct FileCopySettings {
-    #[serde(default, alias = "UseNativeCopy")]
     use_native_copy: bool,
 }
 

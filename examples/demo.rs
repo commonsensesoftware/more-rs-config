@@ -4,7 +4,6 @@ use std::{error::Error, path::Path};
 
 #[allow(dead_code)]
 #[derive(Default, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 struct Client {
     region: String,
     url: String,
@@ -12,7 +11,6 @@ struct Client {
 
 #[allow(dead_code)]
 #[derive(Default, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
 struct AppOptions {
     text: String,
     demo: bool,

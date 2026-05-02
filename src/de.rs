@@ -71,6 +71,11 @@ impl<'de> de::Deserializer<'de> for Key<'de> {
     }
 
     #[inline]
+    fn deserialize_identifier<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+        visitor.visit_str(self.0.key())
+    }
+
+    #[inline]
     fn deserialize_newtype_struct<V: Visitor<'de>>(
         self,
         _name: &'static str,
@@ -82,7 +87,7 @@ impl<'de> de::Deserializer<'de> for Key<'de> {
     serde::forward_to_deserialize_any! {
         char str string unit seq option
         bytes byte_buf map unit_struct tuple_struct
-        identifier tuple ignored_any enum
+        tuple ignored_any enum
         struct bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64
     }
 }
@@ -161,11 +166,11 @@ impl<'de> de::Deserializer<'de> for Val<'de> {
     #[inline]
     fn deserialize_struct<V: Visitor<'de>>(
         self,
-        _name: &'static str,
-        _fields: &'static [&'static str],
+        name: &'static str,
+        fields: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Self::Error> {
-        de::Deserializer::deserialize_any(Deserializer::from_ref(self.0), visitor)
+        Deserializer::from_ref(self.0).deserialize_struct(name, fields, visitor)
     }
 
     #[inline]
@@ -236,10 +241,10 @@ impl<'de> de::VariantAccess<'de> for EnumDeserializer<'de> {
     #[inline]
     fn struct_variant<V: Visitor<'de>>(
         self,
-        _fields: &'static [&'static str],
+        fields: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Self::Error> {
-        de::Deserializer::deserialize_map(Val(Rc::new(self.0)), visitor)
+        de::Deserializer::deserialize_struct(Deserializer(self.0.sections().into_iter()), "", fields, visitor)
     }
 }
 
@@ -254,12 +259,55 @@ impl<'a> Iterator for ConfigValues<'a> {
     }
 }
 
-struct Deserializer<'de>(MapDeserializer<'de, ConfigValues<'de>, Error>);
+struct Deserializer<'de>(IntoIter<Section<'de>>);
+
+fn fields_match(config_key: &str, field: &str) -> bool {
+    // compare characters case-insensitively, skipping underscores in the field name. this allows PascalCase config
+    // keys (ex: "MagicNumbers") to match snake_case Rust fields (ex: "magic_numbers")
+    let mut key_chars = config_key.chars();
+    let mut field_chars = field.chars().filter(|&c| c != '_');
+
+    loop {
+        match (key_chars.next(), field_chars.next()) {
+            (Some(a), Some(b)) if a.eq_ignore_ascii_case(&b) => continue,
+            (None, None) => return true,
+            _ => return false,
+        }
+    }
+}
+
+struct FieldMappingAccess<'de> {
+    sections: IntoIter<Section<'de>>,
+    fields: &'static [&'static str],
+    pending_value: Option<Rc<Section<'de>>>,
+}
+
+impl<'de> de::MapAccess<'de> for FieldMappingAccess<'de> {
+    type Error = Error;
+
+    fn next_key_seed<K: de::DeserializeSeed<'de>>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error> {
+        while let Some(section) = self.sections.next() {
+            let config_key = section.key();
+
+            if let Some(&field) = self.fields.iter().find(|f| fields_match(config_key, f)) {
+                self.pending_value = Some(Rc::new(section));
+                return seed.deserialize(field.into_deserializer()).map(Some);
+            }
+        }
+
+        Ok(None)
+    }
+
+    fn next_value_seed<V: de::DeserializeSeed<'de>>(&mut self, seed: V) -> Result<V::Value, Self::Error> {
+        let section = self.pending_value.take().expect("next_value_seed called before next_key_seed");
+        seed.deserialize(Val(section))
+    }
+}
 
 impl<'de> From<&'de Configuration> for Deserializer<'de> {
     #[inline]
     fn from(config: &'de Configuration) -> Self {
-        Self(MapDeserializer::new(ConfigValues(config.sections().into_iter())))
+        Self(config.sections().into_iter())
     }
 }
 
@@ -267,7 +315,7 @@ impl<'de> Deserializer<'de> {
     fn from_ref(section: Rc<Section<'de>>) -> Self {
         match Rc::try_unwrap(section) {
             Ok(section) => Self::from(section),
-            Err(section) => Self(MapDeserializer::new(ConfigValues((*section).sections().into_iter()))),
+            Err(section) => Self((*section).sections().into_iter()),
         }
     }
 }
@@ -275,14 +323,14 @@ impl<'de> Deserializer<'de> {
 impl<'de> From<Section<'de>> for Deserializer<'de> {
     #[inline]
     fn from(section: Section<'de>) -> Self {
-        Self(MapDeserializer::new(ConfigValues(section.sections().into_iter())))
+        Self(section.sections().into_iter())
     }
 }
 
 impl<'de> From<Vec<Section<'de>>> for Deserializer<'de> {
     #[inline]
     fn from(sections: Vec<Section<'de>>) -> Self {
-        Self(MapDeserializer::new(ConfigValues(sections.into_iter())))
+        Self(sections.into_iter())
     }
 }
 
@@ -296,14 +344,27 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
 
     #[inline]
     fn deserialize_map<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
-        visitor.visit_map(self.0)
+        visitor.visit_map(MapDeserializer::new(ConfigValues(self.0)))
+    }
+
+    #[inline]
+    fn deserialize_struct<V: Visitor<'de>>(
+        self,
+        _name: &'static str,
+        fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Self::Error> {
+        visitor.visit_map(FieldMappingAccess {
+            sections: self.0,
+            fields,
+            pending_value: None,
+        })
     }
 
     serde::forward_to_deserialize_any! {
         bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit seq
         bytes byte_buf unit_struct tuple_struct
         identifier tuple ignored_any option newtype_struct enum
-        struct
     }
 }
 
