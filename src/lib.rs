@@ -19,7 +19,6 @@ pub mod chained;
 pub mod cmd;
 
 /// Contains strongly-typed configuration deserialization support.
-#[cfg(feature = "binder")]
 pub mod de;
 
 /// Contains environment variable configuration support.
