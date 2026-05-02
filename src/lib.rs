@@ -37,6 +37,13 @@ pub mod json;
 #[cfg(feature = "mem")]
 pub mod mem;
 
+/// Contains configuration serialization support.
+pub mod ser;
+
+/// Contains strongly-typed configuration support.
+#[cfg(feature = "typed")]
+pub mod typed;
+
 /// Provides configuration path utilities.
 pub mod path;
 

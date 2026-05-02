@@ -16,6 +16,7 @@ This crate provides the following features:
 - **ini** - Configuration provided by an \*.ini file
 - **json** - Configuration provided by a \*.json file
 - **mem** - Configuration provided by in-memory data
+- **typed** - Configuration provided by strongly-typed, in-memory data
 - **xml** - Configuration provided by a \*.xml file
 - **yaml** - Configuration provided by a \*.yaml file
 

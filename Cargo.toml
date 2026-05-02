@@ -21,6 +21,7 @@ features = [
     "ini",
     "json",
     "mem",
+    "typed",
     "xml",
     "yaml",
 ]
@@ -42,8 +43,9 @@ ini = ["dep:configparser", "more-changetoken/fs"]
 json = ["dep:serde_json", "more-changetoken/fs"]
 mem = []
 xml = ["dep:xml_rs", "more-changetoken/fs"]
+typed = ["dep:serde"]
 yaml = ["dep:yaml-rust2", "more-changetoken/fs"]
-all = ["binder", "chained", "cmd", "env", "ini", "json", "mem", "xml", "yaml"]
+all = ["binder", "chained", "cmd", "env", "ini", "json", "mem", "typed", "xml", "yaml"]
 
 [workspace.dependencies]
 serde = "1.0"

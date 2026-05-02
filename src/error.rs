@@ -1,4 +1,4 @@
-use crate::de;
+use crate::{de, ser};
 use std::{fmt::Debug, path::PathBuf};
 use thiserror::Error;
 
@@ -26,6 +26,10 @@ pub enum Error {
     /// Indicates that a reification operation failed.
     #[error(transparent)]
     ReifyFailed(#[from] de::Error),
+
+    /// Indicates that a serialization operation failed.
+    #[error(transparent)]
+    SerializeFailed(#[from] ser::Error),
 
     /// Indicates that an unknown [error](std::error::Error) occurred.
     #[error(transparent)]
