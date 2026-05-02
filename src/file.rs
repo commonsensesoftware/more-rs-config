@@ -128,11 +128,7 @@ impl FileSourceBuilder {
     /// Creates and returns a new [file source](FileSource).
     #[inline]
     pub fn build(&self) -> FileSource {
-        FileSource::new(
-            self.path.clone(),
-            self.optional,
-            self.reload_on_change,
-        )
+        FileSource::new(self.path.clone(), self.optional, self.reload_on_change)
     }
 }
 
