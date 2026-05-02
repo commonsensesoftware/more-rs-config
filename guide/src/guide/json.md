@@ -4,7 +4,7 @@
 
 >These features are only available if the **json** feature is activated
 
-The [`JsonConfigurationProvider`] supports loading configuration from a `*.json` file.
+The [json::Provider] supports loading configuration from a `*.json` file.
 
 Consider the following `appsettings.json` file:
 
@@ -29,26 +29,21 @@ Consider the following `appsettings.json` file:
 The following code displays several of the preceding configurations settings:
 
 ```rust
-use config::{*, ext::*};
+use config::prelude::*;
+use std::error::Error;
 
-fn main() {
-    let config = DefaultConfigurationBuilder::new()
-        .add_json_file("appsettings.json")
-        .build()
-        .unwrap();
+fn main() -> Result<(), Box<dyn Error + 'static>> {
+    let config = config::builder().add_json_file("appsettings.json").build()?;
+    let my_key_value = config.get("MyKey").unwrap();
+    let title = config.get("Position:Title").unwrap();
+    let name = config.section("Position").get("Name").unwrap();
+    let default_log_level = config.get("Logging:LogLevel:Default").unwrap();
 
-    let my_key_value = config.get("MyKey").unwrap().as_str();
-    let title = config.get("Position:Title").unwrap().as_str();
-    let name = config.section("Position").get("Name").unwrap().as_str();
-    let default_log_level = config.get("Logging:LogLevel:Default").unwrap().as_str();
+    println!("MyKey value: {my_key_value}\n\
+              Title: {title}\n\
+              Name: {name}\n\
+              Default Log Level: {default_log_level}");
 
-    println!("MyKey value: {}\n\
-              Title: {}\n\
-              Name: {}\n\
-              Default Log Level: {}",
-              my_key_value,
-              title,
-              name,
-              default_log_level);
+    Ok(())
 }
 ```

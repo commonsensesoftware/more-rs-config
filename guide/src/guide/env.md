@@ -4,7 +4,7 @@
 
 >These features are only available if the **env** feature is activated
 
-The [`EnvironmentVariablesConfigurationProvider`] loads configuration from environment variable key-value pairs.
+The [env::Provider] loads configuration from environment variable key-value pairs.
 
 The `:` separator doesn't work with environment variable hierarchical keys on all platforms. `__`, the double underscore, is:
 
@@ -17,24 +17,28 @@ export Position__Title=Console
 export Position__Name="John Doe"
 ```
 
-Call [`add_env_vars`] to add environment variables or [`add_env_vars_with_prefix`] with a string to specify a prefix for environment variables:
+Call [add_env_vars] to add environment variables or [add_env_vars_with_prefix] with a string to specify a prefix for
+environment variables:
 
 ```rust
-use config::{*, ext::*};
+use config::prelude::*;
+use std::error::Error;
 
-fn main() {
-    let config = DefaultConfigurationBuilder::new()
-            .add_env_vars_with_prefix("MyCustomPrefix_")
-            .build()
-            .unwrap();
+fn main() -> Result<(), Box<dyn Error + 'static>> {
+    let config = config::builder()
+        .add_env_vars_with_prefix("MyCustomPrefix_")
+        .build()?;
     
-    for (key, value) in config.iter(None) {
-        println!("{} = {}", key, value.as_str());
+    for (key, value) in &config {
+        println!("{key} = {value}");
     }
+
+    Ok(())
 }
 ```
 
-Environment variables set with the `MyCustomPrefix_` prefix override the default configuration providers. This includes environment variables without the prefix. The prefix is stripped off when the configuration key-value pairs are read.
+Environment variables set with the `MyCustomPrefix_` prefix override the default configuration providers. This includes
+environment variables without the prefix. The prefix is stripped off when the configuration key-value pairs are read.
 
 ```bash
 export MyCustomPrefix_MyKey="My key with MyCustomPrefix_ Environment"
@@ -44,7 +48,10 @@ export MyCustomPrefix_Position__Name="Jane Doe"
 
 ## Naming of Environment Variables
 
-Environment variable names reflect the structure of an `appsettings.json` file. Each element in the hierarchy is separated by a double underscore. When the element structure includes an array, the array index should be treated as an additional element name in this path. Consider the following `appsettings.json` file and its equivalent values represented as environment variables.
+Environment variable names reflect the structure of an `appsettings.json` file. Each element in the hierarchy is
+separated by a double underscore. When the element structure includes an array, the array index should be treated as an
+additional element name in this path. Consider the following `appsettings.json` file and its equivalent values
+represented as environment variables.
 
 ```json
 {
@@ -77,3 +84,12 @@ export Logging__0__Args__ToAddress=SRE@example.com
 export Logging__1__Name=ToConsole
 export Logging__1__Level=Information
 ```
+
+Names can also be all uppercase letters:
+
+```bash
+export SMTP_SERVER=smtp.example.com
+export LOGGING__0__NAME=ToEmail
+```
+
+will transform to `StmpServer` and `Logging:0:Name` respectively.

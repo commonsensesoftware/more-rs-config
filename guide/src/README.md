@@ -6,18 +6,17 @@
 
 This crate provides the following features:
 
-- _default_ - Abstractions for configuration, including the **std** features
-- **std** - Standard configuration implementation
+- _default_ - Abstractions for configuration, including the **cmd**, **env**, and **mem** features
 - **all** - Includes all features, except **async**
 - **async** - Use configuration in an asynchronous context
-- **mem** - An in-memory configuration source
-- **env** - An environment variables configuration source
-- **cmd** - A command-line argument configuration source
-- **json** - A \*.json file configuration source
-- **xml** - A \*.xml file configuration source
-- **ini** - An \*.ini file configuration source
-- **chained** - Chain multiple configuration sources
 - **binder** - Bind a configuration to strongly-typed values and structs
+- **chained** - Chain multiple configuration sources
+- **cmd** - A command-line argument configuration source
+- **env** - An environment variables configuration source
+- **ini** - An \*.ini file configuration source
+- **json** - A \*.json file configuration source
+- **mem** - An in-memory configuration source
+- **xml** - A \*.xml file configuration source
 
 >Use `--features all,async` for all features with asynchronous support
 

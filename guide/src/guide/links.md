@@ -8,43 +8,40 @@ REF: https://github.com/rust-lang/cargo/issues/739
 REF: https://github.com/tag1consulting/goose/issues/320
 -->
 
-[`ChangeToken`]: https://docs.rs/more-changetoken/2.0.0/tokens/trait.ChangeToken.html
+[ChangeToken]: https://docs.rs/more-changetoken/2.1.0/tokens/trait.ChangeToken.html
 
-[`Value`]: https://docs.rs/more-config/2.0.0/config/type.Value.html
+[Error]: https://docs.rs/more-config/3.0.0/config/struct.Error.html
+[Settings]: https://docs.rs/more-config/3.0.0/config/struct.Settings.html
+[Configuration]: https://docs.rs/more-config/3.0.0/config/struct.Configuration.html
+[Section]: https://docs.rs/more-config/3.0.0/config/struct.Section.html
+[section]: https://docs.rs/more-config/3.0.0/config/struct.Configuration.html#method.section
+[sections]: https://docs.rs/more-config/3.0.0/config/struct.Configuration.html#method.sections
+[exists]: https://docs.rs/more-config/3.0.0/config/struct.Section.html#method.exists
 
-[`ConfigurationRoot`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationRoot.html
-[`Configuration`]: https://docs.rs/more-config/2.0.0/config/trait.Configuration.html
-[`ConfigurationSection`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationSection.html
-[`section`]: https://docs.rs/more-config/2.0.0/config/trait.Configuration.html#method.section
-[`children`]: https://docs.rs/more-config/2.0.0/config/trait.Configuration.html#method.children
-[`exists`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationSectionExtensions.html#method.exists
+[Provider]: https://docs.rs/more-config/3.0.0/config/trait.Provider.html
+[Provider::reload_token]: https://docs.rs/more-config/3.0.0/config/trait.Provider.html#method.reload_token
 
-[`ConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationProvider.html
-[`ConfigurationProvider::reload_token`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationProvider.html#method.reload_token
+[Binder]: https://docs.rs/more-config/3.0.0/config/prelude/trait.Binder.html
+[bind]: https://docs.rs/more-config/3.0.0/config/prelude/trait.Binder.html#method.bind
+[reify]: https://docs.rs/more-config/3.0.0/config/prelude/trait.Binder.html#method.reify
+[get_value]: https://docs.rs/more-config/3.0.0/config/prelude/trait.Binder.html#method.get_value
+[get_value_or_default]: https://docs.rs/more-config/3.0.0/config/prelude/trait.Binder.html#method.get_value_or_default
 
-[`ConfigurationBinder`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationBinder.html
-[`bind`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationBinder.html#method.bind
-[`reify`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationBinder.html#method.reify
-[`get_value`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationBinder.html#method.get_value
-[`get_value_or_default`]: https://docs.rs/more-config/2.0.0/config/trait.ConfigurationBinder.html#method.get_value_or_default
+[cmd::Provider]: https://docs.rs/more-config/3.0.0/config/cmd/struct.Provider.html
+[add_command_line_map]: https://docs.rs/more-config/3.0.0/config/prelude/trait.CommandLineExt.html#method.add_command_line_map
 
-[`CommandLineConfigurationSource`]: https://docs.rs/more-config/2.0.0/config/struct.CommandLineConfigurationSource.html
-[`CommandLineConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.CommandLineConfigurationProvider.html
-[`add_command_line_map`]: https://docs.rs/more-config/2.0.0/config/trait.CommandLineConfigurationBuilderExtensions.html#method.add_command_line_map
+[env::Provider]: https://docs.rs/more-config/3.0.0/config/env/struct.Provider.html
+[add_env_vars]: https://docs.rs/more-config/3.0.0/config/prelude/trait.EnvVarsExt.html#method.add_env_vars
+[add_env_vars_with_prefix]: https://docs.rs/more-config/3.0.0/config/prelude/trait.EnvVarsExt.html#method.add_env_vars_with_prefix
 
-[`EnvironmentVariablesConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.EnvironmentVariablesConfigurationProvider.html
-[`add_env_vars`]: https://docs.rs/more-config/2.0.0/config/struct.EnvironmentVariablesExtensions.html#method.add_env_vars
-[`add_env_vars_with_prefix`]: https://docs.rs/more-config/2.0.0/config/struct.EnvironmentVariablesExtensions.html#method.add_env_vars_with_prefix
+[FileSource]: https://docs.rs/more-config/3.0.0/config/struct.FileSource.html
+[path]: https://docs.rs/more-config/3.0.0/config/struct.FileSource.html#method.path
+[optional]: https://docs.rs/more-config/3.0.0/config/struct.FileSource.html#method.optional
+[reload_on_change]: https://docs.rs/more-config/3.0.0/config/struct.FileSource.html#method.reload_on_change
+[FileSourceBuilder]: https://docs.rs/more-config/3.0.0/config/struct.FileSourceBuilder.html
+[FileSourceBuilderExt]: https://docs.rs/more-config/3.0.0/config/prelude/trait.FileSourceBuilderExt.html
 
-[`FileSource`]: https://docs.rs/more-config/2.0.0/config/struct.FileSource.html
-[`path`]: https://docs.rs/more-config/2.0.0/config/struct.FileSource.html#method.path
-[`optional`]: https://docs.rs/more-config/2.0.0/config/struct.FileSource.html#method.optional
-[`reload_on_change`]: https://docs.rs/more-config/2.0.0/config/struct.FileSource.html#method.reload_on_change
-[`reload_delay`]: https://docs.rs/more-config/2.0.0/config/struct.FileSource.html#method.reload_delay
-[`FileSourceBuilder`]: https://docs.rs/more-config/2.0.0/config/struct.FileSourceBuilder.html
-[`FileSourceBuilderExtensions`]: https://docs.rs/more-config/2.0.0/config/trait.FileSourceBuilderExtensions.html
-
-[`JsonConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.JsonConfigurationProvider.html
-[`XmlConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.XmlConfigurationProvider.html
-[`IniConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.IniConfigurationProvider.html
-[`MemoryConfigurationProvider`]: https://docs.rs/more-config/2.0.0/config/struct.MemoryConfigurationProvider.html
+[ini::Provider]: https://docs.rs/more-config/3.0.0/config/ini/struct.Provider.html
+[json::Provider]: https://docs.rs/more-config/3.0.0/config/json/struct.Provider.html
+[mem::Provider]: https://docs.rs/more-config/3.0.0/config/mem/struct.Provider.html
+[xml::Provider]: https://docs.rs/more-config/3.0.0/config/xml/struct.Provider.html

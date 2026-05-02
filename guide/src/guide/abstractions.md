@@ -6,94 +6,61 @@ The configuration framework contains a common set of traits and behaviors for nu
 
 ## Configuration
 
-The [`Configuration`] trait is the pinnacle of the entire framework. It defines the behaviors to retrieve a configured value or iterate over all key-value pairs, access or traverse child sections, and react to a reload triggered by the underlying configuration source.
+The [Configuration] struct is the pinnacle of the entire framework. It defines the behaviors to retrieve a configured
+value or iterate over all key-value pairs, access or traverse child sections, and react to a reload triggered by the
+underlying configuration source.
 
 ```rust
-pub trait Configuration {
-    fn get(&self, key: &str) -> Option<Value>;
-    fn section(&self, key: &str) -> Box<dyn ConfigurationSection>;
-    fn children(&self) -> Vec<Box<dyn ConfigurationSection>>;
-    fn reload_token(&self) -> Box<dyn ChangeToken>;
-    fn as_section(&self) -> Option<&dyn ConfigurationSection>;
-    fn iter(
-        &self,
-        path: Option<ConfigurationPath>
-    ) -> Box<dyn Iterator<Item = (String, Value)>>;
+pub struct Configuration {
+    pub fn get(&self, key: &str) -> Option<&str>;
+    pub fn section(&self, key: impl Into<String>) -> Section<'_>;
+    pub fn sections(&self) -> Vec<Section<'_>>;
+    pub fn reload_token(&self) -> impl ChangeToken;
 }
 ```
+
+The entire configuration can be enumerated as tuples of key/value pairs similar to a `HashMap`.
 
 ## Configuration Section
 
-Hierarchical configurations are divided into _sections_. A configurations section is itself a nested [`Configuration`]. A configuration section also has its own key and, possibly, a value. A configuration section which does not have a value will always yield an empty string.
+Hierarchical configurations are divided into _sections_. A configuration [Section] has its own key and, possibly, a
+value. A configuration section which does not have a value will always yield an empty string.
 
 ```rust
-pub trait ConfigurationSection:
-    Configuration
-    + AsRef<dyn Configuration>
-    + Borrow<dyn Configuration>
-    + Deref<Target = dyn Configuration>
-{
-    fn key(&self) -> &str;
-    fn path(&self) -> &str;
-    fn value(&self) -> Value;
-    fn as_config(&self) -> Box<dyn Configuration>;
+pub struct Section<'a> {
+    pub fn key(&self) -> &str;
+    pub fn value(&self) -> &str;
+    pub fn path(&self) -> &str;
+    pub fn exists(&self) -> bool;
+    pub fn get(&self, key: &str) -> Option<&str>;
+    pub fn section(&self, key: &str) -> Section<'a>;
+    pub fn sections(&self) -> Vec<Section<'a>>
 }
 ```
 
-## Configuration Root
-
-Every configuration has a single root. The root configuration knows about all of the associated [`ConfigurationProvider`] instances and can reload the entire configuration.
-
-```rust
-pub trait ConfigurationRoot:
-    Configuration
-    + AsRef<dyn Configuration>
-    + Borrow<dyn Configuration>
-    + Deref<Target = dyn Configuration>
-    + Debug
-{
-    fn reload(&mut self) -> ReResult;
-    fn providers(&self) -> Box<dyn ConfigurationProviderIterator + '_>;
-    fn as_config(&self) -> Box<dyn Configuration>;
-}
-```
+A configuration section can also be enumerated as tuples of key/value pairs similar to a `HashMap`.
 
 # Configuration Provider
 
-A configuration provider is responsible for loading configuration from a source. A configuration provider might support automatic reloading and can advertise when a reload has occurred via a reload [`ChangeToken`].
+A configuration [Provider] is responsible for loading configuration key/value pairs as a collection of [Settings].
+A provider might support automatic reloading and can advertise when a reload has occurred via a reload [ChangeToken].
 
 ```rust
-pub trait ConfigurationProvider {
+pub trait Provider {
     fn name(&self) -> &str;
-    fn get(&self, key: &str) -> Option<Value>;
     fn reload_token(&self) -> Box<dyn ChangeToken>;
-    fn load(&mut self) -> Result;
-    fn child_keys(&self, earlier_keys: &mut Vec<String>, parent_path: Option<&str>);
-}
-```
-
-# Configuration Source
-
-A configuration source provides an abstraction over a source for configuration such as a file. The source accepts all of the information required to setup a provider and then constructs it when the configuration is built.
-
-```rust
-pub trait ConfigurationSource {
-    fn build(
-        &self,
-        builder: &dyn ConfigurationBuilder
-    ) -> Box<dyn ConfigurationProvider>;
+    fn load(&self, settings: &mut Settings) -> config::Result;
 }
 ```
 
 ## Configuration Builder
 
-A configuration builder accumulates one or more configuration sources and then builds a [`ConfigurationRoot`]. The configuration is immediately reloaded so that it is ready to use.
+A configuration builder accumulates one or more configuration providers and then builds a [Configuration].
 
 ```rust
-pub trait ConfigurationBuilder {
-    fn properties(&self) -> &HashMap<String, Box<dyn Any>>;
-    fn sources(&self) -> &[Box<dyn ConfigurationSource>];
-    fn add(&mut self, source: Box<dyn ConfigurationSource>);
-    fn build(&self) -> Result<Box<dyn ConfigurationRoot>, ReloadError>;
+pub struct Builder {
+    pub fn providers(&self) -> impl Iterator<Item = &dyn Provider>;
+    pub fn add(&mut self, provider: impl Provider + 'static);
+    pub fn build(&self) -> config::Result<Configuration>;
 }
 ```
