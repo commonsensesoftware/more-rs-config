@@ -1,4 +1,4 @@
-use crate::{path, Error, FileSource, Result, Settings};
+use crate::{pascal_case, path, Error, FileSource, Result, Settings};
 use configparser::ini::Ini;
 use tokens::{ChangeToken, FileChangeToken, NeverChangeToken};
 
@@ -45,7 +45,7 @@ impl crate::Provider for Provider {
 
         for (section, pairs) in sections {
             for (key, value) in pairs {
-                let key = format!("{section}{}{key}", path::delimiter());
+                let key = format!("{}{}{}", pascal_case(&section), path::delimiter(), pascal_case(&key),);
                 settings.insert(key, value.unwrap_or_default());
             }
         }

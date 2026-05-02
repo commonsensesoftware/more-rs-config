@@ -24,11 +24,11 @@ fn add_env_vars_should_load_filtered_environment_variables() {
     let expected = var("CARGO_PKG_NAME").unwrap();
 
     // act
-    let actual = config.get("NAME");
+    let actual = config.get("Name");
 
     // assert
     assert_eq!(actual, Some(&*expected));
-    assert_eq!(config.get("PATH"), None);
+    assert_eq!(config.get("Path"), None);
 }
 
 #[test]
@@ -36,7 +36,7 @@ fn add_env_vars_should_translate_double_underscore_to_colon() {
     // arrange
     let expected = "any";
 
-    set_var("Foo__Bar__Baz", expected);
+    set_var("FOO__BAR__BAZ", expected);
 
     let config = config::builder().add_env_vars().build().unwrap();
 

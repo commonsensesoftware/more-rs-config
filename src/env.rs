@@ -1,11 +1,11 @@
-use crate::{Result, Settings};
+use crate::{pascal_case, Result, Settings};
 use std::{borrow::Cow, env::vars};
 
-fn escape(name: String) -> String {
+fn escape(name: &str) -> Cow<'_, str> {
     if name.contains("__") {
-        name.replace("__", ":")
+        Cow::Owned(name.replace("__", ":"))
     } else {
-        name
+        Cow::Borrowed(name)
     }
 }
 
@@ -38,7 +38,7 @@ impl crate::Provider for Provider {
     fn load(&self, settings: &mut Settings) -> Result {
         if self.0.is_empty() {
             for (key, value) in vars() {
-                settings.insert(escape(key), value);
+                settings.insert(pascal_case(&escape(&key)), value);
             }
         } else {
             let prefix = &self.0;
@@ -46,7 +46,7 @@ impl crate::Provider for Provider {
 
             for (key, value) in vars() {
                 if starts_with(&key, prefix) {
-                    settings.insert(escape(key[len..].to_string()), value);
+                    settings.insert(pascal_case(&escape(&key[len..])), value);
                 }
             }
         }

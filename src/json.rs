@@ -1,17 +1,7 @@
-use crate::{path, Error, FileSource, Result, Settings};
+use crate::{pascal_case, path, Error, FileSource, Result, Settings};
 use serde_json::{map::Map, Value as JsonValue};
 use std::fs;
 use tokens::{ChangeToken, FileChangeToken, NeverChangeToken};
-
-fn to_pascal_case(text: &str) -> String {
-    let mut chars = text.chars();
-
-    if let Some(first) = chars.next() {
-        first.to_uppercase().collect::<String>() + chars.as_str()
-    } else {
-        String::new()
-    }
-}
 
 struct JsonVisitor<'a> {
     settings: &'a mut Settings,
@@ -37,11 +27,11 @@ impl JsonVisitor<'_> {
     fn visit_element(&mut self, element: &Map<String, JsonValue>) {
         if element.is_empty() {
             if let Some(key) = self.paths.last() {
-                self.settings.insert(to_pascal_case(key), String::new());
+                self.settings.insert(pascal_case(key), String::new());
             }
         } else {
             for (name, value) in element {
-                self.enter_context(to_pascal_case(name));
+                self.enter_context(pascal_case(name));
                 self.visit_value(value);
                 self.exit_context();
             }
@@ -66,8 +56,8 @@ impl JsonVisitor<'_> {
     }
 
     fn add_value<T: ToString>(&mut self, value: T) {
-        let key = self.paths.last().expect("no paths").to_string();
-        self.settings.insert(key, value.to_string());
+        let key = self.paths.last().expect("no paths");
+        self.settings.insert(pascal_case(key), value.to_string());
     }
 
     fn enter_context(&mut self, context: String) {

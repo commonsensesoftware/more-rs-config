@@ -1,4 +1,4 @@
-use crate::{path, Error, FileSource, Settings};
+use crate::{pascal_case, path, Error, FileSource, Settings};
 use std::{
     cell::RefCell,
     fmt::{self, Display, Formatter},
@@ -199,7 +199,7 @@ fn visit_children(prefix: &mut Prefix, element: &Element, settings: &mut Setting
 }
 
 fn add_setting(key: String, value: String, element: &Element, settings: &mut Settings) -> Result<(), String> {
-    if settings.insert(key.clone(), value).is_some() {
+    if settings.insert(pascal_case(&key), value).is_some() {
         Err(format!(
             "A duplicate key '{key}' was found. ({name}, Line: {line})",
             name = &element.element_name,
