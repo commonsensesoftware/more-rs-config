@@ -1,7 +1,7 @@
 use crate::{pascal_case, Result, Settings};
 use std::{borrow::Cow, collections::HashMap};
 
-/// Represents a [configuration provider](Provider) for command line arguments.
+/// Represents a [configuration provider](crate::Provider) for command line arguments.
 #[derive(Debug)]
 pub struct Provider {
     args: Vec<String>,

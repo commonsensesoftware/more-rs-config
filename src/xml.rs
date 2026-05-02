@@ -274,7 +274,7 @@ fn visit(file: File, settings: &mut Settings) -> Result<(), String> {
     Ok(())
 }
 
-/// Represents a [configuration provider](Provider) for `*.xml` files.
+/// Represents a [configuration provider](crate::Provider) for `*.xml` files.
 pub struct Provider(FileSource);
 
 impl Provider {

@@ -2,7 +2,7 @@ use crate::{pascal_case, path, Error, FileSource, Result, Settings};
 use configparser::ini::Ini;
 use tokens::{ChangeToken, FileChangeToken, NeverChangeToken};
 
-/// Represents a [configuration provider](Provider) for `*.ini` files.
+/// Represents a [configuration provider](crate::Provider) for `*.ini` files.
 pub struct Provider(FileSource);
 
 impl Provider {

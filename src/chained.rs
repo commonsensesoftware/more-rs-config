@@ -1,7 +1,7 @@
 use crate::{Configuration, Merge, Ref, Result, Settings};
 use tokens::ChangeToken;
 
-/// Represents a chained [configuration provider](Provider).
+/// Represents a chained [configuration provider](crate::Provider).
 pub struct Provider(Ref<Configuration>);
 
 impl Provider {
