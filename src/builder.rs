@@ -1,4 +1,5 @@
 use crate::{Configuration, Provider, Result, Settings};
+use std::convert::TryFrom;
 
 /// Represents a [configuration](crate::Configuration) builder.
 #[derive(Default)]
@@ -34,5 +35,14 @@ impl Builder {
         settings.shrink_to_fit();
 
         Ok(Configuration::new(settings, tokens))
+    }
+}
+
+impl TryFrom<Builder> for Configuration {
+    type Error = crate::Error;
+
+    #[inline]
+    fn try_from(builder: Builder) -> Result<Self> {
+        builder.build()
     }
 }
