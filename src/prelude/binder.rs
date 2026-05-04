@@ -7,12 +7,38 @@ pub trait Binder: Sized {
     /// Creates and returns a structure reified from the configuration.
     fn reify<T: DeserializeOwned>(&self) -> crate::Result<T>;
 
+    /// Creates and returns a structure reified from the configuration.
+    ///
+    /// # Remarks
+    ///
+    /// This function panics the reify operation fails.
+    fn reify_unchecked<T: DeserializeOwned>(&self) {
+        if let Err(error) = self.reify::<T>() {
+            panic!("{}", error);
+        }
+    }
+
     /// Binds the configuration to the specified instance.
     ///
     /// # Arguments
     ///
     /// * `instance` - The instance to bind the configuration to
     fn bind<T: DeserializeOwned>(&self, instance: &mut T) -> crate::Result;
+
+    /// Binds the configuration to the specified instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `instance` - The instance to bind the configuration to
+    ///
+    /// # Remarks
+    ///
+    /// This function panics the bind operation fails.
+    fn bind_unchecked<T: DeserializeOwned>(&self, instance: &mut T) {
+        if let Err(error) = self.bind(instance) {
+            panic!("{}", error);
+        }
+    }
 
     /// Binds the specified configuration section to the provided instance.
     ///
@@ -21,6 +47,22 @@ pub trait Binder: Sized {
     /// * `key` - The key of the configuration section to bind
     /// * `instance` - The instance to bind the configuration to
     fn bind_at<T: DeserializeOwned>(&self, key: impl AsRef<str>, instance: &mut T) -> crate::Result;
+
+    /// Binds the specified configuration section to the provided instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key of the configuration section to bind
+    /// * `instance` - The instance to bind the configuration to
+    ///
+    /// # Remarks
+    ///
+    /// This function panics the bind operation fails.
+    fn bind_at_unchecked<T: DeserializeOwned>(&self, key: impl AsRef<str>, instance: &mut T) {
+        if let Err(error) = self.bind_at(key, instance) {
+            panic!("{}", error);
+        }
+    }
 
     /// Gets a typed value from the configuration.
     ///
