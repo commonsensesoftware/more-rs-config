@@ -7,8 +7,7 @@
 This crate provides the following features:
 
 - _default_ - Abstractions for configuration, including the **cmd**, **env**, and **mem** features
-- **all** - Includes all features, except **async**
-- **async** - Use configuration in an asynchronous context
+- **all** - Includes all features
 - **binder** - Bind a configuration to strongly-typed values and structs
 - **chained** - Chain multiple configuration providers
 - **cmd** - Configuration provided by command-line arguments
@@ -19,8 +18,6 @@ This crate provides the following features:
 - **typed** - Configuration provided by strongly-typed, in-memory data
 - **xml** - Configuration provided by a \*.xml file
 - **yaml** - Configuration provided by a \*.yaml file
-
->Use `--features all,async` for all features with asynchronous support
 
 ## Contributing
 

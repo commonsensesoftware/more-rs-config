@@ -1,5 +1,3 @@
-#![cfg(feature = "async")]
-
 use config::prelude::*;
 
 fn assert_send_and_sync(_: impl Send + Sync) {}

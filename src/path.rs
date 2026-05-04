@@ -21,9 +21,9 @@ pub fn combine(segments: &[&str]) -> String {
 ///
 /// * `text` - The text to test
 /// * `other` - The prefix to check for
-/// 
+///
 /// # Remarks
-/// 
+///
 /// The comparison is case-insensitive.
 pub fn starts_with(text: impl AsRef<str>, other: impl AsRef<str>) -> bool {
     let a = text.as_ref();
