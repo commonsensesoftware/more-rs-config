@@ -180,7 +180,7 @@ impl ReloadableConfiguration {
     /// This method will reload the [configuration](Configuration) if it has changed. If the reload operation fails,
     /// then the error is logged and the previous [configuration](Configuration) is retained.
     #[inline]
-    pub fn get(&self) -> Arc<Configuration> {
+    pub fn current(&self) -> Arc<Configuration> {
         self.0.config.load_full()
     }
 
@@ -254,14 +254,14 @@ impl Reloadable for ReloadableConfiguration {
 impl From<ReloadableConfiguration> for Arc<Configuration> {
     #[inline]
     fn from(rc: ReloadableConfiguration) -> Self {
-        rc.get()
+        rc.current()
     }
 }
 
 impl From<&ReloadableConfiguration> for Arc<Configuration> {
     #[inline]
     fn from(rc: &ReloadableConfiguration) -> Self {
-        rc.get()
+        rc.current()
     }
 }
 
