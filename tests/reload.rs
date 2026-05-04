@@ -84,7 +84,7 @@ fn reload_token_should_indicate_change_after_provider_change() {
     builder.add(ReloadableProvider::new(trigger.clone()));
 
     let config = builder.build().unwrap();
-    let _unused = config.change_token().register(
+    let _registration = config.change_token().register(
         Box::new(|state| {
             state
                 .unwrap()
