@@ -1,4 +1,5 @@
-use config::{prelude::*, Error};
+use config::{prelude::*, Error, Reloadable, ReloadableConfiguration};
+use std::convert::TryInto;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -550,15 +551,17 @@ fn xml_file_should_reload_when_changed() {
     drop(file);
 
     let builder = config::builder().add_xml_file(&path.is().reloadable());
-    let mut config = builder.build().unwrap();
-    let section = config.section("Connections").section("Connection");
-    let initial = section.get("Retries").unwrap_or_default().to_owned();
-
-    drop(section);
-
-    let token = config.change_token();
+    let config: ReloadableConfiguration = builder.try_into().unwrap();
+    let initial = config
+        .current()
+        .section("Connections")
+        .section("Connection")
+        .get("Retries")
+        .unwrap_or_default()
+        .to_owned();
+    let token = config.reload_token();
     let state = Arc::new((Mutex::new(false), Condvar::new()));
-    let _unused = token.register(
+    let _registration = token.register(
         Box::new(|s| {
             let data = s.unwrap();
             let (reloaded, event) = &*(data.downcast_ref::<(Mutex<bool>, Condvar)>().unwrap());
@@ -589,11 +592,14 @@ fn xml_file_should_reload_when_changed() {
         reloaded = event.wait_timeout(reloaded, Duration::from_secs(1)).unwrap().0;
     }
 
-    config = builder.build().unwrap();
-
     // act
-    let section = config.section("Connections").section("Connection");
-    let current = section.get("Retries").unwrap_or_default();
+    let current = config
+        .current()
+        .section("Connections")
+        .section("Connection")
+        .get("Retries")
+        .unwrap_or_default()
+        .to_owned();
 
     // assert
     assert_eq!(initial, "3");

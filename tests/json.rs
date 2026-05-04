@@ -1,5 +1,6 @@
-use config::{prelude::*, Error, FileSource};
+use config::{prelude::*, Error, FileSource, Reloadable, ReloadableConfiguration};
 use serde_json::json;
+use std::convert::TryInto;
 use std::env::temp_dir;
 use std::fs::{remove_file, File};
 use std::io::Write;
@@ -305,15 +306,17 @@ fn json_file_should_reload_when_changed() {
     drop(file);
 
     let builder = config::builder().add_json_file(&path.is().reloadable());
-    let mut config = builder.build().unwrap();
-    let section = config.section("Feature").section("NativeCopy");
-    let initial = section.get("Disabled").unwrap_or_default().to_owned();
-
-    drop(section);
-
-    let token = config.change_token();
+    let config: ReloadableConfiguration = builder.try_into().unwrap();
+    let initial = config
+        .current()
+        .section("Feature")
+        .section("NativeCopy")
+        .get("Disabled")
+        .unwrap_or_default()
+        .to_owned();
+    let token = config.reload_token();
     let state = Arc::new((Mutex::new(false), Condvar::new()));
-    let _unused = token.register(
+    let _registration = token.register(
         Box::new(|s| {
             let data = s.unwrap();
             let (reloaded, event) = &*(data.downcast_ref::<(Mutex<bool>, Condvar)>().unwrap());
@@ -347,16 +350,15 @@ fn json_file_should_reload_when_changed() {
     }
 
     // act
-    config = builder.build().unwrap();
-
-    let section = config.section("Feature").section("NativeCopy");
-    let current = section.get("Disabled").unwrap_or_default();
+    let current = config
+        .current()
+        .section("Feature")
+        .section("NativeCopy")
+        .get("Disabled")
+        .unwrap_or_default()
+        .to_owned();
 
     // assert
-    if path.exists() {
-        remove_file(&path).ok();
-    }
-
     assert_eq!(initial, "true");
     assert_eq!(current, "false");
 }
