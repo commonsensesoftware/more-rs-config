@@ -1,6 +1,8 @@
-use crate::{de, section::OwnedSection, Configuration, Ref, ReloadableConfiguration, Section};
+use crate::{de, section::OwnedSection, Configuration, ReloadableConfiguration, Section};
 use serde::de::DeserializeOwned;
+use std::rc::Rc;
 use std::str::FromStr;
+use std::sync::Arc;
 
 /// Represents [configuration](Configuration) binder for strongly-typed configurations.
 pub trait Binder: Sized {
@@ -127,7 +129,8 @@ macro_rules! binder {
 }
 
 binder!(Configuration);
-binder!(Ref<Configuration>);
+binder!(Arc<Configuration>);
+binder!(Rc<Configuration>);
 binder!(Section<'_>);
 binder!(OwnedSection);
 

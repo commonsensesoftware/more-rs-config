@@ -1,47 +1,30 @@
-use cfg_if::cfg_if;
 use config::*;
+use std::mem::take;
 use std::sync::{
     atomic::{AtomicU8, Ordering},
-    Arc,
+    Arc, Mutex,
 };
 use tokens::{ChangeToken, SharedChangeToken, SingleChangeToken};
 
-cfg_if! {
-    if #[cfg(feature = "async")] {
-        type Rc<T> = std::sync::Arc<T>;
-        type Mut<T> = std::sync::Mutex<T>;
-    } else {
-        type Rc<T> = std::rc::Rc<T>;
-        type Mut<T> = std::cell::RefCell<T>;
-    }
-}
-
 #[derive(Default)]
 struct Trigger {
-    token: Mut<SharedChangeToken<SingleChangeToken>>,
+    token: Mutex<SharedChangeToken<SingleChangeToken>>,
 }
 
 impl Trigger {
     fn fire(&self) {
-        cfg_if! {
-            if #[cfg(feature = "async")] {
-                let token = std::mem::take(&mut *self.token.lock().unwrap());
-            } else {
-                let token = self.token.replace(SharedChangeToken::default());
-            }
-        }
-
+        let token = take(&mut *self.token.lock().unwrap());
         token.notify();
     }
 }
 
 struct ReloadableProvider {
     counter: AtomicU8,
-    trigger: Rc<Trigger>,
+    trigger: Arc<Trigger>,
 }
 
 impl ReloadableProvider {
-    fn new(trigger: Rc<Trigger>) -> Self {
+    fn new(trigger: Arc<Trigger>) -> Self {
         Self {
             counter: AtomicU8::new(1),
             trigger,
@@ -69,13 +52,7 @@ impl Provider for ReloadableProvider {
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
-        cfg_if! {
-            if #[cfg(feature = "async")] {
-                Box::new((*self.trigger.token.lock().unwrap()).clone())
-            } else {
-                Box::new(self.trigger.token.borrow().clone())
-            }
-        }
+        Box::new((*self.trigger.token.lock().unwrap()).clone())
     }
 }
 
@@ -100,7 +77,7 @@ fn load_should_reload_providers() {
 #[test]
 fn reload_token_should_indicate_change_after_provider_change() {
     // arrange
-    let trigger = Rc::new(Trigger::default());
+    let trigger = Arc::new(Trigger::default());
     let data = Arc::<AtomicU8>::default();
     let mut builder = config::builder();
 

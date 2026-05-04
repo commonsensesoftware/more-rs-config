@@ -1,8 +1,9 @@
-use crate::{Configuration, Merge, Ref, Result, Settings};
+use crate::{Configuration, Merge, Result, Settings};
+use std::sync::Arc;
 use tokens::ChangeToken;
 
 /// Represents a chained [configuration provider](crate::Provider).
-pub struct Provider(Ref<Configuration>);
+pub struct Provider(Arc<Configuration>);
 
 impl Provider {
     /// Initializes a new chained configuration provider.
@@ -11,7 +12,7 @@ impl Provider {
     ///
     /// * `configuration` - The [configuration](Configuration) to chain
     #[inline]
-    pub fn new(configuration: Ref<Configuration>) -> Self {
+    pub fn new(configuration: Arc<Configuration>) -> Self {
         Self(configuration)
     }
 }

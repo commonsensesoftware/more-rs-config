@@ -1,4 +1,6 @@
-use crate::{Configuration, OwnedSection, Ref, Section};
+use crate::{Configuration, OwnedSection, Section};
+use std::rc::Rc;
+use std::sync::Arc;
 use tokens::{ChangeToken, NeverChangeToken};
 
 /// Defines the behavior of a reloadable configuration.
@@ -30,14 +32,21 @@ unreloadable!(Configuration);
 unreloadable!(Section<'_>);
 unreloadable!(OwnedSection);
 
-impl Reloadable for Ref<Configuration> {
-    #[inline]
-    fn can_reload(&self) -> bool {
-        (&**self).can_reload()
-    }
+macro_rules! reloadable {
+    ($type:ty) => {
+        impl Reloadable for $type {
+            #[inline]
+            fn can_reload(&self) -> bool {
+                (&**self).can_reload()
+            }
 
-    #[inline]
-    fn reload_token(&self) -> impl ChangeToken + 'static {
-        (&**self).reload_token()
-    }
+            #[inline]
+            fn reload_token(&self) -> impl ChangeToken + 'static {
+                (&**self).reload_token()
+            }
+        }
+    };
 }
+
+reloadable!(Arc<Configuration>);
+reloadable!(Rc<Configuration>);

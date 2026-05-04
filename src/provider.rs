@@ -2,8 +2,7 @@ use crate::{Result, Settings};
 use tokens::{ChangeToken, NeverChangeToken};
 
 /// Defines the behavior of an object that provides configuration settings.
-#[cfg_attr(feature = "async", maybe_impl::traits(Send, Sync))]
-pub trait Provider {
+pub trait Provider: Send + Sync {
     /// Gets the name of the provider.
     fn name(&self) -> &str;
 

@@ -4,14 +4,7 @@ use arc_swap::ArcSwap;
 use serde::de::DeserializeOwned;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::str::FromStr;
-use std::{
-    any::Any,
-    convert::TryFrom,
-    sync::{
-        atomic::{AtomicBool, Ordering::Relaxed},
-        Arc,
-    },
-};
+use std::{any::Any, convert::TryFrom, sync::Arc};
 use tokens::{ChangeToken, CompositeChangeToken, Registration, SharedChangeToken, SingleChangeToken};
 use tracing::{error, trace};
 
@@ -122,15 +115,33 @@ impl Display for Configuration {
 }
 
 fn on_changed(state: Option<Arc<dyn Any + Send + Sync + 'static>>) {
-    if let Some(changed) = state {
-        changed.downcast_ref::<AtomicBool>().unwrap().store(true, Relaxed);
+    if let Some(state) = state {
+        let inner = state.downcast_ref::<Inner>().unwrap();
+
+        match inner.builder.build() {
+            Ok(config) => {
+                let registration = inner
+                    .config
+                    .load()
+                    .change_token()
+                    .register(Box::new(on_changed), Some(state.clone()));
+                let token = inner.token.swap(Arc::new(SharedChangeToken::default()));
+
+                inner.config.store(Arc::new(config));
+                inner.registration.store(Arc::new(registration));
+
+                trace!("Reloaded the configuration");
+
+                token.notify();
+            }
+            Err(error) => error!("Failed to reload the configuration. {error:?}"),
+        }
     }
 }
 
 struct Inner {
     builder: Builder,
     config: ArcSwap<Configuration>,
-    changed: Arc<AtomicBool>,
     registration: ArcSwap<Registration>,
     token: ArcSwap<SharedChangeToken<SingleChangeToken>>,
 }
@@ -146,18 +157,20 @@ impl ReloadableConfiguration {
     /// * `builder` - The [builder](Builder) used to reload the configuration
     /// * `config` - The initial [configuration](Configuration)
     pub fn new(builder: Builder, configuration: Configuration) -> Self {
-        let changed = Arc::new(AtomicBool::default());
-        let registration = configuration
-            .change_token()
-            .register(Box::new(on_changed), Some(changed.clone()));
-
-        Self(Arc::new(Inner {
+        let inner = Arc::new(Inner {
             builder,
             config: ArcSwap::from_pointee(configuration),
-            changed,
-            registration: ArcSwap::from_pointee(registration),
+            registration: ArcSwap::from_pointee(Registration::none()),
             token: ArcSwap::from_pointee(SharedChangeToken::default()),
-        }))
+        });
+        let registration = inner
+            .config
+            .load()
+            .change_token()
+            .register(Box::new(on_changed), Some(inner.clone()));
+
+        inner.registration.store(registration.into());
+        Self(inner)
     }
 
     /// Gets the current [configuration](Configuration).
@@ -166,35 +179,9 @@ impl ReloadableConfiguration {
     ///
     /// This method will reload the [configuration](Configuration) if it has changed. If the reload operation fails,
     /// then the error is logged and the previous [configuration](Configuration) is retained.
+    #[inline]
     pub fn get(&self) -> Arc<Configuration> {
-        match self.get_or_reload() {
-            Ok(config) => config,
-            Err(error) => {
-                error!("Failed to reload the configuration. {error:?}");
-                self.0.config.load_full()
-            }
-        }
-    }
-
-    /// Gets or reloads the current [configuration](Configuration).
-    pub fn get_or_reload(&self) -> crate::Result<Arc<Configuration>> {
-        if self.0.changed.load(Relaxed) {
-            let config = self.0.builder.build()?;
-            let registration = config
-                .change_token()
-                .register(Box::new(on_changed), Some(self.0.changed.clone()));
-            let token = self.0.token.swap(Arc::new(SharedChangeToken::default()));
-
-            self.0.config.store(Arc::new(config));
-            self.0.registration.store(Arc::new(registration));
-            self.0.changed.store(false, Relaxed);
-
-            trace!("Reloaded the configuration");
-
-            token.notify();
-        }
-
-        Ok(self.0.config.load_full())
+        self.0.config.load_full()
     }
 
     /// Creates and returns a structure reified from the configuration.
@@ -260,7 +247,7 @@ impl Reloadable for ReloadableConfiguration {
 
     #[inline]
     fn reload_token(&self) -> impl ChangeToken + 'static {
-        (&**self.0.token.load()).clone()
+        (**self.0.token.load()).clone()
     }
 }
 

@@ -69,14 +69,6 @@ pub use reloadable::Reloadable;
 pub use section::{OwnedSection, Section};
 pub use settings::Settings;
 
-/// Represents the type alias for a configuration reference.
-#[cfg(not(feature = "async"))]
-pub type Ref<T> = std::rc::Rc<T>;
-
-/// Represents the type alias for a configuration reference.
-#[cfg(feature = "async")]
-pub type Ref<T> = std::sync::Arc<T>;
-
 /// Represents a configuration result.
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
