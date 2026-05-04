@@ -61,7 +61,7 @@ impl Configuration {
 
     /// Returns a [change token](ChangeToken) that indicates when the configuration has changed.
     #[inline]
-    pub fn reload_token(&self) -> impl ChangeToken {
+    pub fn change_token(&self) -> impl ChangeToken {
         self.token.clone()
     }
 }

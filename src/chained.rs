@@ -24,7 +24,7 @@ impl crate::Provider for Provider {
 
     #[inline]
     fn reload_token(&self) -> Box<dyn ChangeToken> {
-        Box::new(self.0.reload_token())
+        Box::new(self.0.change_token())
     }
 
     fn load(&self, settings: &mut Settings) -> Result {

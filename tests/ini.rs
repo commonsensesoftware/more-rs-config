@@ -105,7 +105,7 @@ fn init_file_should_reload_when_changed() {
 
     drop(section);
 
-    let token = config.reload_token();
+    let token = config.change_token();
     let state = Arc::new((Mutex::new(false), Condvar::new()));
     let _unused = token.register(
         Box::new(|s| {
