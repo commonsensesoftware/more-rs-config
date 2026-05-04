@@ -15,6 +15,23 @@ pub fn combine(segments: &[&str]) -> String {
     segments.join(":")
 }
 
+/// Determines if the given text starts with the provided prefix text.
+///
+/// # Arguments
+///
+/// * `text` - The text to test
+/// * `other` - The prefix to check for
+/// 
+/// # Remarks
+/// 
+/// The comparison is case-insensitive.
+pub fn starts_with(text: impl AsRef<str>, other: impl AsRef<str>) -> bool {
+    let a = text.as_ref();
+    let b = other.as_ref();
+
+    a.len() >= b.len() && a.chars().zip(b.chars()).all(|(l, r)| l.eq_ignore_ascii_case(&r))
+}
+
 /// Extracts the last path segment from the path.
 ///
 /// # Arguments
