@@ -1,8 +1,22 @@
-use crate::{path, settings, Section, Settings};
-use std::fmt::{Debug, Display, Formatter, Result};
-use tokens::{ChangeToken, CompositeChangeToken, SharedChangeToken};
+use crate::Reloadable;
+use crate::{path, prelude::Binder, settings, Builder, Section, Settings};
+use arc_swap::ArcSwap;
+use serde::de::DeserializeOwned;
+use std::fmt::{self, Debug, Display, Formatter};
+use std::str::FromStr;
+use std::{
+    any::Any,
+    convert::TryFrom,
+    sync::{
+        atomic::{AtomicBool, Ordering::Relaxed},
+        Arc,
+    },
+};
+use tokens::{ChangeToken, CompositeChangeToken, Registration, SharedChangeToken, SingleChangeToken};
+use tracing::{error, trace};
 
 /// Represents a configuration.
+#[derive(Clone)]
 pub struct Configuration {
     pub(crate) settings: Settings,
     token: SharedChangeToken<CompositeChangeToken>,
@@ -95,14 +109,180 @@ impl<'a> From<&'a Configuration> for Vec<Section<'a>> {
 
 impl Debug for Configuration {
     #[inline]
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         Debug::fmt(&self.settings, f)
     }
 }
 
 impl Display for Configuration {
     #[inline]
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         Display::fmt(&self.settings, f)
+    }
+}
+
+fn on_changed(state: Option<Arc<dyn Any + Send + Sync + 'static>>) {
+    if let Some(changed) = state {
+        changed.downcast_ref::<AtomicBool>().unwrap().store(true, Relaxed);
+    }
+}
+
+struct Inner {
+    builder: Builder,
+    config: ArcSwap<Configuration>,
+    changed: Arc<AtomicBool>,
+    registration: ArcSwap<Registration>,
+    token: ArcSwap<SharedChangeToken<SingleChangeToken>>,
+}
+
+/// Represents a reloadable [configuration](Configuration).
+pub struct ReloadableConfiguration(Arc<Inner>);
+
+impl ReloadableConfiguration {
+    /// Initializes a new [ReloadableConfiguration].
+    ///
+    /// # Arguments
+    ///
+    /// * `builder` - The [builder](Builder) used to reload the configuration
+    /// * `config` - The initial [configuration](Configuration)
+    pub fn new(builder: Builder, configuration: Configuration) -> Self {
+        let changed = Arc::new(AtomicBool::default());
+        let registration = configuration
+            .change_token()
+            .register(Box::new(on_changed), Some(changed.clone()));
+
+        Self(Arc::new(Inner {
+            builder,
+            config: ArcSwap::from_pointee(configuration),
+            changed,
+            registration: ArcSwap::from_pointee(registration),
+            token: ArcSwap::from_pointee(SharedChangeToken::default()),
+        }))
+    }
+
+    /// Gets the current [configuration](Configuration).
+    ///
+    /// # Remarks
+    ///
+    /// This method will reload the [configuration](Configuration) if it has changed. If the reload operation fails,
+    /// then the error is logged and the previous [configuration](Configuration) is retained.
+    pub fn get(&self) -> Arc<Configuration> {
+        match self.get_or_reload() {
+            Ok(config) => config,
+            Err(error) => {
+                error!("Failed to reload the configuration. {error:?}");
+                self.0.config.load_full()
+            }
+        }
+    }
+
+    /// Gets or reloads the current [configuration](Configuration).
+    pub fn get_or_reload(&self) -> crate::Result<Arc<Configuration>> {
+        if self.0.changed.load(Relaxed) {
+            let config = self.0.builder.build()?;
+            let registration = config
+                .change_token()
+                .register(Box::new(on_changed), Some(self.0.changed.clone()));
+            let token = self.0.token.swap(Arc::new(SharedChangeToken::default()));
+
+            self.0.config.store(Arc::new(config));
+            self.0.registration.store(Arc::new(registration));
+            self.0.changed.store(false, Relaxed);
+
+            trace!("Reloaded the configuration");
+
+            token.notify();
+        }
+
+        Ok(self.0.config.load_full())
+    }
+
+    /// Creates and returns a structure reified from the configuration.
+    #[inline]
+    pub fn reify<T: DeserializeOwned>(&self) -> crate::Result<T> {
+        self.0.config.load().reify()
+    }
+
+    /// Binds the configuration to the specified instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `instance` - The instance to bind the configuration to
+    #[inline]
+    pub fn bind<T: DeserializeOwned>(&self, instance: &mut T) -> crate::Result {
+        self.0.config.load().bind(instance)
+    }
+
+    /// Binds the specified configuration section to the provided instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key of the configuration section to bind
+    /// * `instance` - The instance to bind the configuration to
+    #[inline]
+    pub fn bind_at<T: DeserializeOwned>(&self, key: impl AsRef<str>, instance: &mut T) -> crate::Result {
+        self.0.config.load().bind_at(key, instance)
+    }
+
+    /// Gets a typed value from the configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key of the value to retrieve
+    #[inline]
+    pub fn get_value<T: FromStr>(&self, key: impl AsRef<str>) -> Result<Option<T>, T::Err> {
+        self.0.config.load().get_value(key)
+    }
+
+    /// Gets an optional, typed value from the configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key of the value to retrieve
+    #[inline]
+    pub fn get_value_or_default<T: FromStr + Default>(&self, key: impl AsRef<str>) -> Result<T, T::Err> {
+        self.0.config.load().get_value_or_default(key)
+    }
+}
+
+impl Clone for ReloadableConfiguration {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
+
+impl Reloadable for ReloadableConfiguration {
+    #[inline]
+    fn can_reload(&self) -> bool {
+        true
+    }
+
+    #[inline]
+    fn reload_token(&self) -> impl ChangeToken + 'static {
+        (&**self.0.token.load()).clone()
+    }
+}
+
+impl From<ReloadableConfiguration> for Arc<Configuration> {
+    #[inline]
+    fn from(rc: ReloadableConfiguration) -> Self {
+        rc.get()
+    }
+}
+
+impl From<&ReloadableConfiguration> for Arc<Configuration> {
+    #[inline]
+    fn from(rc: &ReloadableConfiguration) -> Self {
+        rc.get()
+    }
+}
+
+impl TryFrom<Builder> for ReloadableConfiguration {
+    type Error = crate::Error;
+
+    fn try_from(builder: Builder) -> crate::Result<Self> {
+        let config = builder.build()?;
+        Ok(Self::new(builder, config))
     }
 }

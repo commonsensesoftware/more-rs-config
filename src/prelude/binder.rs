@@ -1,4 +1,4 @@
-use crate::{de, Configuration, Section};
+use crate::{de, section::OwnedSection, Configuration, Ref, ReloadableConfiguration, Section};
 use serde::de::DeserializeOwned;
 use std::str::FromStr;
 
@@ -127,4 +127,33 @@ macro_rules! binder {
 }
 
 binder!(Configuration);
+binder!(Ref<Configuration>);
 binder!(Section<'_>);
+binder!(OwnedSection);
+
+impl Binder for ReloadableConfiguration {
+    #[inline]
+    fn reify<T: DeserializeOwned>(&self) -> crate::Result<T> {
+        self.reify()
+    }
+
+    #[inline]
+    fn bind<T: DeserializeOwned>(&self, instance: &mut T) -> crate::Result {
+        self.bind(instance)
+    }
+
+    #[inline]
+    fn bind_at<T: DeserializeOwned>(&self, key: impl AsRef<str>, instance: &mut T) -> crate::Result {
+        self.bind_at(key, instance)
+    }
+
+    #[inline]
+    fn get_value<T: FromStr>(&self, key: impl AsRef<str>) -> Result<Option<T>, T::Err> {
+        self.get_value(key)
+    }
+
+    #[inline]
+    fn get_value_or_default<T: FromStr + Default>(&self, key: impl AsRef<str>) -> Result<T, T::Err> {
+        self.get_value_or_default(key)
+    }
+}

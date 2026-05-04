@@ -7,6 +7,7 @@ mod error;
 mod file;
 mod merge;
 mod provider;
+mod reloadable;
 mod section;
 mod settings;
 
@@ -59,12 +60,13 @@ pub mod xml;
 pub mod yaml;
 
 pub use builder::Builder;
-pub use configuration::Configuration;
+pub use configuration::{Configuration, ReloadableConfiguration};
 pub use error::Error;
 pub use file::{FileSource, FileSourceBuilder};
 pub use merge::Merge;
 pub use provider::Provider;
-pub use section::Section;
+pub use reloadable::Reloadable;
+pub use section::{OwnedSection, Section};
 pub use settings::Settings;
 
 /// Represents the type alias for a configuration reference.
