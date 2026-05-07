@@ -1,4 +1,5 @@
 use std::cmp::Ordering::{self, *};
+use std::path::Path;
 
 /// Gets the key delimiter used in configuration paths.
 pub const fn delimiter() -> char {
@@ -56,6 +57,16 @@ pub fn parent(path: &str) -> &str {
     } else {
         ""
     }
+}
+
+/// Gets the name of a provider from a file path.
+///
+/// # Arguments
+///
+/// * `path` - The path to extract the provider name from
+/// * `name` - The default name to use if the path doesn't have a file name
+pub fn provider<'a>(path: &'a Path, name: &'a str) -> &'a str {
+    path.file_name().map(|n| n.to_str().unwrap_or(name)).unwrap_or(name)
 }
 
 /// Extracts the next path segment with a given base.
