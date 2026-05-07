@@ -102,7 +102,7 @@ impl Provider {
 impl crate::Provider for Provider {
     #[inline]
     fn name(&self) -> &str {
-        "Yaml"
+        path::provider(&self.0.path, "Yaml")
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {

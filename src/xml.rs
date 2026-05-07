@@ -292,7 +292,7 @@ impl Provider {
 impl crate::Provider for Provider {
     #[inline]
     fn name(&self) -> &str {
-        "Xml"
+        path::provider(&self.0.path, "Xml")
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {

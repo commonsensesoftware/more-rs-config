@@ -93,7 +93,7 @@ impl Provider {
 impl crate::Provider for Provider {
     #[inline]
     fn name(&self) -> &str {
-        "Json"
+        path::provider(&self.0.path, "Json")
     }
 
     fn reload_token(&self) -> Box<dyn ChangeToken> {
