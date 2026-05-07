@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::fmt::{Formatter, Result};
-use std::mem::replace;
+use std::mem::take;
 use tracing::trace;
 
 thread_local!(static ID: RefCell<(u8, Vec::<String>)> = RefCell::default());
@@ -12,7 +12,7 @@ pub fn id() -> u8 {
 
 /// Advances to the next configuration provider.
 pub fn next() {
-    ID.with(|id| (*id.borrow_mut()).0 += 1);
+    ID.with(|id| (id.borrow_mut()).0 += 1);
 }
 
 /// Enters a new configuration context.
@@ -30,7 +30,7 @@ pub fn enter(names: Vec<String>) {
 ///
 /// The provider names associated with the context.
 pub fn exit() -> Vec<String> {
-    ID.with(|id| replace(&mut *id.borrow_mut(), Default::default()).1)
+    ID.with(|id| take(&mut *id.borrow_mut()).1)
 }
 
 /// Traces a diagnostic message for an overridden value.
