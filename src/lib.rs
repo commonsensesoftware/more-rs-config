@@ -2,7 +2,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod builder;
-mod configuration;
+mod cfg;
 mod error;
 mod file;
 mod merge;
@@ -60,7 +60,7 @@ pub mod xml;
 pub mod yaml;
 
 pub use builder::Builder;
-pub use configuration::{Configuration, ReloadableConfiguration};
+pub use cfg::{Configuration, ReloadableConfiguration};
 pub use error::Error;
 pub use file::{FileSource, FileSourceBuilder};
 pub use merge::Merge;
