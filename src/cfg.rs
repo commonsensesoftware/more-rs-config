@@ -62,7 +62,6 @@ impl Configuration {
             }
         }
 
-        keys.sort_by(path::cmp);
         keys.into_iter().map(|key| self.section(key)).collect()
     }
 
