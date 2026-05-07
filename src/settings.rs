@@ -1,3 +1,4 @@
+use crate::{context, path, Merge};
 use indexmap::{
     map::{self, Entry::*},
     IndexMap,
@@ -8,9 +9,9 @@ use std::{
         Cow::{self, *},
     },
     cmp::Ordering,
-    collections::{hash_map, HashMap},
     fmt::{Debug, Display, Formatter, Result},
     hash::{Hash, Hasher},
+    mem::replace,
     str,
 };
 
@@ -180,11 +181,15 @@ impl Settings {
             // is an ASCII character, so the concatenation is valid UTF-8.
 
             let combined = unsafe { std::str::from_utf8_unchecked(&buf[..len]) };
-            self.0.get(KeyRef::new(combined)).map(String::as_str)
+            self.0.get(KeyRef::new(combined)).map(|(s, _)| s.as_str())
         } else {
             let combined = format!("{path}{delimiter}{key}");
-            self.0.get(KeyRef::new(combined.as_str())).map(String::as_str)
+            self.0.get(KeyRef::new(combined.as_str())).map(|(s, _)| s.as_str())
         }
+    }
+
+    pub(crate) fn get_with_id(&self, key: &str) -> Option<(&str, u8)> {
+        self.0.get(KeyRef::new(key)).map(|(s, i)| (s.as_str(), *i))
     }
 
     /// Gets the setting with the specified key.
@@ -192,9 +197,8 @@ impl Settings {
     /// # Arguments
     ///
     /// * `key` - The case-insensitive key of the setting to retrieve
-    #[inline]
     pub fn get(&self, key: &str) -> Option<&str> {
-        self.0.get(KeyRef::new(key)).map(String::as_str)
+        self.0.get(KeyRef::new(key)).map(|(s, _)| s.as_str())
     }
 
     /// Adds or updates a setting with the specified key and value.
@@ -203,9 +207,27 @@ impl Settings {
     ///
     /// * `key` - The key of the setting to add or update
     /// * `value` - The value of the setting to add or update
-    #[inline]
     pub fn insert(&mut self, key: impl Into<String>, value: impl Into<String>) -> Option<String> {
-        self.0.insert(Key::from(key.into()), value.into())
+        let id = context::id();
+        let value = value.into();
+
+        match self.0.entry(Key::from(key.into())) {
+            Occupied(mut e) => {
+                let entry = e.get_mut();
+                let old = replace(&mut entry.0, value);
+
+                entry.1 |= id;
+
+                let entry = e.get();
+
+                context::overridden(entry.1, e.key().as_ref(), &old, &entry.0);
+                Some(old)
+            }
+            Vacant(e) => {
+                e.insert((value, id));
+                None
+            }
+        }
     }
 
     /// Shrinks the capacity of the settings as much as possible. It will drop down as much as possible while
@@ -229,7 +251,7 @@ impl<'a> Iterator for Iter<'a> {
     type Item = (&'a str, &'a str);
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|(k, v)| (k.as_ref(), v.as_str()))
+        self.0.next().map(|(k, (v, _))| (k.as_ref(), v.as_str()))
     }
 }
 
@@ -237,7 +259,7 @@ impl Iterator for IntoIter {
     type Item = (String, String);
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|(k, v)| (k.0.into_owned(), v))
+        self.0.next().map(|(k, (v, _))| (k.0.into_owned(), v))
     }
 }
 
@@ -281,10 +303,10 @@ impl Display for Settings {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let mut pairs = self.0.iter();
 
-        if let Some((key, value)) = pairs.next() {
+        if let Some((key, (value, _))) = pairs.next() {
             write!(f, "{key}: {value}")?;
 
-            for (key, value) in pairs {
+            for (key, (value, _)) in pairs {
                 f.write_str(", ")?;
                 write!(f, "{key}: {value}")?;
             }
@@ -296,8 +318,12 @@ impl Display for Settings {
 
 impl Merge for Settings {
     fn merge(&mut self, other: &Self) {
-        for (key, value) in &other.0 {
-            self.0.insert(key.clone(), value.clone());
+        // merging from another collection cannot ensure any existing identifier comes from one of the current providers
+        // that can be traced so always replace the current identifier
+        let id = context::id();
+
+        for (key, (value, _)) in &other.0 {
+            self.0.insert(key.clone(), (value.clone(), id));
         }
     }
 }

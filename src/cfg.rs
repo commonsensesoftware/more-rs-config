@@ -13,6 +13,7 @@ use tracing::{error, trace};
 pub struct Configuration {
     pub(crate) settings: Settings,
     token: SharedChangeToken<CompositeChangeToken>,
+    pub(crate) providers: Vec<String>,
 }
 
 impl Configuration {
@@ -22,11 +23,17 @@ impl Configuration {
     ///
     /// * `settings` - The configuration [settings](Settings)
     /// * `tokens` - The [sequence](Iterator) of [change tokens](ChangeToken) associated with the configuration
+    /// * `providers` - The names of the providers that generated the configuration
     #[inline]
-    pub fn new(settings: Settings, tokens: impl IntoIterator<Item = Box<dyn ChangeToken>>) -> Self {
+    pub fn new(
+        settings: Settings,
+        tokens: impl IntoIterator<Item = Box<dyn ChangeToken>>,
+        providers: Vec<String>,
+    ) -> Self {
         Self {
             settings,
             token: SharedChangeToken::new(CompositeChangeToken::new(tokens.into_iter())),
+            providers,
         }
     }
 

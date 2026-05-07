@@ -3,6 +3,7 @@
 
 mod builder;
 mod cfg;
+pub(crate) mod context;
 mod error;
 mod file;
 mod merge;

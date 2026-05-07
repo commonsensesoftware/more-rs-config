@@ -1,4 +1,4 @@
-use crate::{Configuration, Provider, Result, Settings};
+use crate::{context, Configuration, Provider, Result, Settings};
 use std::convert::TryFrom;
 
 /// Represents a [configuration](crate::Configuration) builder.
@@ -27,14 +27,17 @@ impl Builder {
         let mut settings = Settings::new();
         let mut tokens = Vec::with_capacity(self.0.len());
 
+        context::enter(self.0.iter().map(|p| p.name().to_owned()).collect());
+
         for provider in &self.0 {
             provider.load(&mut settings)?;
             tokens.push(provider.reload_token());
+            context::next();
         }
 
         settings.shrink_to_fit();
 
-        Ok(Configuration::new(settings, tokens))
+        Ok(Configuration::new(settings, tokens, context::exit()))
     }
 }
 
