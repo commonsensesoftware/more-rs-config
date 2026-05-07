@@ -33,7 +33,7 @@ pub enum Error {
 
     /// Indicates that an unknown [error](std::error::Error) occurred.
     #[error(transparent)]
-    Unknown(#[from] Box<dyn std::error::Error>),
+    Unknown(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
 impl Error {
@@ -53,7 +53,7 @@ impl Error {
     ///
     /// * `error` - The unknown [error](std::error::Error)
     #[inline]
-    pub fn unknown(error: impl std::error::Error + 'static) -> Self {
+    pub fn unknown(error: impl std::error::Error + Send + Sync + 'static) -> Self {
         Self::Unknown(Box::new(error))
     }
 }

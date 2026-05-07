@@ -26,8 +26,7 @@ impl Builder {
     pub fn build(&self) -> Result<Configuration> {
         let mut settings = Settings::new();
         let mut tokens = Vec::with_capacity(self.0.len());
-
-        context::enter(self.0.iter().map(|p| p.name().to_owned()).collect());
+        let scope = context::enter(self.0.iter().map(|p| p.name().to_owned()).collect());
 
         for provider in &self.0 {
             provider.load(&mut settings)?;
@@ -37,7 +36,7 @@ impl Builder {
 
         settings.shrink_to_fit();
 
-        Ok(Configuration::new(settings, tokens, context::exit()))
+        Ok(Configuration::new(settings, tokens, scope.into()))
     }
 }
 

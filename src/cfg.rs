@@ -141,7 +141,7 @@ impl Display for Configuration {
 
 fn on_changed(state: Option<Arc<dyn Any + Send + Sync + 'static>>) {
     if let Some(state) = state {
-        let inner = state.downcast_ref::<Inner>().unwrap();
+        let inner = state.downcast_ref::<Inner>().expect("received state other than Inner");
 
         match inner.builder.build() {
             Ok(config) => {

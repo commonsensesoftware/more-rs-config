@@ -14,9 +14,10 @@ pub trait Binder: Sized {
     /// # Remarks
     ///
     /// This function panics the reify operation fails.
-    fn reify_unchecked<T: DeserializeOwned>(&self) {
-        if let Err(error) = self.reify::<T>() {
-            panic!("{}", error);
+    fn reify_unchecked<T: DeserializeOwned>(&self) -> T {
+        match self.reify::<T>() {
+            Ok(data) => data,
+            Err(error) => panic!("{}", error),
         }
     }
 

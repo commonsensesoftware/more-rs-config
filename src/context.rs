@@ -1,9 +1,25 @@
 use std::cell::RefCell;
 use std::fmt::{Formatter, Result};
 use std::mem::take;
-use tracing::trace;
+use tracing::{trace, warn};
 
 thread_local!(static ID: RefCell<(u8, Vec::<String>)> = RefCell::default());
+
+/// Represents a configuration scope.
+pub struct Scope;
+
+impl From<Scope> for Vec<String> {
+    #[inline]
+    fn from(_: Scope) -> Self {
+        exit()
+    }
+}
+
+impl Drop for Scope {
+    fn drop(&mut self) {
+        let _ = exit();
+    }
+}
 
 /// Gets the current configuration provider identifier.
 pub fn id() -> u8 {
@@ -20,16 +36,21 @@ pub fn next() {
 /// # Arguments
 ///
 /// * `names` - The names of the providers in the new context
-pub fn enter(names: Vec<String>) {
+pub fn enter(names: Vec<String>) -> Scope {
+    if names.len() > u8::BITS as usize {
+        warn!(
+            "{} providers exceeds the limit of {}; some provider diagnostics may not output",
+            names.len(),
+            u8::BITS
+        );
+    }
+
     ID.with(|id| *id.borrow_mut() = (1, names));
+    Scope
 }
 
-/// Exits the configuration context.
-///
-/// # Returns
-///
-/// The provider names associated with the context.
-pub fn exit() -> Vec<String> {
+
+fn exit() -> Vec<String> {
     ID.with(|id| take(&mut *id.borrow_mut()).1)
 }
 
