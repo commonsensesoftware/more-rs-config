@@ -53,7 +53,6 @@ fn collect_section_keys(config: &Configuration, parent: &str) -> Vec<String> {
         }
     }
 
-    keys.sort_by(path::cmp);
     keys
 }
 

@@ -1,4 +1,3 @@
-use std::cmp::Ordering::{self, *};
 use std::path::Path;
 
 /// Gets the key delimiter used in configuration paths.
@@ -95,57 +94,6 @@ pub fn next<'a>(path: &'a str, base: Option<&str>) -> Option<&'a str> {
     } else {
         Some(path)
     }
-}
-
-/// Compares two key paths.
-///
-/// # Arguments
-///
-/// * `lhs` - The left-hand side to compare
-/// * `rhs` - The right-hand side to compare against
-pub fn cmp<S: AsRef<str>>(lhs: &S, rhs: &S) -> Ordering {
-    let lhs = lhs.as_ref();
-    let rhs = rhs.as_ref();
-    let a = lhs.split(delimiter()).filter(|s| !s.is_empty()).count();
-    let b = rhs.split(delimiter()).filter(|s| !s.is_empty()).count();
-    let mut result = a.cmp(&b);
-
-    if result != Equal {
-        return result;
-    }
-
-    let segments = lhs
-        .split(delimiter())
-        .filter(|s| !s.is_empty())
-        .zip(rhs.split(delimiter()).filter(|s| !s.is_empty()));
-
-    for (a, b) in segments {
-        if let Ok(x) = a.parse::<usize>() {
-            if let Ok(y) = b.parse::<usize>() {
-                // int : int
-                result = x.cmp(&y);
-
-                if result != Equal {
-                    return result;
-                }
-            } else {
-                // int : string
-                return Less;
-            }
-        } else if b.parse::<usize>().is_ok() {
-            // string : int
-            return Greater;
-        } else {
-            // string : string
-            result = a.to_uppercase().cmp(&b.to_uppercase());
-
-            if result != Equal {
-                return result;
-            }
-        }
-    }
-
-    Equal
 }
 
 #[cfg(test)]

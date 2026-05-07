@@ -1,4 +1,7 @@
-use crate::{path, Merge};
+use indexmap::{
+    map::{self, Entry::*},
+    IndexMap,
+};
 use std::{
     borrow::{
         Borrow,
@@ -79,7 +82,7 @@ impl<'a> From<&'a str> for Key<'a> {
     }
 }
 
-/// An unsized wrapper for case-insensitive key lookups in the settings HashMap.
+/// An unsized wrapper for case-insensitive key lookups in the settings IndexMap.
 /// This type has the same Hash/Eq semantics as Key, allowing it to be
 /// used as a query type via the Borrow trait.
 #[derive(Eq)]
@@ -134,7 +137,7 @@ impl Display for Key<'_> {
 
 /// Represents a case-insensitive collection of configuration settings.
 #[derive(Clone, Default)]
-pub struct Settings(HashMap<Key<'static>, String>);
+pub struct Settings(IndexMap<Key<'static>, (String, u8)>);
 
 impl Settings {
     /// Initializes new [Settings].
@@ -214,13 +217,13 @@ impl Settings {
 }
 
 /// Represents a iterator over the key/value pairs in [Settings].
-pub struct Iter<'a>(hash_map::Iter<'a, Key<'static>, String>);
+pub struct Iter<'a>(map::Iter<'a, Key<'static>, (String, u8)>);
 
 /// Represents a consuming iterator over the key/value pairs in [Settings].
-pub struct IntoIter(hash_map::IntoIter<Key<'static>, String>);
+pub struct IntoIter(map::IntoIter<Key<'static>, (String, u8)>);
 
 /// Represents a iterator over the keys in [Settings].
-pub struct Keys<'a>(hash_map::Keys<'a, Key<'static>, String>);
+pub struct Keys<'a>(map::Keys<'a, Key<'static>, (String, u8)>);
 
 impl<'a> Iterator for Iter<'a> {
     type Item = (&'a str, &'a str);
