@@ -2,7 +2,8 @@ use crate::Reloadable;
 use crate::{path, prelude::Binder, settings, Builder, Section, Settings};
 use arc_swap::ArcSwap;
 use serde::de::DeserializeOwned;
-use std::fmt::{self, Debug, Display, Formatter};
+use std::collections::VecDeque;
+use std::fmt::{self, Debug, Display, Formatter, Write};
 use std::str::FromStr;
 use std::{any::Any, convert::TryFrom, sync::Arc};
 use tokens::{ChangeToken, CompositeChangeToken, Registration, SharedChangeToken, SingleChangeToken};
@@ -107,9 +108,27 @@ impl<'a> From<&'a Configuration> for Vec<Section<'a>> {
 }
 
 impl Debug for Configuration {
-    #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        Debug::fmt(&self.settings, f)
+        if self.providers.is_empty() {
+            Debug::fmt(&self.settings, f)
+        } else {
+            let mut sections: VecDeque<_> = self.sections().into_iter().map(|s| (0, s)).collect();
+
+            while let Some((depth, section)) = sections.pop_front() {
+                f.write_str(&"  ".repeat(depth))?;
+                Display::fmt(&section, f)?;
+
+                for (i, child) in section.sections().into_iter().map(|s| (depth + 1, s)).enumerate() {
+                    sections.insert(i, child);
+                }
+
+                if !sections.is_empty() {
+                    f.write_char('\n')?;
+                }
+            }
+
+            Ok(())
+        }
     }
 }
 
@@ -254,6 +273,20 @@ impl Reloadable for ReloadableConfiguration {
     #[inline]
     fn reload_token(&self) -> impl ChangeToken + 'static {
         (**self.0.token.load()).clone()
+    }
+}
+
+impl Debug for ReloadableConfiguration {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        Debug::fmt(&*self.current(), f)
+    }
+}
+
+impl Display for ReloadableConfiguration {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        Display::fmt(&*self.current(), f)
     }
 }
 
