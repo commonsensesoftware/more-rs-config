@@ -1,4 +1,4 @@
-use crate::{path, Configuration, Settings};
+use crate::{context, path, Configuration, Settings};
 use tokens::{ChangeToken, NeverChangeToken};
 
 macro_rules! section {
@@ -94,7 +94,6 @@ impl<'a> Section<'a> {
     /// This function is useful for taking ownership of a section in order to decouple it from the entire
     /// [configuration](Configuration) that created it. The owned section holds a reference to the subset of key/value
     /// pairs at this point in the [configuration](Configuration).
-    #[inline]
     pub fn to_owned(&self) -> OwnedSection {
         let len = self.path.len();
         let token: Box<dyn ChangeToken> = Box::new(NeverChangeToken);
@@ -107,7 +106,7 @@ impl<'a> Section<'a> {
         }
 
         OwnedSection {
-            config: Configuration::new(settings, [token]),
+            config: Configuration::new(settings, [token], self.config.providers.clone()),
             path: self.path.clone(),
         }
     }
