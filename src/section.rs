@@ -1,4 +1,5 @@
 use crate::{context, path, Configuration, Settings};
+use std::fmt::{self, Debug, Display, Formatter, Write};
 use tokens::{ChangeToken, NeverChangeToken};
 
 macro_rules! section {
@@ -38,6 +39,44 @@ macro_rules! section {
         #[inline]
         pub fn get(&$self, key: &str) -> Option<&str> {
             $self.config.settings.get_subkey(&$self.path, key)
+        }
+    };
+}
+
+macro_rules! diagnostic {
+    ($self:ty, $name:literal) => {
+        impl Debug for $self {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                f.debug_struct($name)
+                    .field("key", &self.key())
+                    .field("path", &self.path())
+                    .field("value", &self.value())
+                    .field("exists", &self.exists())
+                    .finish()
+            }
+        }
+
+        impl Display for $self {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                let (value, providers) = self.config.settings.get_with_id(&self.path).unwrap_or_default();
+
+                f.write_str(self.key())?;
+
+                if value.is_empty() {
+                    f.write_char(':')?;
+                } else {
+                    f.write_str(" = ")?;
+                    f.write_str(value)?;
+                }
+
+                if providers > 0 && !self.config.providers.is_empty() {
+                    f.write_str(" (")?;
+                    context::trace(providers, &self.config.providers, f)?;
+                    f.write_char(')')?;
+                }
+
+                Ok(())
+            }
         }
     };
 }
@@ -156,3 +195,6 @@ impl OwnedSection {
 
     section!(self);
 }
+
+diagnostic!(Section<'_>, "Section");
+diagnostic!(OwnedSection, "OwnedSection");
