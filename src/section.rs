@@ -69,7 +69,7 @@ macro_rules! diagnostic {
                     f.write_str(value)?;
                 }
 
-                if providers > 0 && !self.config.providers.is_empty() {
+                if providers > 0 && !self.config.providers.is_empty() && f.alternate() {
                     f.write_str(" (")?;
                     context::expand(providers, &self.config.providers, f)?;
                     f.write_char(')')?;

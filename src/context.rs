@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::cmp::min;
 use std::fmt::{Formatter, Result};
 use std::mem::{forget, take};
 use tracing::warn;
@@ -78,17 +79,36 @@ pub fn overridden(providers: u8, key: &str, old: &str, new: &str) {
 /// * `names` - The names of the providers
 /// * `f` - The formatter to expand the names into
 pub fn expand(providers: u8, names: &[String], f: &mut Formatter<'_>) -> Result {
-    let len = providers.count_ones() as usize;
+    let mut len = providers.count_ones() as usize;
 
     if len == 0 {
         Ok(())
     } else {
+        let mut skip = 0;
+
+        if let Some(keep) = f.width() {
+            if keep == 0 {
+                return Ok(());
+            }
+
+            let constrained = min(len, keep);
+
+            skip = len - constrained;
+            len = constrained;
+        }
+
         let mut count = 0;
         let mut i = 0;
 
         while count < len && count < names.len() {
             while providers & (1u8 << i) == 0 {
                 i += 1;
+            }
+
+            if skip > 0 {
+                skip -= 1;
+                i += 1;
+                continue;
             }
 
             if count > 0 {
