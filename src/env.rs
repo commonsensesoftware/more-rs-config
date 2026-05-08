@@ -19,9 +19,9 @@ impl Provider {
     /// # Arguments
     ///
     /// * `prefix` - A prefix used to filter environment variables
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// If no prefix is specified, then all environment variables are loaded, which might include sensitive data.
     #[inline]
     pub fn new(prefix: impl Into<String>) -> Self {

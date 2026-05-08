@@ -1,11 +1,10 @@
-use crate::Reloadable;
-use crate::{path, prelude::Binder, settings, Builder, Section, Settings};
+use crate::{path, prelude::Binder, settings, Builder, Reloadable, Section, Settings};
 use arc_swap::ArcSwap;
 use serde::de::DeserializeOwned;
 use std::collections::VecDeque;
 use std::fmt::{self, Debug, Display, Formatter, Write};
 use std::str::FromStr;
-use std::{any::Any, convert::TryFrom, sync::Arc};
+use std::{any::Any, sync::Arc};
 use tokens::{ChangeToken, CompositeChangeToken, Registration, SharedChangeToken, SingleChangeToken};
 use tracing::{error, trace};
 
@@ -63,10 +62,12 @@ impl Configuration {
         let mut keys = Vec::new();
 
         for (path, _) in self {
-            if let Some(key) = path::next(path, None) {
-                if !keys.iter().any(|k: &String| k.eq_ignore_ascii_case(key)) {
-                    keys.push(key.to_owned());
-                }
+            let Some(key) = path::next(path, None) else {
+                continue;
+            };
+
+            if !keys.iter().any(|k: &String| k.eq_ignore_ascii_case(key)) {
+                keys.push(key.to_owned());
             }
         }
 
@@ -140,27 +141,29 @@ impl Display for Configuration {
 }
 
 fn on_changed(state: Option<Arc<dyn Any + Send + Sync + 'static>>) {
-    if let Some(state) = state {
-        let inner = state.downcast_ref::<Inner>().expect("received state other than Inner");
+    let Some(state) = state else {
+        return;
+    };
 
-        match inner.builder.build() {
-            Ok(config) => {
-                let registration = inner
-                    .config
-                    .load()
-                    .change_token()
-                    .register(Box::new(on_changed), Some(state.clone()));
-                let token = inner.token.swap(Arc::new(SharedChangeToken::default()));
+    let inner = state.downcast_ref::<Inner>().expect("received state other than Inner");
 
-                inner.config.store(Arc::new(config));
-                inner.registration.store(Arc::new(registration));
+    match inner.builder.build() {
+        Ok(config) => {
+            let registration = inner
+                .config
+                .load()
+                .change_token()
+                .register(Box::new(on_changed), Some(state.clone()));
+            let token = inner.token.swap(Arc::new(SharedChangeToken::default()));
 
-                trace!("Reloaded the configuration");
+            inner.config.store(Arc::new(config));
+            inner.registration.store(Arc::new(registration));
 
-                token.notify();
-            }
-            Err(error) => error!("Failed to reload the configuration. {error:?}"),
+            trace!("Reloaded the configuration");
+
+            token.notify();
         }
+        Err(error) => error!("Failed to reload the configuration. {error:?}"),
     }
 }
 

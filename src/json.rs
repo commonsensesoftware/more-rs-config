@@ -116,12 +116,8 @@ impl crate::Provider for Provider {
         // REF: https://docs.serde.rs/serde_json/de/fn.from_reader.html
         let content = fs::read(&self.0.path).map_err(Error::unknown)?;
         let json: JsonValue = serde_json::from_slice(&content).map_err(Error::unknown)?;
-
-        if let Some(root) = json.as_object() {
-            JsonVisitor::new(settings).visit(root);
-            Ok(())
-        } else {
-            Err(Error::InvalidFile {
+        let Some(root) = json.as_object() else {
+            return Err(Error::InvalidFile {
                 message: format!(
                     "Top-level JSON element must be an object. Instead, '{}' was found.",
                     match json {
@@ -134,7 +130,10 @@ impl crate::Provider for Provider {
                     }
                 ),
                 path: self.0.path.clone(),
-            })
-        }
+            });
+        };
+
+        JsonVisitor::new(settings).visit(root);
+        Ok(())
     }
 }
