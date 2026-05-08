@@ -13,6 +13,7 @@ REF: https://github.com/tag1consulting/goose/issues/320
 [Error]: https://docs.rs/more-config/3.0.0/config/struct.Error.html
 [Settings]: https://docs.rs/more-config/3.0.0/config/struct.Settings.html
 [Configuration]: https://docs.rs/more-config/3.0.0/config/struct.Configuration.html
+[ReloadableConfiguration]: https://docs.rs/more-config/3.0.0/config/struct.ReloadableConfiguration.html
 [Section]: https://docs.rs/more-config/3.0.0/config/struct.Section.html
 [section]: https://docs.rs/more-config/3.0.0/config/struct.Configuration.html#method.section
 [sections]: https://docs.rs/more-config/3.0.0/config/struct.Configuration.html#method.sections
