@@ -103,10 +103,7 @@ impl Prefix {
 
     fn pop(&mut self) {
         if let Some(length) = self.lengths.pop() {
-            let idx = self.text.len() - length;
-            for _ in 0..length {
-                let _ = self.text.remove(idx);
-            }
+            self.text.truncate(self.text.len() - length);
         }
     }
 }
@@ -118,7 +115,7 @@ impl Display for Prefix {
     }
 }
 
-fn get_name(element: &OwnedName, attributes: &Vec<OwnedAttribute>, line: usize) -> Result<Option<String>, String> {
+fn get_name(element: &OwnedName, attributes: &[OwnedAttribute], line: usize) -> Result<Option<String>, String> {
     for attribute in attributes {
         let local_name = attribute.name.local_name_or_error(element, line)?;
 

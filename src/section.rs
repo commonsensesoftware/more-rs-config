@@ -71,7 +71,7 @@ macro_rules! diagnostic {
 
                 if providers > 0 && !self.config.providers.is_empty() {
                     f.write_str(" (")?;
-                    context::trace(providers, &self.config.providers, f)?;
+                    context::expand(providers, &self.config.providers, f)?;
                     f.write_char(')')?;
                 }
 
