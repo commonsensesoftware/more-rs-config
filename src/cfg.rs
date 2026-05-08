@@ -111,33 +111,29 @@ impl<'a> From<&'a Configuration> for Vec<Section<'a>> {
 
 impl Debug for Configuration {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if self.providers.is_empty() {
-            Debug::fmt(&self.settings, f)
-        } else {
-            let mut sections: VecDeque<_> = self.sections().into_iter().map(|s| (0, s)).collect();
-
-            while let Some((depth, section)) = sections.pop_front() {
-                f.write_str(&"  ".repeat(depth))?;
-                Display::fmt(&section, f)?;
-
-                for (i, child) in section.sections().into_iter().map(|s| (depth + 1, s)).enumerate() {
-                    sections.insert(i, child);
-                }
-
-                if !sections.is_empty() {
-                    f.write_char('\n')?;
-                }
-            }
-
-            Ok(())
-        }
+        Debug::fmt(&self.settings, f)
     }
 }
 
 impl Display for Configuration {
     #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.settings, f)
+        let mut sections: VecDeque<_> = self.sections().into_iter().map(|s| (0, s)).collect();
+
+        while let Some((depth, section)) = sections.pop_front() {
+            write!(f, "{:width$}", "", width = depth * 2)?;
+            Display::fmt(&section, f)?;
+
+            for (i, child) in section.sections().into_iter().map(|s| (depth + 1, s)).enumerate() {
+                sections.insert(i, child);
+            }
+
+            if !sections.is_empty() {
+                f.write_char('\n')?;
+            }
+        }
+
+        Ok(())
     }
 }
 
