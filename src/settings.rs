@@ -12,7 +12,6 @@ use std::{
     fmt::{Debug, Display, Formatter, Result},
     hash::{Hash, Hasher},
     mem::replace,
-    str,
 };
 
 #[derive(Clone, Eq)]

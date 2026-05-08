@@ -127,7 +127,7 @@ cargo run --example demo -- --text "I'm a teapot!"
 ## Minimum Supported Rust Version
 
 When increasing the minimum supported Rust version (MSRV), the new version must have been released at least six months
-ago. The current MSRV is 1.60.
+ago. The current MSRV is 1.79.
 
 ## License
 

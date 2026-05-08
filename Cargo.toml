@@ -2,7 +2,7 @@
 name = "more-config"
 version = "3.0.0"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.79"
 authors = ["Chris Martinez <chris.s.martinez@hotmail.com>"]
 description = "Provides support for configuration"
 keywords = ["more", "configuration", "config"]
@@ -52,7 +52,6 @@ yaml-rust2 = "0.9"
 
 [dependencies]
 arc-swap = "1.9.1"
-cfg-if = "1.0"
 configparser = { version = "3.1.0", optional = true }
 indexmap = "2.14.0"
 more-changetoken = "2.1.0"

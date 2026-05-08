@@ -8,7 +8,7 @@ use serde::{
     },
     Deserialize,
 };
-use std::{fmt::Display, iter::IntoIterator, rc::Rc, vec::IntoIter};
+use std::{fmt::Display, rc::Rc, vec::IntoIter};
 
 impl de::Error for Error {
     #[inline]

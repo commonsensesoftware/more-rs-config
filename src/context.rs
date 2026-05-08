@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::fmt::{Formatter, Result};
-use std::mem::take;
+use std::mem::{forget, take};
 use tracing::{trace, warn};
 
 thread_local!(static ID: RefCell<(u8, Vec::<String>)> = const { RefCell::new((0, Vec::new())) });
@@ -10,8 +10,10 @@ pub struct Scope;
 
 impl From<Scope> for Vec<String> {
     #[inline]
-    fn from(_: Scope) -> Self {
-        exit()
+    fn from(scope: Scope) -> Self {
+        let names = exit();
+        forget(scope);
+        names
     }
 }
 
@@ -94,14 +96,14 @@ pub fn overridden(providers: u8, key: &str, old: &str, new: &str) {
     });
 }
 
-/// Traces the order of providers set in from provided bitmap into the provided formatter.
+/// Expands the ordered set of providers from the supplied bitmap into the provided formatter.
 ///
 /// # Arguments
 ///
-/// * `providers` - A bitmap of set providers
+/// * `providers` - A bitmap of set providers to expand
 /// * `names` - The names of the providers
-/// * `f` - The formatter to trace the names into
-pub fn trace(providers: u8, names: &[String], f: &mut Formatter<'_>) -> Result {
+/// * `f` - The formatter to expand the names into
+pub fn expand(providers: u8, names: &[String], f: &mut Formatter<'_>) -> Result {
     let len = providers.count_ones() as usize;
 
     if len == 0 {
