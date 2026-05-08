@@ -137,11 +137,11 @@ fn visit_element(prefix: &mut Prefix, element: &Element, settings: &mut Settings
 }
 
 fn visit_element_content(prefix: &mut Prefix, element: &Element, settings: &mut Settings) -> Result<(), String> {
-    if let Some(ref value) = element.text {
-        add_setting(prefix.to_string(), value.clone(), element, settings)
-    } else {
-        Ok(())
-    }
+    let Some(ref value) = element.text else {
+        return Ok(());
+    };
+
+    add_setting(prefix.to_string(), value.clone(), element, settings)
 }
 
 fn visit_element_child(

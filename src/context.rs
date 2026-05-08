@@ -3,7 +3,7 @@ use std::fmt::{Formatter, Result};
 use std::mem::take;
 use tracing::{trace, warn};
 
-thread_local!(static ID: RefCell<(u8, Vec::<String>)> = RefCell::default());
+thread_local!(static ID: RefCell<(u8, Vec::<String>)> = const { RefCell::new((0, Vec::new())) });
 
 /// Represents a configuration scope.
 pub struct Scope;
@@ -48,7 +48,6 @@ pub fn enter(names: Vec<String>) -> Scope {
     ID.with(|id| *id.borrow_mut() = (1, names));
     Scope
 }
-
 
 fn exit() -> Vec<String> {
     ID.with(|id| take(&mut *id.borrow_mut()).1)

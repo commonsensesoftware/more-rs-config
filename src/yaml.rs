@@ -134,12 +134,8 @@ impl crate::Provider for Provider {
 
         let doc = &docs[0];
 
-        match doc {
-            Yaml::Hash(ref hash) => {
-                YamlVisitor::new(settings).visit(hash);
-                Ok(())
-            }
-            _ => Err(Error::InvalidFile {
+        let Yaml::Hash(ref hash) = doc else {
+            return Err(Error::InvalidFile {
                 message: format!(
                     "Top-level YAML element must be a mapping, but '{}' was found.",
                     match doc {
@@ -153,7 +149,10 @@ impl crate::Provider for Provider {
                     }
                 ),
                 path: self.0.path.clone(),
-            }),
-        }
+            });
+        };
+
+        YamlVisitor::new(settings).visit(hash);
+        Ok(())
     }
 }

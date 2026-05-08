@@ -1,5 +1,4 @@
 use crate::{context, Configuration, Provider, Result, Settings};
-use std::convert::TryFrom;
 
 /// Represents a [configuration](crate::Configuration) builder.
 #[derive(Default)]

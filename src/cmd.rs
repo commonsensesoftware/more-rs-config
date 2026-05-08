@@ -61,8 +61,9 @@ impl crate::Provider for Provider {
             } else {
                 0
             };
-            let key: String;
-            let value: String;
+
+            let key;
+            let value;
 
             if let Some(separator) = current.find('=') {
                 let segment: String = current
@@ -93,11 +94,11 @@ impl crate::Provider for Provider {
                     current.chars().skip(start).collect()
                 };
 
-                if let Some(next) = args.next() {
-                    value = next.clone();
-                } else {
+                let Some(next) = args.next() else {
                     continue;
-                }
+                };
+
+                value = next.clone();
             }
 
             settings.insert(pascal_case(&key), value);

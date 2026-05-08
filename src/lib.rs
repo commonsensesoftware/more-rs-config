@@ -98,9 +98,9 @@ pub fn builder() -> Builder {
 ///
 /// The characters `' '`, `'_'`, and `'-'` are considered word boundaries. Alphabetic characters following these
 /// characters will be capitalized.
-/// 
+///
 /// # Remarks
-/// 
+///
 /// This function does not handle Unicode word boundaries.
 pub fn pascal_case(text: &str) -> String {
     let mut converted = String::with_capacity(text.len());

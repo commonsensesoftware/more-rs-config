@@ -172,17 +172,17 @@ impl<'de> de::Deserializer<'de> for Val<'de> {
 
         if !value.is_empty() {
             // unit variant: the value itself is the variant name (e.g. "First")
-            visitor.visit_enum(value.into_deserializer())
-        } else {
-            // non-scalar variant: a subsection key is the variant name
-            // and its value/children are the variant data (e.g. Second: "test")
-            let sections = self.0.sections();
+            return visitor.visit_enum(value.into_deserializer());
+        }
 
-            if let Some(section) = sections.into_iter().next() {
-                visitor.visit_enum(EnumDeserializer(section))
-            } else {
-                visitor.visit_enum(value.into_deserializer())
-            }
+        // non-scalar variant: a subsection key is the variant name
+        // and its value/children are the variant data (e.g. Second: "test")
+        let sections = self.0.sections();
+
+        if let Some(section) = sections.into_iter().next() {
+            visitor.visit_enum(EnumDeserializer(section))
+        } else {
+            visitor.visit_enum(value.into_deserializer())
         }
     }
 

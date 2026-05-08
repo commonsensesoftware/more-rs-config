@@ -85,10 +85,12 @@ fn collect_section_keys(config: &Configuration, parent: &str) -> Vec<String> {
     let mut keys = Vec::new();
 
     for (path, _) in config {
-        if let Some(key) = path::next(path, Some(parent)) {
-            if !keys.iter().any(|k: &String| k.eq_ignore_ascii_case(key)) {
-                keys.push(key.to_owned());
-            }
+        let Some(key) = path::next(path, Some(parent)) else {
+            continue;
+        };
+
+        if !keys.iter().any(|k: &String| k.eq_ignore_ascii_case(key)) {
+            keys.push(key.to_owned());
         }
     }
 
