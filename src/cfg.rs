@@ -1,12 +1,13 @@
-use crate::{path, prelude::Binder, settings, Builder, Reloadable, Section, Settings};
+use crate::{path, settings, Builder, Reloadable, Section, Settings};
 use arc_swap::ArcSwap;
-use serde::de::DeserializeOwned;
 use std::collections::VecDeque;
 use std::fmt::{self, Debug, Display, Formatter, Write};
-use std::str::FromStr;
 use std::{any::Any, sync::Arc};
 use tokens::{ChangeToken, CompositeChangeToken, Registration, SharedChangeToken, SingleChangeToken};
 use tracing::{error, trace};
+
+#[cfg(feature = "binder")]
+use {crate::prelude::Binder, serde::de::DeserializeOwned, std::str::FromStr};
 
 /// Represents a configuration.
 #[derive(Clone)]
@@ -211,7 +212,10 @@ impl ReloadableConfiguration {
     pub fn current(&self) -> Arc<Configuration> {
         self.0.config.load_full()
     }
+}
 
+#[cfg(feature = "binder")]
+impl ReloadableConfiguration {
     /// Creates and returns a structure reified from the configuration.
     #[inline]
     pub fn reify<T: DeserializeOwned>(&self) -> crate::Result<T> {
