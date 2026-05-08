@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::fmt::{Formatter, Result};
 use std::mem::{forget, take};
-use tracing::{trace, warn};
+use tracing::warn;
 
 thread_local!(static ID: RefCell<(u8, Vec::<String>)> = const { RefCell::new((0, Vec::new())) });
 
@@ -64,35 +64,9 @@ fn exit() -> Vec<String> {
 /// * `old` - The old value of the configuration key
 /// * `new` - The new value of the configuration key
 pub fn overridden(providers: u8, key: &str, old: &str, new: &str) {
-    const UNKNOWN: &str = "Unknown";
-
     ID.with(|ctx| {
         let (id, names) = &*ctx.borrow();
-        let mut id = *id;
-        let mut i = (id as u32).saturating_sub(1);
-        let current = if i < u8::BITS && (i as usize) < names.len() {
-            &names[i as usize]
-        } else {
-            UNKNOWN
-        };
-        let last = loop {
-            if id > 0 {
-                id >>= 1;
-                i = (id as u32).saturating_sub(1);
-
-                if providers & id != 0 {
-                    if i < u8::BITS && (i as usize) < names.len() {
-                        break names[i as usize].as_str();
-                    } else {
-                        break UNKNOWN;
-                    }
-                }
-            } else {
-                break UNKNOWN;
-            }
-        };
-
-        trace!("key '{key}' with value '{old}' ({last}) has been overridden with value '{new}' ({current})");
+        crate::overridden(*id, names, providers, key, old, new)
     });
 }
 
