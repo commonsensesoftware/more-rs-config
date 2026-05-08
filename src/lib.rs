@@ -132,6 +132,39 @@ pub fn pascal_case(text: &str) -> String {
     converted
 }
 
+// this function is intentionally located here for tracing::trace! to capture the desired location info
+#[inline(never)]
+fn overridden(mut id: u8, names: &[String], providers: u8, key: &str, old: &str, new: &str) {
+    use tracing::trace;
+
+    const UNKNOWN: &str = "Unknown";
+
+    let mut i = (id as u32).saturating_sub(1);
+    let current = if i < u8::BITS && (i as usize) < names.len() {
+        &names[i as usize]
+    } else {
+        UNKNOWN
+    };
+    let last = loop {
+        if id > 0 {
+            id >>= 1;
+            i = (id as u32).saturating_sub(1);
+
+            if providers & id != 0 {
+                if i < u8::BITS && (i as usize) < names.len() {
+                    break names[i as usize].as_str();
+                } else {
+                    break UNKNOWN;
+                }
+            }
+        } else {
+            break UNKNOWN;
+        }
+    };
+
+    trace!("key '{key}' with value '{old}' ({last}) has been overridden with value '{new}' ({current})");
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
