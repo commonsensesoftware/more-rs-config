@@ -30,7 +30,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 [lib]
 name = "config"
 path = "src/lib.rs"
-doctest = false
 
 [features]
 default = ["cmd", "env", "mem"]

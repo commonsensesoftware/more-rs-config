@@ -106,6 +106,8 @@ fn main() -> Result<(), Box<dyn Error + 'static>> {
   } else {
     println!("Not a demo!");
   }
+
+  Ok(())
 }
 ```
 
