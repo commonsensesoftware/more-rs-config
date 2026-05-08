@@ -21,3 +21,4 @@
 - [Typed Provider](guide/typed.md)
 - [Chained Provider](guide/chained.md)
 - [Data Binding](guide/binding.md)
+- [Troubleshooting](guide/troubleshooting.md)
