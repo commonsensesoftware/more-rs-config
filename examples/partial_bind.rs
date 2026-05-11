@@ -1,5 +1,4 @@
-use config::prelude::*;
-use serde::Deserialize;
+use config::{prelude::*, Deserialize};
 use std::{error::Error, path::Path};
 
 #[derive(Default, Deserialize)]
@@ -23,7 +22,15 @@ fn main() -> Result<(), Box<dyn Error + 'static>> {
         .add_env_vars()
         .add_command_line()
         .build()?;
-    let app: AppOptions = config.reify()?;
+    let mut app = AppOptions::default();
+    let before = &mut app as *mut _;
+
+    config.bind(&mut app)?;
+
+    let after = &mut app as *mut _;
+
+    // verify the pointer wasn't replaced
+    assert_eq!(before, after, "app was replaced");
 
     if app.demo {
         println!("Text = {}", &app.text);
