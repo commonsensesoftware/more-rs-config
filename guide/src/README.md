@@ -12,6 +12,7 @@ This crate provides the following features:
 - **chained** - Chain multiple configuration providers
 - **cmd** - Configuration provided by command-line arguments
 - **env** - Configuration provided by environment variables
+- **derive** - Enables full and partial configuration deserialization using **serde**
 - **ini** - Configuration provided by an \*.ini file
 - **json** - Configuration provided by a \*.json file
 - **mem** - Configuration provided by in-memory data

@@ -12,25 +12,27 @@ A [Configuration](abstractions.md#configuration) is deserialized through the [Bi
 
 ```rust
 pub trait Binder {
-    fn reify<T>(&self) -> config::Result<T>
-    where
-        T: DeserializeOwned;
+  fn reify<T: DeserializeOwned>(&self) -> config::Result<T>;
 
-    fn bind<T>(&self, instance: &mut T) -> config::Result
-    where
-        T: DeserializeOwned;
+  fn reify_unchecked<T: DeserializeOwned>(&self) -> T;
 
-    fn bind_at<T>(&self, key: impl AsRef<str>, instance: &mut T) -> config::Result
-    where
-        T: DeserializeOwned;
+  fn bind<T: DeserializeOwned>(&self, instance: &mut T) -> config::Result;
 
-    fn get_value<T>(&self, key: impl AsRef<str>) -> Result<Option<T>, T::Err>
-    where
-        T: FromStr;
-    
-    fn get_value_or_default<T>(&self, key: impl AsRef<str>) -> Result<T, T::Err>
-    where
-        T: FromStr + Default;
+  fn bind_unchecked<T: DeserializeOwned>(&self, instance: &mut T);
+
+  fn bind_at<T>(&self, key: impl AsRef<str>, instance: &mut T) -> config::Result
+  where
+      T: DeserializeOwned;
+
+  fn bind_at_unchecked<T>(&self, key: impl AsRef<str>, instance: &mut T)
+  where
+      T: DeserializeOwned;
+
+  fn get_value<T: FromStr>(&self, key: impl AsRef<str>) -> Result<Option<T>, T::Err>;
+  
+  fn get_value_or_default<T>(&self, key: impl AsRef<str>) -> Result<T, T::Err>
+  where
+      T: FromStr + Default;
 }
 ```
 
@@ -116,6 +118,59 @@ fn main() -> Result<(), Box<dyn Error + 'static>> {
 default implementation creates a new struct and binds to it, which is essentially the same as mutating the struct to
 the result of [reify].
 
+## Partial Updates
+
+In order to support partial updates, a drop-in replace is provided using the `config::Deserialize` derive macro. The
+implementation has parity with most the **serde** deserialization capabilities with added support for
+`Deserialize::deserialize_in_place`.
+
+This feature is a meant to support configuration and is not an all purpose deserialization mechanism. If you have
+additional deserialization requirements consider providing an implementation for `Deserialize::deserialize_in_place` or
+use another technique such as an ephemeral struct that can accept the deserialized configuration values and then merge
+that to your general purpose struct.
+
+```rust
+use config::{Deserialize, prelude::*};
+use std::error::Error;
+
+#[derive(Default, Deserialize)]  // ← config::Deserialize instead of serde::Deserialize
+struct ContactOptions {
+    name: String,
+    primary: bool,
+    phones: Vec<String>,
+}
+
+fn main() -> Result<(), Box<dyn Error + 'static>> {
+    let config = config::builder()
+        .add_in_memory(&[
+            ("name", "John Doe"),
+            ("phones:0", "+44 1234567"),
+        ])
+        .build()?;
+    let mut options = ContactOptions::default();
+    let before = &mut options as *mut _;
+
+    config.bind(&mut options)?;
+
+    let after = &mut options as *mut _;
+
+    // verify the pointer wasn't replaced
+    assert_eq!(before, after, "options was replaced");
+
+    println!("{}", &options.name);
+    println!("Phones:");
+
+    for phone in &contact.phones {
+        println!("\n  {phone}");
+    }
+
+    Ok(())
+}
+```
+
+>Partial data binding requires the **derive** feature, which will also trigger activation of the optional
+>**binder** feature.
+
 ## Bind an Array
 
 [bind] supports binding arrays to objects using array indices in configuration keys.
@@ -149,9 +204,7 @@ struct ArrayExample {
 }
 
 fn main() -> Result<(), Box<dyn Error + 'static>> {
-    let config = DefaultConfigurationBuilder::new()
-        .add_json_file("MyArray.json")
-        .build()?;
+    let config = config::builder().add_json_file("MyArray.json").build()?;
     let array: ArrayExample = config.reify()?;
 
     for (i, item) in array.entries.iter().enumerate() {
