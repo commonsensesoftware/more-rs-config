@@ -1,0 +1,5 @@
+error: config::Deserialize does not support #[serde(try_from)]
+ --> tests/compile_fail/unsupported_try_from.rs:4:9
+  |
+4 | #[serde(try_from = "String")]
+  |         ^^^^^^^^

@@ -1,0 +1,5 @@
+error: config::Deserialize does not support #[serde(deserialize_with)]
+ --> tests/compile_fail/unsupported_deserialize_with.rs:5:13
+  |
+5 |     #[serde(deserialize_with = "some_function")]
+  |             ^^^^^^^^^^^^^^^^

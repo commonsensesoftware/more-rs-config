@@ -1,0 +1,5 @@
+error: config::Deserialize does not support #[serde(flatten)]
+ --> tests/compile_fail/unsupported_flatten.rs:5:13
+  |
+5 |     #[serde(flatten)]
+  |             ^^^^^^^
