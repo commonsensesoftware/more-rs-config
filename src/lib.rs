@@ -70,7 +70,6 @@ pub use reloadable::Reloadable;
 pub use section::{OwnedSection, Section};
 pub use settings::Settings;
 
-/// Re-exports the `Deserialize` derive macro from `more-config-derive`.
 #[cfg(feature = "derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
 pub use config_derive::Deserialize;

@@ -33,20 +33,9 @@ keywords = ["more", "configuration", "config"]
 readme = "README.md"
 homepage = "https://commonsensesoftware.github.io/more-rs-config/"
 
-# RUSTDOCFLAGS="--cfg docsrs"; cargo +nightly doc
+# RUSTDOCFLAGS="--cfg docsrs"; cargo +nightly doc --features all
 [package.metadata.docs.rs]
-features = [
-    "binder",
-    "chained",
-    "cmd",
-    "env",
-    "ini",
-    "json",
-    "mem",
-    "typed",
-    "xml",
-    "yaml",
-]
+features = ["all"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [lib]
