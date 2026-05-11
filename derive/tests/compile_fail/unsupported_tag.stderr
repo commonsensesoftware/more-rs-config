@@ -1,0 +1,5 @@
+error: config::Deserialize does not support #[serde(tag)]
+ --> tests/compile_fail/unsupported_tag.rs:4:9
+  |
+4 | #[serde(tag = "type")]
+  |         ^^^

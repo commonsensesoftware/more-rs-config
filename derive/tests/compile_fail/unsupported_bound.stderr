@@ -1,0 +1,5 @@
+error: config::Deserialize does not support #[serde(bound)]
+ --> tests/compile_fail/unsupported_bound.rs:4:9
+  |
+4 | #[serde(bound = "T: Clone")]
+  |         ^^^^^

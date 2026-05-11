@@ -1,0 +1,5 @@
+error: config::Deserialize can only be derived for structs with named fields
+ --> tests/compile_fail/unit_struct.rs:4:8
+  |
+4 | struct MyUnit;
+  |        ^^^^^^

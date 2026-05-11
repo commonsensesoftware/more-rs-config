@@ -1,0 +1,5 @@
+error: config::Deserialize does not support #[serde(untagged)]
+ --> tests/compile_fail/unsupported_untagged.rs:4:9
+  |
+4 | #[serde(untagged)]
+  |         ^^^^^^^^
