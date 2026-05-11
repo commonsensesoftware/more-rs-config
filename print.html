@@ -1,0 +1,1398 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>More Configuration Documentation</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-2459343d.css">
+        <link rel="stylesheet" href="css/chrome-ae938929.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-7bd75dcc.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-46e85f11.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-67431344.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">More Configuration Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/commonsensesoftware/more-rs-config/tree/main/guide" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p><code>more-config</code> is a crate containing all of the fundamental abstractions for configuration in Rust.</p>
+<h2 id="features"><a class="header" href="#features">Features</a></h2>
+<p>This crate provides the following features:</p>
+<ul>
+<li><em>default</em> - Abstractions for configuration, including the <strong>cmd</strong>, <strong>env</strong>, and <strong>mem</strong> features</li>
+<li><strong>all</strong> - Includes all features</li>
+<li><strong>binder</strong> - Bind a configuration to strongly-typed values and structs</li>
+<li><strong>chained</strong> - Chain multiple configuration providers</li>
+<li><strong>cmd</strong> - Configuration provided by command-line arguments</li>
+<li><strong>env</strong> - Configuration provided by environment variables</li>
+<li><strong>derive</strong> - Enables full and partial configuration deserialization using <strong>serde</strong></li>
+<li><strong>ini</strong> - Configuration provided by an *.ini file</li>
+<li><strong>json</strong> - Configuration provided by a *.json file</li>
+<li><strong>mem</strong> - Configuration provided by in-memory data</li>
+<li><strong>typed</strong> - Configuration provided by strongly-typed, in-memory data</li>
+<li><strong>xml</strong> - Configuration provided by a *.xml file</li>
+<li><strong>yaml</strong> - Configuration provided by a *.yaml file</li>
+</ul>
+<h2 id="contributing"><a class="header" href="#contributing">Contributing</a></h2>
+<p><code>more-config</code> is free and open source. You can find the source code on <a href="https://github.com/commonsensesoftware/more-rs-config">GitHub</a>
+and issues and feature requests can be posted on the <a href="https://github.com/commonsensesoftware/more-rs-config/issues">GitHub issue tracker</a>.
+<code>more-config</code> relies on the community to fix bugs and add features: if you’d like to contribute, please read the
+<a href="https://github.com/commonsensesoftware/more-rs-config/blob/main/CONTRIBUTING.md">CONTRIBUTING</a> guide and consider opening
+a <a href="https://github.com/commonsensesoftware/more-rs-config/pulls">pull request</a>.</p>
+<h2 id="license"><a class="header" href="#license">License</a></h2>
+<p>This project is licensed under the <a href="https://github.com/commonsensesoftware/more-rs-config/blob/main/LICENSE">MIT</a> license.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h1>
+<p>The simplest way to get started is to install the crate using all features.</p>
+<pre><code class="language-bash">cargo add more-config --features all
+</code></pre>
+<p>Once you know which configuration sources you want to support, you can limit the features to only the ones you need.</p>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<p>Configuration is a common requirement of virtually any application and can be performed using one or more configuration
+providers. Configuration providers read configuration data from key-value pairs using a variety of configuration sources:</p>
+<ul>
+<li>Settings files, such as <code>appsettings.json</code></li>
+<li>Environment variables</li>
+<li>Command-line arguments</li>
+<li>In-memory data structures</li>
+<li>Custom providers</li>
+</ul>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder()
+        .add_in_memory(&amp;[("MyKey", "MyValue")])
+        .add_json_file("appsettings.json".is().optional())
+        .add_env_vars()
+        .add_command_line()
+        .build()?;
+
+    println!("MyKey = {}", config.get("MyKey").unwrap().as_str());
+    Ok(())
+}</code></pre>
+<p>Configuration providers that are added later have higher precedence and override previous key settings. For example, if
+<code>MyKey</code> is set in both <code>appsettings.json</code> and an environment variable, then the environment variable value is used. If
+<code>appsettings.json</code> does not exist or contain <code>MyKey</code> and there is no environment variable for <code>MyKey</code>, then the
+in-memory value of <code>MyValue</code> is used. Finally, if command-line argument <code>--MyKey</code> is provided, it overrides all other
+values.</p>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="abstractions"><a class="header" href="#abstractions">Abstractions</a></h1>
+<p>The configuration framework contains a common set of traits and behaviors for numerous scenarios.</p>
+<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
+<p>The <a href="https://docs.rs/more-config/3.0.0/config/struct.Configuration.html">Configuration</a> struct is the pinnacle of the entire framework. It defines the behaviors to retrieve a configured
+value or iterate over all key-value pairs, access or traverse child sections, and react to a reload triggered by the
+underlying configuration source.</p>
+<pre><code class="language-rust">pub struct Configuration {
+    pub fn get(&amp;self, key: &amp;str) -&gt; Option&lt;&amp;str&gt;;
+    pub fn section(&amp;self, key: impl Into&lt;String&gt;) -&gt; Section&lt;'_&gt;;
+    pub fn sections(&amp;self) -&gt; Vec&lt;Section&lt;'_&gt;&gt;;
+    pub fn reload_token(&amp;self) -&gt; impl ChangeToken;
+}</code></pre>
+<p>The entire configuration can be enumerated as tuples of key/value pairs similar to a <code>HashMap</code>.</p>
+<h2 id="configuration-section"><a class="header" href="#configuration-section">Configuration Section</a></h2>
+<p>Hierarchical configurations are divided into <em>sections</em>. A configuration <a href="https://docs.rs/more-config/3.0.0/config/struct.Section.html">Section</a> has its own key and, possibly, a
+value. A configuration section which does not have a value will always yield an empty string.</p>
+<pre><code class="language-rust">pub struct Section&lt;'a&gt; {
+    pub fn key(&amp;self) -&gt; &amp;str;
+    pub fn value(&amp;self) -&gt; &amp;str;
+    pub fn path(&amp;self) -&gt; &amp;str;
+    pub fn exists(&amp;self) -&gt; bool;
+    pub fn get(&amp;self, key: &amp;str) -&gt; Option&lt;&amp;str&gt;;
+    pub fn section(&amp;self, key: &amp;str) -&gt; Section&lt;'a&gt;;
+    pub fn sections(&amp;self) -&gt; Vec&lt;Section&lt;'a&gt;&gt;
+}</code></pre>
+<p>A configuration section can also be enumerated as tuples of key/value pairs similar to a <code>HashMap</code>.</p>
+<h1 id="configuration-provider"><a class="header" href="#configuration-provider">Configuration Provider</a></h1>
+<p>A configuration <a href="https://docs.rs/more-config/3.0.0/config/trait.Provider.html">Provider</a> is responsible for loading configuration key/value pairs as a collection of <a href="https://docs.rs/more-config/3.0.0/config/struct.Settings.html">Settings</a>.
+A provider might support automatic reloading and can advertise when a reload has occurred via a reload <a href="https://docs.rs/more-changetoken/2.1.0/tokens/trait.ChangeToken.html">ChangeToken</a>.</p>
+<pre><code class="language-rust">pub trait Provider {
+    fn name(&amp;self) -&gt; &amp;str;
+    fn reload_token(&amp;self) -&gt; Box&lt;dyn ChangeToken&gt;;
+    fn load(&amp;self, settings: &amp;mut Settings) -&gt; config::Result;
+}</code></pre>
+<h2 id="configuration-builder"><a class="header" href="#configuration-builder">Configuration Builder</a></h2>
+<p>A configuration builder accumulates one or more configuration providers and then builds a <a href="https://docs.rs/more-config/3.0.0/config/struct.Configuration.html">Configuration</a>.</p>
+<pre><code class="language-rust">pub struct Builder {
+    pub fn providers(&amp;self) -&gt; impl Iterator&lt;Item = &amp;dyn Provider&gt;;
+    pub fn add(&amp;mut self, provider: impl Provider + 'static);
+    pub fn build(&amp;self) -&gt; config::Result&lt;Configuration&gt;;
+}</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="working-with-configuration-data"><a class="header" href="#working-with-configuration-data">Working With Configuration Data</a></h1>
+<p>There are several different ways to work with configuration data. <a href="#configuration-provider">Configuration providers</a>
+are normalized to a generic key-value pair format, which can then be merged and consumed universally; regardless of the
+original format.</p>
+<h2 id="hierarchical-configuration-data"><a class="header" href="#hierarchical-configuration-data">Hierarchical Configuration Data</a></h2>
+<p>The Configuration API reads hierarchical configuration data by flattening the hierarchical data with the use of a
+delimiter in the configuration keys.</p>
+<p>Consider the following <code>appsettings.json</code> file:</p>
+<pre><code class="language-json">{
+  "Position": {
+    "Title": "Editor",
+    "Name": "Joe Smith"
+  },
+  "MyKey": "My appsettings.json Value",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "App": "Warning",
+      "App.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*"
+}
+</code></pre>
+<p>The following code displays several of the configurations settings:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder().add_json_file("appsettings.json").build()?;
+    let my_key_value = config.get("MyKey").unwrap();
+    let title = config.get("Position:Title").unwrap();
+    let name = config.section("Position").get("Name").unwrap();
+    let default_log_level = config.get("Logging:LogLevel:Default").unwrap();
+
+    println!("MyKey value: {my_key_value}\n\
+              Title: {title}\n\
+              Name: {name}\n\
+              Default Log Level: {default_log_level}");
+
+    Ok(())
+}</code></pre>
+<p>The preferred way to read hierarchical configuration data is using the <em>Options</em> pattern provided by the
+<a href="https://crates.io/crates/more-options">more-options</a> crate. The <a href="https://docs.rs/more-config/3.0.0/config/struct.Section.html">section</a> and <a href="https://docs.rs/more-config/3.0.0/config/struct.Configuration.html#method.sections">sections</a> methods are available to
+isolate sections and children of a section in the configuration data.</p>
+<h2 id="configuration-keys-and-values"><a class="header" href="#configuration-keys-and-values">Configuration Keys and Values</a></h2>
+<p>Configuration keys:</p>
+<ul>
+<li>Are case-insensitive; for example, <code>ConnectionString</code> and <code>connectionstring</code> are treated as equivalent keys</li>
+<li>If a key and value is set in more than one <a href="#configuration-provider">configuration providers</a>, the value from the last provider added is used</li>
+<li>Hierarchical keys
+<ul>
+<li>Within the Configuration API, a colon separator (<code>:</code>) works on all platforms</li>
+<li>In environment variables, a colon separator may not work on all platforms. A double underscore, <code>__</code>, is supported by all platforms and is automatically converted into a colon <code>:</code></li>
+</ul>
+</li>
+<li>The <a href="#data-binding">Binder</a> supports binding arrays to objects using array indices in configuration keys</li>
+</ul>
+<p>Configuration values:</p>
+<ul>
+<li>Are strings</li>
+<li>Null values can’t be stored in configuration or bound to objects</li>
+</ul>
+<h2 id="get-value"><a class="header" href="#get-value">Get Value</a></h2>
+<p>The <a href="https://docs.rs/more-config/3.0.0/config/prelude/trait.Binder.html#method.get_value">get_value</a> and <a href="https://docs.rs/more-config/3.0.0/config/prelude/trait.Binder.html#method.get_value_or_default">get_value_or_default</a> methods extract a single value from configuration with a specified key and
+converts it to the specified type.</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder().add_json_file("settings.json").build()?;
+    let number: Option&lt;u8&gt; = config.get_value("NumberKey").unwrap().unwrap_or(99);
+    let flag: bool = config.get_value_or_default("Enabled").unwrap();
+
+    println!("Number = {number}");
+    println!("Flag = {flag}");
+
+    Ok(())
+}</code></pre>
+<p>In the preceding code, if <code>NumberKey</code> isn’t found in the configuration, the default value of <code>99</code> is used. If <code>Enabled</code>
+isn’t found in the configuration, it will default to <code>false</code>, which is the <code>Default::default()</code> for <code>bool</code>.</p>
+<h2 id="section-sections-and-exists"><a class="header" href="#section-sections-and-exists">Section, Sections, and Exists</a></h2>
+<p>For the examples that follow, consider the following <code>MySubsection.json</code> file:</p>
+<pre><code class="language-json">{
+  "section0": {
+    "key0": "value00",
+    "key1": "value01"
+  },
+  "section1": {
+    "key0": "value10",
+    "key1": "value11"
+  },
+  "section2": {
+    "subsection0": {
+      "key0": "value200",
+      "key1": "value201"
+    },
+    "subsection1": {
+      "key0": "value210",
+      "key1": "value211"
+    }
+  }
+}
+</code></pre>
+<h3 id="section"><a class="header" href="#section">Section</a></h3>
+<p><a href="https://docs.rs/more-config/3.0.0/config/struct.Section.html">section</a> returns a configuration subsection with the specified subsection key.</p>
+<p>The following code returns values for <code>section1</code>:</p>
+<pre><code class="language-rust">let section = config.section("section1");
+
+println!("section1:key0: {}\n\
+          section1:key1: {}",
+          section.get("key0").unwrap(),
+          section.get("key1").unwrap());</code></pre>
+<p>The following code returns values for <code>section2:subsection0</code>:</p>
+<pre><code class="language-rust">let section = config.section("section2:subsection0");
+
+println!("section2:subsection0:key0: {}\n\
+          section2:subsection0:key0: {}",
+          section.get("key0").unwrap(),
+          section.get("key1").unwrap());</code></pre>
+<p>If a matching section isn’t found, an empty <a href="https://docs.rs/more-config/3.0.0/config/struct.Section.html">Section</a> is returned.</p>
+<h3 id="sections-and-exists"><a class="header" href="#sections-and-exists">Sections and Exists</a></h3>
+<p>The following code calls <a href="https://docs.rs/more-config/3.0.0/config/struct.Configuration.html#method.sections">sections</a> and returns values for <code>section2:subsection0</code>:</p>
+<pre><code class="language-rust">let section = config.section("section2");
+
+if section.exists() {
+  for subsection in section.sections() {
+    let key1 = format!("{}:key0", section.key());
+    let key2 = format!("{}:key1", section.key());
+    
+    println!("{key1} value: {}\n\
+              {key2} value: {}",
+              section.get(&amp;key1).unwrap(),
+              section.get(&amp;key2).unwrap());
+  }
+} else {
+  println!("section2 does not exist.");
+}</code></pre>
+<p>The preceding code uses the <a href="https://docs.rs/more-config/3.0.0/config/struct.Section.html#method.exists">exists</a> extension to verify the section exists.</p>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="working-with-files"><a class="header" href="#working-with-files">Working With Files</a></h1>
+<p>A <a href="#configuration-provider">Provider</a> that is based on a file should support a <a href="https://docs.rs/more-config/3.0.0/config/struct.FileSource.html">FileSource</a>:</p>
+<pre><code class="language-rust">pub struct FileSource {
+    pub path: PathBuf,
+    pub optional: bool,
+    pub reload_on_change: bool,
+}</code></pre>
+<p>An <a href="https://docs.rs/more-config/3.0.0/config/struct.FileSource.html#method.optional">optional</a> file means that the <a href="https://docs.rs/more-config/3.0.0/config/struct.FileSource.html#method.path">path</a> does not need to exist. When <a href="https://docs.rs/more-config/3.0.0/config/struct.FileSource.html#method.reload_on_change">reload_on_change</a> is specified, the provider will
+watch for changes to <a href="https://docs.rs/more-config/3.0.0/config/struct.FileSource.html#method.path">path</a> and trigger a notification via <a href="https://docs.rs/more-config/3.0.0/config/trait.Provider.html#method.reload_token">Provider::reload_token</a>. A file change might trigger before
+a file has been completely written, which is operating system dependent.</p>
+<p>All of the built-in, file-based configuration providers support accepting a <a href="https://docs.rs/more-config/3.0.0/config/struct.FileSource.html">FileSource</a>. A file source is most commonly
+just a file path, but it may include additional configuration features. The <a href="https://docs.rs/more-config/3.0.0/config/struct.FileSourceBuilder.html">FileSourceBuilder</a> struct and
+<a href="https://docs.rs/more-config/3.0.0/config/prelude/trait.FileSourceBuilderExt.html">FileSourceBuilderExt</a> trait provide several methods of specifying a <a href="https://docs.rs/more-config/3.0.0/config/struct.FileSource.html">FileSource</a> and its options in a fluent manner.</p>
+<pre><code class="language-rust">use config::{FileSource, prelude::*};
+use std::error::Error;
+use std::path::PathBuf;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let xml = PathBuf::from("settings.xml");
+    let config = config::builder()
+        .add_ini_file(FileSource::new(PathBuf::("prod.cfg.ini"), false, false))
+        .add_ini_file(FileSource::optional(PathBuf::("dev.cfg.ini")))
+        .add_xml_file(xml.is().optional())
+        .add_json_file("settings.json".is().optional().reloadable())
+        .build()?;
+
+    for (key, value) in &amp;config {
+        println!("{key} = {value}");
+    }
+
+    Ok(())
+}</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="in-memory-configuration-provider"><a class="header" href="#in-memory-configuration-provider">In-Memory Configuration Provider</a></h1>
+<blockquote>
+<p>These features are only available if the <strong>mem</strong> feature is activated</p>
+</blockquote>
+<p>The <a href="https://docs.rs/more-config/3.0.0/config/mem/struct.Provider.html">mem::Provider</a> uses an in-memory collection as configuration key-value pairs. This is most useful as a default
+configuration or when providing test values.</p>
+<p>The following code adds a memory collection to the configuration system and displays the settings:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder()
+        .add_in_memory(&amp;[
+            ("MyKey", "Dictionary MyKey Value"),
+            ("Position:Title", "Dictionary_Title"),
+            ("Position:Name", "Dictionary_Name"),
+            ("Logging:LogLevel:Default", "Warning"),
+        ])
+        .build()?;
+    let my_key_value = config.get("MyKey").unwrap();
+    let title = config.get("Position:Title").unwrap();
+    let name = config.section("Position").get("Name").unwrap();
+    let default_log_level = config.get("Logging:LogLevel:Default").unwrap();
+
+    println!("MyKey value: {my_key_value}\n\
+              Title: {title}\n\
+              Name: {name}\n\
+              Default Log Level: {default_log_level}");
+
+    Ok(())
+}</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="environment-variable-configuration-provider"><a class="header" href="#environment-variable-configuration-provider">Environment Variable Configuration Provider</a></h1>
+<blockquote>
+<p>These features are only available if the <strong>env</strong> feature is activated</p>
+</blockquote>
+<p>The <a href="https://docs.rs/more-config/3.0.0/config/env/struct.Provider.html">env::Provider</a> loads configuration from environment variable key-value pairs.</p>
+<p>The <code>:</code> separator doesn’t work with environment variable hierarchical keys on all platforms. <code>__</code>, the double underscore, is:</p>
+<ul>
+<li>Supported by all platforms; for example, the <code>:</code> separator is not supported by Bash, but <code>__</code> is.</li>
+<li>Automatically replaced by a <code>:</code></li>
+</ul>
+<pre><code class="language-bash">export MyKey="My key from Environment"
+export Position__Title=Console
+export Position__Name="John Doe"
+</code></pre>
+<p>Call <a href="https://docs.rs/more-config/3.0.0/config/prelude/trait.EnvVarsExt.html#method.add_env_vars">add_env_vars</a> to add environment variables or <a href="https://docs.rs/more-config/3.0.0/config/prelude/trait.EnvVarsExt.html#method.add_env_vars_with_prefix">add_env_vars_with_prefix</a> with a string to specify a prefix for
+environment variables:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder()
+        .add_env_vars_with_prefix("MyCustomPrefix_")
+        .build()?;
+    
+    for (key, value) in &amp;config {
+        println!("{key} = {value}");
+    }
+
+    Ok(())
+}</code></pre>
+<p>Environment variables set with the <code>MyCustomPrefix_</code> prefix override the default configuration providers. This includes
+environment variables without the prefix. The prefix is stripped off when the configuration key-value pairs are read.</p>
+<pre><code class="language-bash">export MyCustomPrefix_MyKey="My key with MyCustomPrefix_ Environment"
+export MyCustomPrefix_Position__Title="Custom Editor"
+export MyCustomPrefix_Position__Name="Jane Doe"
+</code></pre>
+<h2 id="naming-of-environment-variables"><a class="header" href="#naming-of-environment-variables">Naming of Environment Variables</a></h2>
+<p>Environment variable names reflect the structure of an <code>appsettings.json</code> file. Each element in the hierarchy is
+separated by a double underscore. When the element structure includes an array, the array index should be treated as an
+additional element name in this path. Consider the following <code>appsettings.json</code> file and its equivalent values
+represented as environment variables.</p>
+<pre><code class="language-json">{
+    "SmtpServer": "smtp.example.com",
+    "Logging":
+    [
+        {
+            "Name": "ToEmail",
+            "Level": "Critical",
+            "Args":
+            {
+                "FromAddress": "MySystem@example.com",
+                "ToAddress": "SRE@example.com"
+            }
+        },
+        {
+            "Name": "ToConsole",
+            "Level": "Information"
+        }
+    ]
+}
+</code></pre>
+<pre><code class="language-bash">export SmtpServer=smtp.example.com
+export Logging__0__Name=ToEmail
+export Logging__0__Level=Critical
+export Logging__0__Args__FromAddress=MySystem@example.com
+export Logging__0__Args__ToAddress=SRE@example.com
+export Logging__1__Name=ToConsole
+export Logging__1__Level=Information
+</code></pre>
+<p>Names can also be all uppercase letters:</p>
+<pre><code class="language-bash">export SMTP_SERVER=smtp.example.com
+export LOGGING__0__NAME=ToEmail
+</code></pre>
+<p>will transform to <code>StmpServer</code> and <code>Logging:0:Name</code> respectively.</p>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="command-line-configuration-provider"><a class="header" href="#command-line-configuration-provider">Command-Line Configuration Provider</a></h1>
+<blockquote>
+<p>These features are only available if the <strong>cmd</strong> feature is activated</p>
+</blockquote>
+<p>The <a href="https://docs.rs/more-config/3.0.0/config/cmd/struct.Provider.html">cmd::Provider</a> loads configuration from command-line argument key-value pairs. Configuration values set on the
+command-line can be used to override configuration values set with all the other configuration providers. When used, it
+is recommended that this is the last configuration provider added.</p>
+<h2 id="command-line-arguments"><a class="header" href="#command-line-arguments">Command-line Arguments</a></h2>
+<p>The following command sets keys and values using <code>=</code>:</p>
+<pre><code class="language-bash">myapp MyKey="Using =" Position:Title=Cmd Position:Name=Cmd_Joe
+</code></pre>
+<p>The following command sets keys and values using <code>/</code>:</p>
+<pre><code class="language-bash">myapp /MyKey "Using /" /Position:Title=Cmd /Position:Name=Cmd_Joe
+</code></pre>
+<p>The following command sets keys and values using <code>--</code>:</p>
+<pre><code class="language-bash">myapp --MyKey "Using --" --Position:Title=Cmd --Position:Name=Cmd_Joe
+</code></pre>
+<p>The key value:</p>
+<ul>
+<li>Must follow <code>=</code>, or the key must have a prefix of <code>--</code> or <code>/</code> when the value follows a space</li>
+<li>Isn’t required if <code>=</code> is used; for example, <code>MySetting=</code></li>
+</ul>
+<p>Within the same command, don’t mix command-line argument key-value pairs that use <code>=</code> with key-value pairs that use a space.</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder().add_command_line().build()?;
+    println!("Name = {}", config.section("Position").get("Name").unwrap());
+    Ok(())
+}</code></pre>
+<h2 id="switch-mappings"><a class="header" href="#switch-mappings">Switch Mappings</a></h2>
+<p>Switch mappings allow key name replacement logic. Provide a hash map of switch replacements to the
+<a href="https://docs.rs/more-config/3.0.0/config/prelude/trait.CommandLineExt.html#method.add_command_line_map">add_command_line_map</a> method.</p>
+<p>When the switch mappings hash map is used, the hash map is checked for a key that matches the key provided by a
+command-line argument. If the command-line key is found in the hash map, the hash map value is passed back to set the
+key-value pair into the application’s configuration. A switch mapping is required for any command-line key prefixed with
+a single dash (<code>-</code>).</p>
+<p>Switch mappings hash map key rules:</p>
+<ul>
+<li>Switches must start with <code>-</code> or <code>--</code>.</li>
+<li>The switch mappings hash map must not contain duplicate keys.</li>
+</ul>
+<p>To use a switch mappings hash map, pass it into the call to <a href="https://docs.rs/more-config/3.0.0/config/prelude/trait.CommandLineExt.html#method.add_command_line_map">add_command_line_map</a>:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let switch_mappings = [
+        ("-k1", "key1"),
+        ("-k2", "key2"),
+        ("--alt3", "key3"),
+        ("--alt4", "key4"),
+        ("--alt5", "key5"),
+        ("--alt6", "key6"),
+    ];
+    let config = config::builder().add_command_line_map(&amp;switch_mappings).build()?;
+
+    for (key, value) in &amp;config {
+        println!("{key} = {value}");
+    }
+
+    Ok(())
+}</code></pre>
+<p>Run the following command works to test key replacement:</p>
+<pre><code class="language-bash">myapp -k1 value1 -k2 value2 --alt3=value2 /alt4=value3 --alt5 value5 /alt6 value6
+</code></pre>
+<p>The following code shows the key values for the replaced keys:</p>
+<pre><code class="language-rust">println!("Key1: {}\n\
+          Key2: {}\n\
+          Key3: {}\n\
+          Key4: {}\n\
+          Key5: {}\n\
+          Key6: {}",
+          config.get("Key1").unwrap(),
+          config.get("Key2").unwrap(),
+          config.get("Key3").unwrap(),
+          config.get("Key4").unwrap(),
+          config.get("Key5").unwrap(),
+          config.get("Key6").unwrap());</code></pre>
+<h2 id="filtering"><a class="header" href="#filtering">Filtering</a></h2>
+<p>By default, the sequence of arguments provided by <code>std::env::args()</code> is supplied to the <a href="https://docs.rs/more-config/3.0.0/config/cmd/struct.Provider.html">cmd::Provider</a>. If custom
+filtering is required, no extension method is provided to do so. The setup is still trivial albeit more verbose.</p>
+<pre><code class="language-rust">use config::{cmd, prelude::*};
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let mut args: Vec&lt;_&gt; = std::env::args().collect();
+
+    // TODO: apply filtering
+
+    let mut builder = config::builder();
+
+    builder.add(cmd::Provider::from(args));
+
+    let config = builder.build()?;
+
+    for (key, value) in &amp;config {
+        println!("{key} = {value}");
+    }
+
+    Ok(())
+}</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="json-configuration-provider"><a class="header" href="#json-configuration-provider">JSON Configuration Provider</a></h1>
+<blockquote>
+<p>These features are only available if the <strong>json</strong> feature is activated</p>
+</blockquote>
+<p>The <a href="https://docs.rs/more-config/3.0.0/config/json/struct.Provider.html">json::Provider</a> supports loading configuration from a <code>*.json</code> file.</p>
+<p>Consider the following <code>appsettings.json</code> file:</p>
+<pre><code class="language-json">{
+  "Position": {
+    "Title": "Editor",
+    "Name": "Joe Smith"
+  },
+  "MyKey": "My appsettings.json Value",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "App": "Warning",
+      "App.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*"
+}
+</code></pre>
+<p>The following code displays several of the preceding configurations settings:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder().add_json_file("appsettings.json").build()?;
+    let my_key_value = config.get("MyKey").unwrap();
+    let title = config.get("Position:Title").unwrap();
+    let name = config.section("Position").get("Name").unwrap();
+    let default_log_level = config.get("Logging:LogLevel:Default").unwrap();
+
+    println!("MyKey value: {my_key_value}\n\
+              Title: {title}\n\
+              Name: {name}\n\
+              Default Log Level: {default_log_level}");
+
+    Ok(())
+}</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="xml-configuration-provider"><a class="header" href="#xml-configuration-provider">XML Configuration Provider</a></h1>
+<blockquote>
+<p>These features are only available if the <strong>xml</strong> feature is activated</p>
+</blockquote>
+<p>The <a href="https://docs.rs/more-config/3.0.0/config/xml/struct.Provider.html">xml::Provider</a> supports loading configuration from a <code>*.xml</code> file.</p>
+<p>The following code adds several configuration providers, including a couple of <code>*.xml</code> files:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let name = std::env::var("ENVIRONMENT").or_else("production");
+    let config = config::builder()
+        .add_xml_file("MyXmlConfig.xml".is().optional())
+        .add_xml_file(format!("MyXmlConfig.{name}.xml").is().optional())
+        .add_env_vars()
+        .add_command_line()
+        .build()?;
+
+    Ok(())
+}</code></pre>
+<p>The XML configuration files have a few special rules that are different from other
+<a href="#configuration-provider">configuration providers</a>:</p>
+<ol>
+<li>XML namespaces are not supported on elements or attributes</li>
+<li>The <code>Name</code> attribute (case-insensitive) is considered as a surrogate key in lieu of the element it is applied to</li>
+<li>Duplicate key-value combinations are ambiguous and not allowed</li>
+<li>Repeating elements with different values are considered <em>array-like</em></li>
+</ol>
+<p>Consider the following configuration file:</p>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;configuration&gt;
+  &lt;MyKey&gt;MyXMLFile Value&lt;/MyKey&gt;
+  &lt;Position&gt;
+    &lt;Title&gt;Title from  MyXMLFile&lt;/Title&gt;
+    &lt;Name&gt;Name from MyXMLFile&lt;/Name&gt;
+  &lt;/Position&gt;
+  &lt;Logging&gt;
+    &lt;LogLevel&gt;
+      &lt;Default&gt;Information&lt;/Default&gt;
+      &lt;App&gt;Warning&lt;/App&gt;
+    &lt;/LogLevel&gt;
+  &lt;/Logging&gt;
+&lt;/configuration&gt;
+</code></pre>
+<p>The following code displays several of the preceding configuration settings:</p>
+<pre><code class="language-rust">let my_key_value = config.get("MyKey").unwrap();
+let title = config.get("Position:Title").unwrap();
+let name = config.section("Position").get("Name").unwrap();
+let default_log_level = config.get("Logging:LogLevel:Default").unwrap();
+
+println!("MyKey value: {my_key_value}\n\
+          Title: {title}\n\
+          Name: {name}\n\
+          Default Log Level: {default_log_level}");</code></pre>
+<p>Repeating elements that use the same element name work if the <code>name</code> attribute is used to distinguish the elements:</p>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;configuration&gt;
+  &lt;section name="section0"&gt;
+    &lt;key name="key0"&gt;value 00&lt;/key&gt;
+    &lt;key name="key1"&gt;value 01&lt;/key&gt;
+  &lt;/section&gt;
+  &lt;section name="section1"&gt;
+    &lt;key name="key0"&gt;value 10&lt;/key&gt;
+    &lt;key name="key1"&gt;value 11&lt;/key&gt;
+  &lt;/section&gt;
+&lt;/configuration&gt;
+</code></pre>
+<p>The following code reads the previous configuration file and displays the keys and values:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder().add_xml_file("MyXmlConfig2.xml").build()?;
+    let val00 = config.get("section:section0:key:key0").unwrap();
+    let val01 = config.get("section:section0:key:key1").unwrap();
+    let val10 = config.get("section:section1:key:key0").unwrap();
+    let val11 = config.get("section:section1:key:key1").unwrap();
+
+    println!("section:section0:key:key0 value: {val00}\n\
+              section:section0:key:key1 value: {val01}\n\
+              section:section1:key:key0 value: {val10}\n\
+              section:section1:key:key1 value: {val11}");
+
+    Ok(())
+}</code></pre>
+<p>If the <code>name</code> attribute were not used, then the elements would be treated as <em>array-like</em>:</p>
+<ul>
+<li><code>section:0:key:0</code></li>
+<li><code>section:0:key:1</code></li>
+<li><code>section:1:key:0</code></li>
+<li><code>section:1:key:1</code></li>
+</ul>
+<p>Attributes can also be used to supply values:</p>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;configuration&gt;
+  &lt;key attribute="value" /&gt;
+  &lt;section&gt;
+    &lt;key attribute="value" /&gt;
+  &lt;/section&gt;
+&lt;/configuration&gt;
+</code></pre>
+<p>The previous configuration file loads the following keys with value of <code>value</code>:</p>
+<ul>
+<li><code>key:attribute</code></li>
+<li><code>section:key:attribute</code></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="yaml-configuration-provider"><a class="header" href="#yaml-configuration-provider">YAML Configuration Provider</a></h1>
+<blockquote>
+<p>These features are only available if the <strong>yaml</strong> feature is activated</p>
+</blockquote>
+<p>The <a href="https://docs.rs/more-config/3.0.0/config/yaml/struct.Provider.html">yaml::Provider</a> supports loading configuration from a <code>*.yaml</code> file.</p>
+<p>Consider the following <code>appsettings.yaml</code> file:</p>
+<pre><code class="language-yaml">Position:
+  Title: Editor
+  Name: Joe Smith
+MyKey: My appsettings.yaml Value
+Logging:
+  LogLevel:
+    Default: Information
+    App: Warning
+    App.Hosting.Lifetime: Information
+AllowedHosts: "*"
+</code></pre>
+<p>The following code displays several of the preceding configurations settings:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder().add_yaml_file("appsettings.yaml").build()?;
+    let my_key_value = config.get("MyKey");
+    let title = config.get("Position:Title");
+    let name = config.section("Position").get("Name");
+    let default_log_level = config.get("Logging:LogLevel:Default");
+
+    println!("MyKey value: {my_key_value}\n\
+              Title: {title}\n\
+              Name: {name}\n\
+              Default Log Level: {default_log_level}");
+
+    Ok(())
+}</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="ini-configuration-provider"><a class="header" href="#ini-configuration-provider">INI Configuration Provider</a></h1>
+<blockquote>
+<p>These features are only available if the <strong>ini</strong> feature is activated</p>
+</blockquote>
+<p>The <a href="https://docs.rs/more-config/3.0.0/config/ini/struct.Provider.html">ini::Provider</a> supports loading configuration from an <code>*.ini</code> file.</p>
+<p>The following code adds several configuration providers, including a couple of <code>*.ini</code> files:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let name = std::env::var("ENVIRONMENT").or_else("production");
+    let config = config::builder()
+        .add_ini_file("MyIniConfig.ini".is().optional())
+        .add_ini_file(format!("MyIniConfig.{name}.ini").is().optional())
+        .add_env_vars()
+        .add_command_line()
+        .build()?;
+
+    Ok(())
+}</code></pre>
+<p>In the preceding code, settings in the <code>MyIniConfig.ini</code> and <code>MyIniConfig.{Environment}.ini</code> files are overridden by
+settings in the:</p>
+<ul>
+<li>Environment variables configuration provider</li>
+<li>Command-line configuration provider</li>
+</ul>
+<p>Assume the <code>MyIniConfig.ini</code> file contains:</p>
+<pre><code class="language-ini">MyKey="MyIniConfig.ini Value"
+
+[Position]
+Title="My INI Config title"
+Name="My INI Config name"
+
+[Logging:LogLevel]
+Default=Information
+App=Warning
+</code></pre>
+<p>The following code displays several of the preceding configurations settings:</p>
+<pre><code class="language-rust">let my_key_value = config.get("MyKey").unwrap();
+let title = config.get("Position:Title").unwrap();
+let name = config.section("Position").get("Name").unwrap();
+let default_log_level = config.get("Logging:LogLevel:Default").unwrap();
+
+println!("MyKey value: {my_key_value}\n\
+          Title: {title}\n\
+          Name: {name}\n\
+          Default Log Level: {default_log_level}");</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="typed-configuration-provider"><a class="header" href="#typed-configuration-provider">Typed Configuration Provider</a></h1>
+<blockquote>
+<p>These features are only available if the <strong>typed</strong> feature is activated</p>
+</blockquote>
+<p>The <a href="https://docs.rs/more-config/3.0.0/config/typed/struct.Provider.html">typed::Provider</a> uses a typed data structure as the source input for configuration values. This is most useful as
+an alternative default configuration to in-memory configuration, which uses loosely defined key/value pairs. This is
+also useful when providing test values.</p>
+<p>The following code adds a data structure to the configuration system and displays the settings:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use serde::{Deserialize, Serialize};
+use std::error::Error;
+
+#[derive(Clone, Default, Deserialize, Serialize)]
+struct PerfSettings {
+    cores: u8,
+} 
+
+#[derive(Clone, Default, Deserialize, Serialize)]
+struct AppOptions {
+    title: String,
+    perf: PerfSettings,
+}
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let default = AppOptions {
+        title: String::from("Banana processor"),
+        perf: SubOptions{ cores: 7 },
+    };
+    let config = config::builder().add_typed(default).build()?;
+    let title = config.get("Title").unwrap();
+    let cores = config.get("Perf:Cores").unwrap();
+
+    println!("Title: {title}\n\ 
+              Cores: {cores}");
+
+    Ok(())
+}</code></pre>
+<p>Although bare primitives and collections of primitives are serializable, they are not supported because there is no
+corresponding key which would otherwise be derived from an associated complex structure. This limitation only applies
+to the root value. Nested data structures can be primitives, tuples, and so on. The one exception is a typed
+<code>HashMap&lt;String, _&gt;</code> because keys are present; however, this is only slightly better than using the
+<a href="#in-memory-configuration-provider">in-memory provider</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="chained-configuration-provider"><a class="header" href="#chained-configuration-provider">Chained Configuration Provider</a></h1>
+<blockquote>
+<p>These features are only available if the <strong>chained</strong> feature is activated</p>
+</blockquote>
+<p>Although it is not a very common usage scenario, you may encounter a scenario where you need to <em>chain</em> multiple
+<a href="#configuration">configurations</a> from different sources into a unified
+<a href="#configuration">configuration</a>. A practical example would be distinct
+<a href="#configuration">configurations</a> defined by different crates.</p>
+<p>Let’s assume that <code>crate1</code> defines its default configuration as:</p>
+<pre><code class="language-rust">use config::{Configuration, Result, prelude::*};
+
+fn default_config() -&gt; Result&lt;Configuration&gt; {
+    config::builder()
+        .add_in_memory(&amp;[("Mem1:KeyInMem1", "ValueInMem1")])
+        .add_in_memory(&amp;[("Mem2:KeyInMem2", "ValueInMem2")])
+        .build()
+}</code></pre>
+<p>Let’s assume that <code>crate2</code> defines its default configuration as:</p>
+<pre><code class="language-rust">use config::{Configuration, Result, prelude::*};
+
+fn default_config() -&gt; Result&lt;Configuration&gt; {
+    config::builder()
+        .add_in_memory(&amp;[("Mem3:KeyInMem3", "ValueInMem3")])
+        .build()
+}</code></pre>
+<p>An application can now compose the <code>crate1</code> and <code>crate2</code> configurations into its own configuration.</p>
+<pre><code class="language-rust">use config::prelude::*;
+use crate1;
+use crate2;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder()
+        .add_configuration(crate1::default_config()?)
+        .add_configuration(crate2::default_config()?)
+        .add_env_vars()
+        .add_command_line()
+        .build()?;
+
+    println!("Mem1:KeyInMem1 = {}", config.get("mem1:keyinmem1").unwrap());
+    println!("Mem2:KeyInMem2 = {}", config.get("Mem2:KeyInMem2").unwrap());
+    println!("Mem3:KeyInMem3 = {}", config.get("MEM3:KEYINMEM3").unwrap());
+
+    Ok(())
+}</code></pre>
+<p>This configuration would output:</p>
+<pre><code class="language-text">Mem1:KeyInMem1 = ValueInMem1
+Mem2:KeyInMem2 = ValueInMem2
+Mem3:KeyInMem3 = ValueInMem3
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="data-binding"><a class="header" href="#data-binding">Data Binding</a></h1>
+<blockquote>
+<p>Data binding requires the <strong>binder</strong> feature, which will also trigger activation of the optional <strong>serde</strong> dependency
+and is required for deserialization.</p>
+</blockquote>
+<p>Data binding leverages the <a href="https://crates.io/crates/serde">serde</a> crate to enable deserializing configurations in part,
+or in whole, into strongly-typed structures. It is also possible to retrieve strongly-typed scalar values.</p>
+<p>A <a href="#configuration">Configuration</a> is deserialized through the <a href="https://docs.rs/more-config/3.0.0/config/prelude/trait.Binder.html">Binder</a> trait:</p>
+<pre><code class="language-rust">pub trait Binder {
+  fn reify&lt;T: DeserializeOwned&gt;(&amp;self) -&gt; config::Result&lt;T&gt;;
+
+  fn reify_unchecked&lt;T: DeserializeOwned&gt;(&amp;self) -&gt; T;
+
+  fn bind&lt;T: DeserializeOwned&gt;(&amp;self, instance: &amp;mut T) -&gt; config::Result;
+
+  fn bind_unchecked&lt;T: DeserializeOwned&gt;(&amp;self, instance: &amp;mut T);
+
+  fn bind_at&lt;T&gt;(&amp;self, key: impl AsRef&lt;str&gt;, instance: &amp;mut T) -&gt; config::Result
+  where
+      T: DeserializeOwned;
+
+  fn bind_at_unchecked&lt;T&gt;(&amp;self, key: impl AsRef&lt;str&gt;, instance: &amp;mut T)
+  where
+      T: DeserializeOwned;
+
+  fn get_value&lt;T: FromStr&gt;(&amp;self, key: impl AsRef&lt;str&gt;) -&gt; Result&lt;Option&lt;T&gt;, T::Err&gt;;
+  
+  fn get_value_or_default&lt;T&gt;(&amp;self, key: impl AsRef&lt;str&gt;) -&gt; Result&lt;T, T::Err&gt;
+  where
+      T: FromStr + Default;
+}</code></pre>
+<p>Consider the following struct:</p>
+<pre><code class="language-rust">use serde::Deserialize;
+
+#[derive(Default, Deserialize)]
+struct ContactOptions {
+    name: String,
+    primary: bool,
+    phones: Vec&lt;String&gt;,
+}</code></pre>
+<blockquote>
+<p>Configuration keys are normalized or expected to otherwise be Pascal Case for consistency.</p>
+</blockquote>
+<p>The following demonstrates how to load a configuration and then reify the configuration into the struct that was
+defined above. This example used the <a href="#in-memory-configuration-provider">in-memory configuration provider</a>, but any configuration provider or
+multiple configuration providers can be used.</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder()
+        .add_in_memory(&amp;[
+            ("name", "John Doe"),
+            ("primary", "true"),
+            ("phones:0", "+44 1234567"),
+            ("phones:1", "+44 2345678"),
+        ])
+        .build()?;
+    let primary: bool = config.get_value_or_default("primary")?;
+    let options: ContactOptions = config.reify()?;
+
+    println!("Is Primary: {primary}");
+    println!("{}", &amp;options.name);
+    println!("Phones:");
+
+    for phone in &amp;contact.phones {
+        println!("\n  {phone}");
+    }
+
+    Ok(())
+}</code></pre>
+<p>It is also possible to bind an existing structure to an entire <a href="#configuration">configuration</a> or bind at
+a specific <a href="#configuration-section">configuration section</a>.</p>
+<pre><code class="language-rust">use config::prelude::*;
+use std::error::Error;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder()
+        .add_in_memory(&amp;[
+            ("name", "John Doe"),
+            ("primary", "true"),
+            ("phones:0", "+44 1234567"),
+            ("phones:1", "+44 2345678"),
+        ])
+        .build()?;
+    let mut options = ContactOptions::default();
+
+    config.bind(&amp;mut options)?;
+
+    println!("{}", &amp;options.name);
+    println!("Phones:");
+
+    for phone in &amp;contact.phones {
+        println!("\n  {phone}");
+    }
+
+    Ok(())
+}</code></pre>
+<blockquote>
+<p><strong>Note</strong>: The bound struct must implement <code>Deserialize::deserialize_in_place</code> to perform a true, in-place update. The
+default implementation creates a new struct and binds to it, which is essentially the same as mutating the struct to
+the result of <a href="https://docs.rs/more-config/3.0.0/config/prelude/trait.Binder.html#method.reify">reify</a>.</p>
+</blockquote>
+<h2 id="partial-updates"><a class="header" href="#partial-updates">Partial Updates</a></h2>
+<p>In order to support partial updates, a drop-in replace is provided using the <code>config::Deserialize</code> derive macro. The
+implementation has parity with most the <strong>serde</strong> deserialization capabilities with added support for
+<code>Deserialize::deserialize_in_place</code>.</p>
+<p>This feature is a meant to support configuration and is not an all purpose deserialization mechanism. If you have
+additional deserialization requirements consider providing an implementation for <code>Deserialize::deserialize_in_place</code> or
+use another technique such as an ephemeral struct that can accept the deserialized configuration values and then merge
+that to your general purpose struct.</p>
+<pre><code class="language-rust">use config::{Deserialize, prelude::*};
+use std::error::Error;
+
+#[derive(Default, Deserialize)]  // ← config::Deserialize instead of serde::Deserialize
+struct ContactOptions {
+    name: String,
+    primary: bool,
+    phones: Vec&lt;String&gt;,
+}
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder()
+        .add_in_memory(&amp;[
+            ("name", "John Doe"),
+            ("phones:0", "+44 1234567"),
+        ])
+        .build()?;
+    let mut options = ContactOptions::default();
+    let before = &amp;mut options as *mut _;
+
+    config.bind(&amp;mut options)?;
+
+    let after = &amp;mut options as *mut _;
+
+    // verify the pointer wasn't replaced
+    assert_eq!(before, after, "options was replaced");
+
+    println!("{}", &amp;options.name);
+    println!("Phones:");
+
+    for phone in &amp;contact.phones {
+        println!("\n  {phone}");
+    }
+
+    Ok(())
+}</code></pre>
+<blockquote>
+<p>Partial data binding requires the <strong>derive</strong> feature, which will also trigger activation of the optional
+<strong>binder</strong> feature.</p>
+</blockquote>
+<h2 id="bind-an-array"><a class="header" href="#bind-an-array">Bind an Array</a></h2>
+<p><a href="https://docs.rs/more-config/3.0.0/config/prelude/trait.Binder.html#method.bind">bind</a> supports binding arrays to objects using array indices in configuration keys.</p>
+<p>Consider <code>MyArray.json</code>:</p>
+<pre><code class="language-json">{
+  "array": {
+    "entries": {
+      "0": "value00",
+      "1": "value10",
+      "2": "value20",
+      "4": "value40",
+      "5": "value50"
+    }
+  }
+}
+</code></pre>
+<p>The following code reads the configuration and displays the values:</p>
+<pre><code class="language-rust">use config::prelude::*;
+use serde::Deserialize;
+use std::error::Error;
+
+#[derive(Default, Deserialize)]
+struct ArrayExample {
+    entries: Vec&lt;String&gt;,
+}
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn Error + 'static&gt;&gt; {
+    let config = config::builder().add_json_file("MyArray.json").build()?;
+    let array: ArrayExample = config.reify()?;
+
+    for (i, item) in array.entries.iter().enumerate() {
+        println!("Index: {i}, Value: {item}");
+    }
+
+    Ok(())
+}</code></pre>
+<p>The preceding code returns the following output. Note that index <code>3</code> has the value <code>value40</code>, which corresponds to
+<code>"4": "value40"</code> in <code>MyArray.json</code>. The bound array indices are continuous and not bound to the configuration key index.
+The configuration binder isn’t capable of binding null values or creating null entries in bound objects; however, a
+missing value can be mapped to <code>Option</code>.</p>
+<pre><code class="language-text">Index: 0  Value: value00
+Index: 1  Value: value10
+Index: 2  Value: value20
+Index: 3  Value: value40
+Index: 4  Value: value50
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><!--
+This file contains links that can be shared across pages. RustDoc links cannot currently
+be used by mdBook directly. Links are stable on crates.io so we can centralize what is
+required in this file, albeit manually.
+
+REF: https://github.com/rust-lang/mdBook/issues/1356
+REF: https://github.com/rust-lang/cargo/issues/739
+REF: https://github.com/tag1consulting/goose/issues/320
+-->
+<h1 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h1>
+<p>Multiple sources of configuration information can be difficult and confusing to track down why a particular configured
+value is the value that it is. Several diagnostic capabilities are provided to help you trace how a value was configured.</p>
+<p>Source tracing is supported for up to 8 configuration providers. The limit of 8 is a design choice to keep the cost of
+tracing low. It’s unlikely an application would have more than 8 configuration providers at a time.</p>
+<h2 id="tracing"><a class="header" href="#tracing">Tracing</a></h2>
+<p>The configuration system provides limited support for the <a href="https://crates.io/crates/tracing">tracing</a> crate.</p>
+<h3 id="configuration-reload"><a class="header" href="#configuration-reload">Configuration Reload</a></h3>
+<p>Whenever a <a href="https://docs.rs/more-config/3.0.0/config/struct.ReloadableConfiguration.html">configuration reloads</a>, it will log a <code>Level::TRACE</code> message indicating a reload has
+occurred. If the reload fails, a <code>Level::ERROR</code> message will be recorded with the error details so that background
+failures can be observed and triaged.</p>
+<p>Whenever an existing configuration value is overridden by another configuration provider, a <code>Level::TRACE</code> message will
+log the key, old value, new value, who provided the old value, and who override the key with a new value. This can
+help identify unexpected configuration resolution in an application.</p>
+<h2 id="formatting"><a class="header" href="#formatting">Formatting</a></h2>
+<p>A <a href="https://docs.rs/more-config/3.0.0/config/struct.Configuration.html">configuration</a> can also be inspected by simply printing it out. The implementation of the <code>Display</code>
+trait will output the configuration hierarchy <a href="https://docs.rs/more-config/3.0.0/config/struct.Section.html">section</a> by section. The implementation also supports an
+alternate output form that includes the corresponding providers associated with a configured value. The default
+alternate behavior expands all providers that set the configuration value. The number of providers that are output can
+be controlled by the formatting width. The configuration providers that are output are ranked most recent to oldest. A
+value of <code>0</code>, indicates the last effective provider for a configuration value.</p>
+<h3 id="default-output"><a class="header" href="#default-output">Default Output</a></h3>
+<p>The default output using <code>format!("{config}")</code> has the hierarchical format:</p>
+<pre><code class="language-text">Section1:
+  Key1 = Value1
+Section2:
+  Key2 = Value2
+</code></pre>
+<h3 id="show-providers"><a class="header" href="#show-providers">Show Providers</a></h3>
+<p>The alternate output using <code>format!("{config:#}")</code> has the format:</p>
+<pre><code class="language-text">Section1:
+  Key1 = Value1 (Memory)
+Section2:
+  Key2 = Value2 (Memory → overrides.json)
+</code></pre>
+<h3 id="show-effective-provider-only"><a class="header" href="#show-effective-provider-only">Show Effective Provider Only</a></h3>
+<p>The alternate and width output using <code>format!("{config:#1}")</code> has the format:</p>
+<pre><code class="language-text">Section1:
+  Key1 = Value1 (Memory)
+Section2:
+  Key2 = Value2 (overrides.json)
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+        <script>
+            window.playground_line_numbers = true;
+        </script>
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+        <script src="ace-2a3cd908.js"></script>
+        <script src="mode-rust-2c9d5c9a.js"></script>
+        <script src="editor-16ca416c.js"></script>
+        <script src="theme-dawn-4493f9c8.js"></script>
+        <script src="theme-tomorrow_night-9dbe62a9.js"></script>
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-c2a407aa.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+
+    </div>
+    </body>
+</html>
