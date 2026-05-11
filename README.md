@@ -24,6 +24,7 @@ This crate provides the following features:
 - **chained** - Chain multiple configuration providers
 - **cmd** - Configuration provided by command-line arguments
 - **env** - Configuration provided by environment variables
+- **derive** - Enables full and partial configuration deserialization using **serde**
 - **ini** - Configuration provided by an \*.ini file
 - **json** - Configuration provided by a \*.json file
 - **mem** - Configuration provided by in-memory data
@@ -113,6 +114,8 @@ fn main() -> Result<(), Box<dyn Error + 'static>> {
 
 ## Examples
 
+### Basic
+
 A simple demonstration application is provided that combines in-memory settings, a demo.json file, and allows command
 line arguments. Run it with:
 
@@ -124,6 +127,14 @@ To highlight overriding configuration via the command line, run it with:
 
 ```bash
 cargo run --example demo -- --text "I'm a teapot!"
+```
+
+### Partial Updates
+
+A variant of the demonstration application is provided that illustrates how to support partial configuration binding.
+
+```bash
+cargo run --example partial-bind
 ```
 
 ## Minimum Supported Rust Version
